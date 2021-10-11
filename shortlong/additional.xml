@@ -1,0 +1,14 @@
+<additional>
+	<entryExitDetector id="Detector" freq="1" file="output.xml" >
+		<detEntry lane="start_0" pos="50" friendlyPos="true" />
+		<detEntry lane="start_1" pos="50" friendlyPos="true" />
+		<detExit lane="goal_0" pos="100" friendlyPos="true" />
+		<detExit lane="goal_1" pos="100" friendlyPos="true" />
+	</entryExitDetector>
+	<entryExitDetector id="Rerouter" freq="1" file="output2.xml" >
+		<detEntry lane="start_0" pos="50" friendlyPos="true" />
+		<detEntry lane="start_1" pos="50" friendlyPos="true" />
+		<detExit lane="start_0" pos="100" friendlyPos="true" />
+		<detExit lane="start_1" pos="100" friendlyPos="true" />
+	</entryExitDetector>
+</additional>
