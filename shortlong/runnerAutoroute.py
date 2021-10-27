@@ -25,7 +25,6 @@ import os
 import sys
 import optparse
 import random
-from numpy import inf
 
 # we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -87,23 +86,32 @@ def run():
     #traci.trafficlight.setPhase("0", 2)
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
+        #if traci.trafficlight.getPhase("0") == 2:
+            # we are not already switching
+            #if traci.inductionloop.getLastStepVehicleNumber("0") > 0:
+                # there is a vehicle from the north, switch
+                #traci.trafficlight.setPhase("0", 3)
+            #else:
+                # otherwise try to keep green for EW
+                #traci.trafficlight.setPhase("0", 2)
+        #print() prints to console, not bottom of SUMO GUI
+        print("Detector data")
+        print(traci.multientryexit.getLastStepMeanSpeed("Detector"))
+        print(traci.multientryexit.getLastStepVehicleNumber("Detector"))
+
+        #Rerouting (right now just picking a random path)
+        #NOTE: This could be done with a rerouter, but the point was to get familiar with Traci
+        #The hope is to do something more advanced later
+        ids = traci.multientryexit.getLastStepVehicleIDs("Rerouter")
+##        for i in range(len(ids)):
+##            if random.random() < 0.5:
+##                traci.vehicle.setRouteID(ids[i], "route_0")
+##            else:
+##                traci.vehicle.setRouteID(ids[i], "route_1")
         step += 1
     traci.close()
     sys.stdout.flush()
 
-##def getShortestRoute(routes):
-##    route = "none"
-##    cost = inf
-##    for i in range(len(routes)):
-##        newroute = routes[i];
-##        newcost = 0;
-##        edges = traci.route.getEdges(newroute);
-##        for j in range(len(edges)):
-##            newcost += traci.edge.getTraveltime(edges[j])
-##        if newcost < cost:
-##            cost = newcost;
-##            route = newroute;
-##    return route
 
 def get_options():
     optParser = optparse.OptionParser()

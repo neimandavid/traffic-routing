@@ -37,73 +37,59 @@ else:
 from sumolib import checkBinary  # noqa
 import traci  # noqa
 
-
-def generate_routefile():
-    random.seed(42)  # make tests reproducible
-    N = 3600  # number of time steps
-    # demand per second from different directions
-    pWE = 1. / 10
-    pEW = 1. / 11
-    pNS = 1. / 30
-    with open("data/cross.rou.xml", "w") as routes:
-        print("""<routes>
-        <vType id="typeWE" accel="0.8" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="16.67" \
-guiShape="passenger"/>
-        <vType id="typeNS" accel="0.8" decel="4.5" sigma="0.5" length="7" minGap="3" maxSpeed="25" guiShape="bus"/>
-
-        <route id="right" edges="51o 1i 2o 52i" />
-        <route id="left" edges="52o 2i 1o 51i" />
-        <route id="down" edges="54o 4i 3o 53i" />""", file=routes)
-        vehNr = 0
-        for i in range(N):
-            if random.uniform(0, 1) < pWE:
-                print('    <vehicle id="right_%i" type="typeWE" route="right" depart="%i" />' % (
-                    vehNr, i), file=routes)
-                vehNr += 1
-            if random.uniform(0, 1) < pEW:
-                print('    <vehicle id="left_%i" type="typeWE" route="left" depart="%i" />' % (
-                    vehNr, i), file=routes)
-                vehNr += 1
-            if random.uniform(0, 1) < pNS:
-                print('    <vehicle id="down_%i" type="typeNS" route="down" depart="%i" color="1,0,0"/>' % (
-                    vehNr, i), file=routes)
-                vehNr += 1
-        print("</routes>", file=routes)
-
-# The program looks like this
-#    <tlLogic id="0" type="static" programID="0" offset="0">
-# the locations of the tls are      NESW
-#        <phase duration="31" state="GrGr"/>
-#        <phase duration="6"  state="yryr"/>
-#        <phase duration="31" state="rGrG"/>
-#        <phase duration="6"  state="ryry"/>
-#    </tlLogic>
-
-
 def run():
     """execute the TraCI control loop"""
     step = 0
-    # we start with phase 2 where EW has green
-    #traci.trafficlight.setPhase("0", 2)
+    doOtherSim()
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
-        step += 1
+
+        
+        
+        step+=1
+        
+        #Smarter rerouting
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterS0")
+        for i in range(len(ids)):
+            traci.vehicle.setRouteID(ids[i], getShortestRoute(["SLL0", "SLR0", "SRL0", "SRR0"], ids[i]))
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterS1")
+        for i in range(len(ids)):
+            traci.vehicle.setRouteID(ids[i], getShortestRoute(["SLL0", "SLR0", "SRL0", "SRR0"], ids[i]))
+
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterSL")
+        for i in range(len(ids)):
+            traci.vehicle.setRouteID(ids[i], getShortestRoute(["SLL", "SLR"], ids[i]))
+
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterL")
+        for i in range(len(ids)):
+            traci.vehicle.setRouteID(ids[i], getShortestRoute(["LL", "LR"], ids[i]))
+
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterSR")
+        for i in range(len(ids)):
+            traci.vehicle.setRouteID(ids[i], getShortestRoute(["SRL", "SRR"], ids[i]))
+
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterR")
+        for i in range(len(ids)):
+            traci.vehicle.setRouteID(ids[i], getShortestRoute(["RL", "RR"], ids[i]))
+
     traci.close()
     sys.stdout.flush()
 
-##def getShortestRoute(routes):
-##    route = "none"
-##    cost = inf
-##    for i in range(len(routes)):
-##        newroute = routes[i];
-##        newcost = 0;
-##        edges = traci.route.getEdges(newroute);
-##        for j in range(len(edges)):
-##            newcost += traci.edge.getTraveltime(edges[j])
-##        if newcost < cost:
-##            cost = newcost;
-##            route = newroute;
-##    return route
+def doOtherSim():
+    traci.simulation.saveState("teststate.xml")
+    traci.switch("test")
+    traci.simulation.loadState("teststate.xml")
+    traci.simulationStep()
+    traci.switch("main")
+
+def getShortestRoute(a, b):
+    traci.simulation.saveState("teststate.xml")
+    traci.switch("test")
+    traci.simulation.loadState("teststate.xml")
+    traci.simulationStep()
+    traci.switch("main")
+    print(traci.vehicle.getIDList())
+    return a[0]
 
 def get_options():
     optParser = optparse.OptionParser()
@@ -131,5 +117,12 @@ if __name__ == "__main__":
     # subprocess and then the python script connects and runs
     traci.start([sumoBinary, "-c", "shortlong.sumocfg",
                              "--tripinfo-output", "tripinfo.xml",
-                             "--additional-files", "additional.xml"])
+                             "--additional-files", "additional.xml",
+                             "--log", "LOGFILE", "--xml-validation", "never"], label="main")
+    #Second simulator for running tests. No GUI
+    traci.start([sumoBinary, "-c", "shortlong.sumocfg",
+                             "--tripinfo-output", "tripinfo.xml",
+                             "--additional-files", "additional.xml",
+                             "--start", "--no-step-log", "true",
+                             "--xml-validation", "never"], label="test")
     run()

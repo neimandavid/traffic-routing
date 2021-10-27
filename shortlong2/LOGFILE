@@ -1,0 +1,20 @@
+***Starting server on port 50671 ***
+Loading net-file from 'shortlong.net.xml' ... done (4ms).
+Loading additional-files from 'additional.xml' ... done (3ms).
+Loading done.
+Simulation started with time: 0.00
+Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
+Quitting (on error).
+Simulation ended at time: 1336.00
+Performance: 
+ Duration: 270.30s
+ TraCI-Duration: 261.74s
+ Real time factor: 4.94275
+ UPS: 363.669324
+Vehicles: 
+ Inserted: 536
+ Running: 81
+ Waiting: 0
+
+DijkstraRouter answered 536 queries and explored 9.50 edges on average.
+DijkstraRouter spent 0.00s answering queries (0.00ms on average).

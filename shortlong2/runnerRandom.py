@@ -96,38 +96,45 @@ def run():
                 # otherwise try to keep green for EW
                 #traci.trafficlight.setPhase("0", 2)
         #print() prints to console, not bottom of SUMO GUI
-        print("Detector data")
-        print(traci.multientryexit.getLastStepMeanSpeed("Detector"))
-        print(traci.multientryexit.getLastStepVehicleNumber("Detector"))
+        #print("Detector data")
+        #print(traci.multientryexit.getLastStepMeanSpeed("Detector"))
+        #print(traci.multientryexit.getLastStepVehicleNumber("Detector"))
         
         #Rerouting (right now just picking a random path)
         #NOTE: This could be done with a rerouter, but the point was to get familiar with Traci
         #The hope is to do something more advanced later
-        ids = traci.multientryexit.getLastStepVehicleIDs("RerouterS")
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterS0")
         for i in range(len(ids)):
             if random.random() < 0.5:
                 traci.vehicle.setRouteID(ids[i], "SLL0")
             else:
                 traci.vehicle.setRouteID(ids[i], "SRR0")
-        ids = traci.multientryexit.getLastStepVehicleIDs("RerouterSL")
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterS1")
+        for i in range(len(ids)):
+            if random.random() < 0.5:
+                traci.vehicle.setRouteID(ids[i], "SLL0")
+            else:
+                traci.vehicle.setRouteID(ids[i], "SRR0")
+                
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterSL")
         for i in range(len(ids)):
             if random.random() < 0.5:
                 traci.vehicle.setRouteID(ids[i], "SLL")
             else:
                 traci.vehicle.setRouteID(ids[i], "SLR")
-        ids = traci.multientryexit.getLastStepVehicleIDs("RerouterL")
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterL")
         for i in range(len(ids)):
             if random.random() < 0.5:
                 traci.vehicle.setRouteID(ids[i], "LL")
             else:
                 traci.vehicle.setRouteID(ids[i], "LR")
-        ids = traci.multientryexit.getLastStepVehicleIDs("RerouterSR")
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterSR")
         for i in range(len(ids)):
             if random.random() < 0.5:
                 traci.vehicle.setRouteID(ids[i], "SRL")
             else:
                 traci.vehicle.setRouteID(ids[i], "SRR")
-        ids = traci.multientryexit.getLastStepVehicleIDs("RerouterR")
+        ids = traci.inductionloop.getLastStepVehicleIDs("RerouterR")
         for i in range(len(ids)):
             if random.random() < 0.5:
                 traci.vehicle.setRouteID(ids[i], "RL")

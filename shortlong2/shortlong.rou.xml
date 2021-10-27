@@ -54,7 +54,10 @@
     <route edges="start R RL C1 C2 goal" color="yellow" id="SRL0"/>
     <route edges="start R RR1 RR2 goal" color="yellow" id="SRR0"/>
 
-    <flow id="Sflow" from="start" to="goal" begin="0" end="10000" number="10000"/>
+    <!--vType id="noVar" accel="0.8" decel="4.5" sigma="0.5" length="5" maxSpeed="70" speedDev="0.0"/-->
+    <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
+
+    <flow id="Sflow" type="noVar" from="start" to="goal" begin="0" end="10000" number="2000"/>
     <flow id="Lflow" from="startL" to="goal" begin="0" end="10000" number="1000"/>
     <flow id="Rflow" from="startR" to="goal" begin="0" end="10000" number="1000"/>
 </routes>

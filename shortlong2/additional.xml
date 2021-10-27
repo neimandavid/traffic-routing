@@ -1,33 +1,8 @@
 <additional>
-	<entryExitDetector id="Detector" freq="1" file="output.xml" >
-		<detEntry lane="start_0" pos="50" friendlyPos="true" />
-		<detEntry lane="start_1" pos="50" friendlyPos="true" />
-		<detEntry lane="startL_0" pos="50" friendlyPos="true" />
-		<detEntry lane="startR_0" pos="50" friendlyPos="true" />
-		<detExit lane="goal_0" pos="100" friendlyPos="true" />
-		<detExit lane="goal_1" pos="100" friendlyPos="true" />
-		<detExit lane="goal_2" pos="100" friendlyPos="true" />
-	</entryExitDetector>
-	<entryExitDetector id="RerouterS" freq="1" file="output2.xml" >
-		<detEntry lane="start_0" pos="50" friendlyPos="true" />
-		<detEntry lane="start_1" pos="50" friendlyPos="true" />
-		<detExit lane="start_0" pos="100" friendlyPos="true" />
-		<detExit lane="start_1" pos="100" friendlyPos="true" />
-	</entryExitDetector>
-	<entryExitDetector id="RerouterSL" freq="1" file="output2SL.xml" >
-		<detEntry lane="L_0" pos="50" friendlyPos="true" />
-		<detExit lane="L_0" pos="100" friendlyPos="true" />
-	</entryExitDetector>
-	<entryExitDetector id="RerouterL" freq="1" file="output2L.xml" >
-		<detEntry lane="startL_0" pos="50" friendlyPos="true" />
-		<detExit lane="startL_0" pos="100" friendlyPos="true" />
-	</entryExitDetector>
-	<entryExitDetector id="RerouterSR" freq="1" file="output2SR.xml" >
-		<detEntry lane="R_0" pos="50" friendlyPos="true" />
-		<detExit lane="R_0" pos="100" friendlyPos="true" />
-	</entryExitDetector>
-	<entryExitDetector id="RerouterR" freq="1" file="output2R.xml" >
-		<detEntry lane="startR_0" pos="50" friendlyPos="true" />
-		<detExit lane="startR_0" pos="100" friendlyPos="true" />
-	</entryExitDetector>
+	<inductionLoop id="RerouterS0" freq="1" file="output2.xml" lane="start_0" pos="450" friendlyPos="true" />
+	<inductionLoop id="RerouterS1" freq="1" file="output2.xml" lane="start_1" pos="450" friendlyPos="true" />
+	<inductionLoop id="RerouterSL" freq="1" file="output2SL.xml" lane="L_0" pos="590" friendlyPos="true" />
+	<inductionLoop id="RerouterL" freq="1" file="output2L.xml" lane="startL_0" pos="150" friendlyPos="true" />
+	<inductionLoop id="RerouterSR" freq="1" file="output2SR.xml" lane="R_0" pos="600" friendlyPos="true" />
+	<inductionLoop id="RerouterR" freq="1" file="output2R.xml" lane="startR_0" pos="150" friendlyPos="true" />
 </additional>
