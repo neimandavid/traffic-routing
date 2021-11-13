@@ -46,41 +46,33 @@ carsOnNetwork = [];
 
 def run():
     """execute the TraCI control loop"""
-    step = 0
-    dontBreakEverything()
+    dontBreakEverything() #Run test simulation for a step to avoid it overwriting the main one or something??
     while traci.simulation.getMinExpectedNumber() > 0:
-        traci.simulationStep()
-        reroute(True)
-        carsOnNetwork.append(len(traci.vehicle.getIDList()))
-        step+=1
-        
+        traci.simulationStep() #Tell the simulator to simulate the next time step
+        reroute(True) #Reroute cars (including simulate-ahead cars)
+        carsOnNetwork.append(len(traci.vehicle.getIDList())) #Track number of cars on network (for plotting)
+
+    #After we're done simulating... 
     plt.figure()
     plt.plot(carsOnNetwork)
     plt.xlabel("Time (s)")
     plt.ylabel("Cars on Network")
     plt.title("Congestion, Adoption Prob=" + str(pSmart))
-    #plt.legend(["Regret (left turn)", "Regret (right turn)"])
-    #plt.show()
+    #plt.show() #NOTE: Blocks code execution until you close the plot
     plt.savefig("Plots/Congestion, AP=" + str(pSmart)+".png")
-        
     
-    traci.close()
-    sys.stdout.flush()
 
 #Tell all the detectors to reroute the cars they've seen
 def reroute(rerouteAuto=True):
+    #Bottom intersection
     rerouteDetector("RerouterS0", ["SLL0", "SLR0", "SRL0", "SRR0"], rerouteAuto)
     rerouteDetector("RerouterS1", ["SLL0", "SLR0", "SRL0", "SRR0"], rerouteAuto)
+    #Left intersection
     rerouteDetector("RerouterSL", ["SLR", "SLL"], rerouteAuto)
-    #rerouteDetector("RerouterSL", ["SLL"], rerouteAuto)
-
     rerouteDetector("RerouterL", ["LR", "LL"], rerouteAuto)
-    #rerouteDetector("RerouterL", ["LL"], rerouteAuto)
-
+    #Right intersection
     rerouteDetector("RerouterSR", ["SRL", "SRR"], rerouteAuto)
-    #rerouteDetector("RerouterSR", ["SRR"], rerouteAuto)
     rerouteDetector("RerouterR", ["RL", "RR"], rerouteAuto)
-    #rerouteDetector("RerouterR", ["RR"], rerouteAuto)
 
 
 #Send all cars that hit detector down one of the routes in routes
@@ -103,11 +95,11 @@ def rerouteDetector(detector, routes, rerouteAuto=True):
         traci.vehicle.setColor(ids[i], [255, 0, 0]) #Red = random routing
         if detector == "RerouterL" or detector == "RerouterR":
                 traci.vehicle.setColor(ids[i], [255, 0, 255]) #Blue = from side
+        #Pick random route
         r = random.random()
         nroutes = len(routes)
         for j in range(nroutes):
-            #if r < 1.0/nroutes:
-            if r < 1.9/nroutes:
+            if r < 1.0/nroutes:
                 traci.vehicle.setRouteID(ids[i], routes[j])
                 break
             else:
@@ -115,12 +107,11 @@ def rerouteDetector(detector, routes, rerouteAuto=True):
 
 #Magically makes the vehicle lists stop deleting themselves somehow???
 def dontBreakEverything():
-    #traci.simulation.saveState("teststate.xml")
     traci.switch("test")
-    #traci.simulation.loadState("teststate.xml")
     traci.simulationStep()
     traci.switch("main")
 
+#TODO: Replace getShortestRoute logic with A* search. Move simulate ahead logic into edgeCosts function
 def getShortestRoute(routes, vehicle):
     #Save time on trivial cases
     if len(routes) == 1:
@@ -137,7 +128,6 @@ def getShortestRoute(routes, vehicle):
         lightStates[light][1] = traci.trafficlight.getNextSwitch(light) - traci.simulation.getTime()
 
     traci.switch("test")
-    #traci.simulationStep() #So stuff doesn't break? Not sure we need this
     
     bestroute = "None"
     besttime = float('inf')
@@ -157,6 +147,7 @@ def getShortestRoute(routes, vehicle):
             reroute(False) #Randomly reroute the non-adopters
             #NOTE: I'm modeling non-adopters as randomly rerouting at each intersection
             #So whether or not I reroute them here, I'm still wrong compared to the main simulation (where they will reroute randomly)
+            #This is good - the whole point is we can't simulate exactly what they'll do
             t+=1
         if t < besttime:
             besttime = t
@@ -183,8 +174,6 @@ if __name__ == "__main__":
     else:
         sumoBinary = checkBinary('sumo-gui')
 
-    # first, generate the route file for this simulation
-    #generate_routefile()
 
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
@@ -200,3 +189,4 @@ if __name__ == "__main__":
                              "--xml-validation", "never",
                              "--step-length", "1"], label="test")
     run()
+    traci.close()

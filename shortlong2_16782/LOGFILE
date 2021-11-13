@@ -1,18 +1,20 @@
-***Starting server on port 49322 ***
-Loading net-file from 'shortlong.net.xml' ... done (3ms).
-Loading additional-files from 'additional.xml' ... done (2ms).
+***Starting server on port 49524 ***
+Loading net-file from 'shortlong.net.xml' ... done (5ms).
+Loading additional-files from 'additional.xml' ... done (4ms).
 Loading done.
 Simulation started with time: 0.00
-Simulation ended at time: 66.00
+Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
+Quitting (on error).
+Simulation ended at time: 173.00
 Performance: 
- Duration: 7.19s
- TraCI-Duration: 5.93s
- Real time factor: 9.17431
- UPS: 175.562969
+ Duration: 54.59s
+ TraCI-Duration: 34.30s
+ Real time factor: 3.16896
+ UPS: 150.681419
 Vehicles: 
- Inserted: 36 (Loaded: 41)
- Running: 36
- Waiting: 5
+ Inserted: 96 (Loaded: 105)
+ Running: 93
+ Waiting: 9
 
-DijkstraRouter answered 41 queries and explored 10.29 edges on average.
+DijkstraRouter answered 105 queries and explored 10.29 edges on average.
 DijkstraRouter spent 0.00s answering queries (0.00ms on average).
