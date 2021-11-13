@@ -11,4 +11,8 @@
 		<detExit lane="start_0" pos="100" friendlyPos="true" />
 		<detExit lane="start_1" pos="100" friendlyPos="true" />
 	</entryExitDetector>
+	<inductionLoop id="Detector0" freq="1" file="Detector0.xml" lane="start_0" pos="50" friendlyPos="true" />
+	<inductionLoop id="Detector1" freq="1" file="Detector1.xml" lane="start_1" pos="50" friendlyPos="true" />
+	<inductionLoop id="DetectorE0" freq="1" file="DetectorE0.xml" lane="goal_0" pos="450" friendlyPos="true" />
+	<inductionLoop id="DetectorE1" freq="1" file="DetectorE1.xml" lane="goal_1" pos="450" friendlyPos="true" />
 </additional>

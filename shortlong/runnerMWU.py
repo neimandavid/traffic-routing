@@ -54,16 +54,25 @@ def runRegret(regrets):
         traci.simulationStep()
         #Get travel times
         #Newly spawned vehicle
-        ids = traci.multientryexit.getLastStepVehicleIDs("Rerouter")
+        ids = traci.inductionloop.getLastStepVehicleIDs("Detector0")
         for v in ids:
             if True:
                 data[v] = [step, -1, 2, 1]
+        ids = traci.inductionloop.getLastStepVehicleIDs("Detector1")
+        for v in ids:
+            if True:
+                data[v] = [step, -1, 2, 1]
+                
         #Newly exited vehicle
-        eta = 1.0/10000
-        for v in data:
-            if not v in traci.vehicle.getIDList() and data[v][1] == -1:
-                data[v][1] = step
-                regrets[0][data[v][2]] -= eta*(data[v][1] - data[v][0])/data[v][3]
+        eta = 1.0/1000000
+        ids = traci.inductionloop.getLastStepVehicleIDs("DetectorE0")
+        for v in ids:
+            data[v][1] = step
+            regrets[0][data[v][2]] -= eta*(data[v][1] - data[v][0])/data[v][3]
+        ids = traci.inductionloop.getLastStepVehicleIDs("DetectorE1")
+        for v in ids:
+            data[v][1] = step
+            regrets[0][data[v][2]] -= eta*(data[v][1] - data[v][0])/data[v][3]
 
         #Routing
         ids = traci.multientryexit.getLastStepVehicleIDs("Rerouter")
