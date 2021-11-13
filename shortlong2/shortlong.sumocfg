@@ -13,7 +13,7 @@
     </time>
 
     <processing>
-        <time-to-teleport value="-1"/>
+        <time-to-teleport value="1000"/>
     </processing>
 
 </configuration>
