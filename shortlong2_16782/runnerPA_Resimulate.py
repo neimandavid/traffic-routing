@@ -40,7 +40,7 @@ from sumolib import checkBinary  # noqa
 import traci  # noqa
 
 isSmart = dict(); #Store whether each vehicle does our routing or not
-pSmart = 0.5; #Adoption probability
+pSmart = 1.0; #Adoption probability
 
 carsOnNetwork = [];
 

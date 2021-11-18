@@ -40,32 +40,128 @@ from sumolib import checkBinary  # noqa
 import traci  # noqa
 
 isSmart = dict(); #Store whether each vehicle does our routing or not
-pSmart = 0.5; #Adoption probability
+pSmart = 1.0; #Adoption probability
 
-carsOnNetwork = [];
+#Plotting travel times
+entryTimes = dict();
+nDone = 0;
+totalTime = 0;
+avgTravelTime = float("nan");
+
+routerInfo = dict();
+routerPlotInfo = dict();
 
 def run():
     """execute the TraCI control loop"""
     step = 0
     dontBreakEverything()
+    try: #Errors out if directory already exists
+        os.mkdir("Plots/NEW")
+    except OSError as error:
+        print(error)
+
+    #Set up plotting variables
+    nCarsOnNetwork = [];
+    avgTravelTimes = [];
+    routers = ["RerouterS0", "RerouterS1", "RerouterSL", "RerouterL", "RerouterSR", "RerouterR"]
+    for router in routers:
+        routerPlotInfo[router] = dict()
+        routerPlotInfo[router]["pchanged"] = []
+        routerPlotInfo[router]["ntotal"] = []
+        
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
-        reroute(True)
-        carsOnNetwork.append(len(traci.vehicle.getIDList()))
-        step+=1
-        
-    plt.figure()
-    plt.plot(carsOnNetwork)
-    plt.xlabel("Time (s)")
-    plt.ylabel("Cars on Network")
-    plt.title("Congestion, Adoption Prob=" + str(pSmart))
-    #plt.legend(["Regret (left turn)", "Regret (right turn)"])
-    #plt.show()
-    plt.savefig("Plots/Congestion, AP=" + str(pSmart)+".png")
-        
+        step+=1 #Track time for plotting
+        reroute(True) #Reroute everything
+        updateTimes(["RerouterS0", "RerouterS1"], ["RerouterG0", "RerouterG1", "RerouterG2"], step)
+        nCarsOnNetwork.append(len(traci.vehicle.getIDList()))
+        avgTravelTimes.append(avgTravelTime)
+        for router in routers:
+            for route in routerInfo[router]:
+                if route != "nchanged" and route != "ntotal" and route != "nsmart":
+                    if not route in routerPlotInfo[router]:
+                        #Copy appropriately-sized NaN array
+                        routerPlotInfo[router][route] = routerPlotInfo[router]["pchanged"].copy()
+                    if routerInfo[router]["ntotal"] == 0:
+                        routerPlotInfo[router][route].append(float("nan"))
+                    else:
+                        routerPlotInfo[router][route].append(routerInfo[router][route]/routerInfo[router]["ntotal"])
+            if routerInfo[router]["nsmart"] == 0:
+                routerPlotInfo[router]["pchanged"].append(float("nan"))
+            else:
+                routerPlotInfo[router]["pchanged"].append(routerInfo[router]["nchanged"]/routerInfo[router]["nsmart"])
+            routerPlotInfo[router]["ntotal"].append(routerInfo[router]["ntotal"])
+        if step % 1000 == 0:
+            plotThings(nCarsOnNetwork, avgTravelTimes, routerPlotInfo)
+
+    
+    plotThings(nCarsOnNetwork, avgTravelTimes, routerPlotInfo)
     
     traci.close()
     sys.stdout.flush()
+
+def plotThings(nCarsOnNetwork, avgTravelTimes, routerPlotInfo):
+    color='tab:blue'
+    fig, ax1 = plt.subplots()
+    ax1.plot(nCarsOnNetwork, color=color)
+    ax1.set_xlabel("Simulation time step (s)")
+    ax1.set_ylabel("Cars on Network", color=color)
+    plt.title("Cars on Network and Travel Time,AP=" + str(pSmart))
+    color='tab:red'
+    ax2 = ax1.twinx()
+    ax2.plot(avgTravelTimes, color=color)
+    ax2.set_ylabel("Average travel time (s)", color=color)
+    fig.tight_layout()
+    plt.savefig("Plots/NEW/Congestion,AP=" + str(pSmart)+".png")
+
+    for router in routerPlotInfo:
+        plt.figure()
+        #color='tab:blue'
+        fig, ax1 = plt.subplots()
+        legend = []
+        for route in routerPlotInfo[router]:
+            if route != "ntotal":
+                ax1.plot(routerPlotInfo[router][route])
+                legend.append(route)
+        ax1.set_xlabel("Simulation time step (s)")
+        ax1.set_ylabel("Proportion of cars")#, color=color)
+        plt.title("Routing, AP=" + str(pSmart)+", Router="+router)
+        color='tab:red'
+        ax2 = ax1.twinx()
+        ax2.plot(routerPlotInfo[router]["ntotal"], color=color)
+        ax2.set_ylabel("Total number of cars", color=color)
+        legend.append("ntotal")
+        fig.legend(legend)
+        fig.tight_layout()
+        plt.savefig("Plots/NEW/Routing,AP=" + str(pSmart)+",Router="+router+".png")
+
+
+##        plt.figure()
+##        legend = []
+##        for route in routerPlotInfo[router]:
+##            plt.plot(routerPlotInfo[router][route])
+##            legend.append(route)
+##        plt.xlabel("Simulation time step (s)")
+##        plt.ylabel("Proportion of cars")
+##        plt.title("Routing, AP=" + str(pSmart)+", Router="+router)
+##        plt.legend(legend)
+##        #plt.show()
+##        plt.savefig("Plots/NEW/Routing,AP=" + str(pSmart)+",Router="+router+".png")
+
+def updateTimes(d_in, d_out, step):
+    global nDone, totalTime, avgTravelTime
+    for d in d_in:
+        ids = traci.inductionloop.getLastStepVehicleIDs(d)
+        for id in ids:
+            entryTimes[id] = step
+    for d in d_out:
+        ids = traci.inductionloop.getLastStepVehicleIDs(d)
+        for id in ids:
+            if id in entryTimes:
+                nDone += 1
+                totalTime += step - entryTimes[id]
+                avgTravelTime = totalTime/nDone
+    
 
 #Tell all the detectors to reroute the cars they've seen
 def reroute(rerouteAuto=True):
@@ -85,19 +181,36 @@ def reroute(rerouteAuto=True):
 
 #Send all cars that hit detector down one of the routes in routes
 def rerouteDetector(detector, routes, rerouteAuto=True):
+    if not detector in routerInfo:
+        routerInfo[detector] = dict()
+        routerInfo[detector]["ntotal"] = 0
+        routerInfo[detector]["nsmart"] = 0
+        routerInfo[detector]["nchanged"] = 0
+        for route in routes:
+            routerInfo[detector][route] = 0
+    
     ids = traci.inductionloop.getLastStepVehicleIDs(detector)
     for i in range(len(ids)):
         #If we haven't decided whether to route it or not, decide now
         if not ids[i] in isSmart:
             isSmart[ids[i]] = random.random() < pSmart
 
-        #If we're routing it, and we're recomputing routes, do so
+        #If we're routing it, and we're recomputing routes, recompute
         if isSmart[ids[i]]:
             traci.vehicle.setColor(ids[i], [0, 255, 0]) #Green = we're routing
             if detector == "RerouterL" or detector == "RerouterR":
                 traci.vehicle.setColor(ids[i], [0, 255, 255]) #Blue = from side
             if rerouteAuto:
-                traci.vehicle.setRouteID(ids[i], getShortestRoute(routes, ids[i]))
+                route = getShortestRoute(routes, ids[i])
+
+                #Update plotting info
+                routerInfo[detector]["ntotal"] += 1
+                routerInfo[detector]["nsmart"] += 1
+                routerInfo[detector][route] += 1
+                if not traci.vehicle.getRouteID(ids[i]) == route:
+                    routerInfo[detector]["nchanged"] += 1
+                    
+                traci.vehicle.setRouteID(ids[i], route)
             continue
         #If we're not routing it, randomly pick a route
         traci.vehicle.setColor(ids[i], [255, 0, 0]) #Red = random routing
@@ -107,8 +220,19 @@ def rerouteDetector(detector, routes, rerouteAuto=True):
         nroutes = len(routes)
         for j in range(nroutes):
             #if r < 1.0/nroutes:
+
+            #This steals 90% of the probability from the last route and gives it to the first route
+            #So the first decision point routes 72.5% left, 27.5% right
+            #Second decision point routes 90% mid, 10% outside
             if r < 1.9/nroutes:
-                traci.vehicle.setRouteID(ids[i], routes[j])
+                route = routes[j]
+
+                #Update plotting info
+                if rerouteAuto:
+                    routerInfo[detector]["ntotal"] += 1
+                    routerInfo[detector][route] += 1
+                
+                traci.vehicle.setRouteID(ids[i], route)
                 break
             else:
                 r -= 1.0/nroutes

@@ -5,4 +5,7 @@
 	<inductionLoop id="RerouterL" freq="1" file="output2L.xml" lane="startL_0" pos="150" friendlyPos="true" />
 	<inductionLoop id="RerouterSR" freq="1" file="output2SR.xml" lane="R_0" pos="600" friendlyPos="true" />
 	<inductionLoop id="RerouterR" freq="1" file="output2R.xml" lane="startR_0" pos="150" friendlyPos="true" />
+	<inductionLoop id="RerouterG0" freq="1" file="output2G.xml" lane="goal_0" pos="450" friendlyPos="true" />
+	<inductionLoop id="RerouterG1" freq="1" file="output2G.xml" lane="goal_1" pos="450" friendlyPos="true" />
+	<inductionLoop id="RerouterG2" freq="1" file="output2G.xml" lane="goal_2" pos="450" friendlyPos="true" />
 </additional>

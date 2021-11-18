@@ -145,8 +145,10 @@ if __name__ == "__main__":
                              "--start"])
 
 
-    for i in range(20):
-        p = i/20.0
+    nprobs = 50
+    for i in range(nprobs+1):
+        p = i/nprobs
+        print(p)
         ps.append(p)
         regrets, avgtime = runProb(p)
         ts.append(avgtime)
