@@ -36,12 +36,13 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("please declare environment variable 'SUMO_HOME'")
 
-from sumolib import checkBinary  # noqa
-import traci  # noqa
-import sumolib
+from sumolib import checkBinary
+import traci  #To interface with SUMO simulations
+import sumolib #To query node/edge stuff about the network
+import pickle #To save/load traffic light states
 
 isSmart = dict(); #Store whether each vehicle does our routing or not
-pSmart = 0.5; #Adoption probability
+pSmart = 1.0; #Adoption probability
 
 carsOnNetwork = [];
 
@@ -68,9 +69,10 @@ def run(netfile, rerouters):
     
 
 #Tell all the detectors to reroute the cars they've seen
+#Devolves into a 2-line for loop once we have A* working, should probably move into AstarReroute then
 def reroute(rerouters, rerouteAuto=True):
     for r in rerouters:
-        AstarReroute(r)
+        AstarReroute(r, rerouteAuto)
     
     #Bottom intersection
     rerouteDetector("IL_start_0", ["SLL0", "SLR0", "SRL0", "SRR0"], rerouteAuto)
@@ -82,11 +84,45 @@ def reroute(rerouters, rerouteAuto=True):
     rerouteDetector("IL_R_0", ["SRL", "SRR"], rerouteAuto)
     rerouteDetector("IL_startR_0", ["RL", "RR"], rerouteAuto)
 
-def AstarReroute(detector):
-    ids = traci.inductionloop.getLastStepVehicleIDs(detector)
-    #TODO: Route these cars with A*
+def AstarReroute(detector, rerouteAuto=True):
     #print("Warning: A* routing not implemented for router " + detector)
 
+    ids = traci.inductionloop.getLastStepVehicleIDs(detector) #All vehicles to be rerouted
+    if len(ids) == 0:
+        #No cars to route, we're done here
+        return
+    
+    #Extract name of current edge from detector
+    #Doing this string splitty stuff in case someone uses underscores in lane names
+    splitname = detector.split("_")
+    edge = ""
+    for i in range(1, len(splitname)-1): #Drop the "IL_" prefix and the lane number
+        if i > 1:
+            edge = edge + "_"
+        edge = edge+splitname[i]
+    saveStateInfo(edge) #Saves the traffic state and traffic light timings
+    
+    
+
+    #Test edge costs
+    for vehicle in ids:
+        #Decide whether we route this vehicle
+        if not vehicle in isSmart:
+            isSmart[vehicle] = random.random() < pSmart
+        if isSmart[vehicle] and rerouteAuto:
+            #TODO: Route these cars using A*.
+            #INSERT A* CODE OR FUNCTION CALL TO A* CODE HERE
+            #Note: You can use sumolib to get edges following edges or vertices. Ex: https://stackoverflow.com/questions/58753690/can-we-get-the-list-of-followed-edges-of-the-current-edge
+            print("TODO: A* routing")
+            #print(getEdgeCost(vehicle, "L", edge, 0)) #Quick test of edge cost, errors out if next edge can't be "L"
+        if not isSmart[vehicle]:
+            #TODO: Turn randomly
+            #Can't just steal from old rerouteDetector code if we don't know possible routes
+            #Could just turn randomly and stop if you fall off the network...
+            #Can deal with this later, for now I'll just set psmart=1
+            print("TODO: Turn randomly")
+    
+def saveStateInfo(edge):
     #Copy state from main sim to test sim
     traci.simulation.saveState("teststate_"+edge+".xml")
     #saveState apparently doesn't save traffic light states despite what the docs say
@@ -96,10 +132,45 @@ def AstarReroute(detector):
         lightStates[light] = [traci.trafficlight.getPhase(light), traci.trafficlight.getPhaseDuration(light)]
         #Why do the built-in functions have such terrible names?!
         lightStates[light][1] = traci.trafficlight.getNextSwitch(light) - traci.simulation.getTime()
+    #Save lightStates to a file
+    with open("lightstate_"+edge+".pickle", 'wb') as handle:
+        pickle.dump(lightStates, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+#I think this works
+#TODO: Consider stopping A* expansions and using current average speed for big g_value
 def getEdgeCost(vehicle, edge, prevedge, g_value):
-    print("Not yet implemented")
-    return 1
+    traci.switch("test")
+    #Load traffic state
+    traci.simulation.loadState("teststate_"+prevedge+".xml")
+    #Load light state
+    with open("lightstate_"+prevedge+".pickle", 'rb') as handle:
+        lightStates = pickle.load(handle)
+    #Copy traffic light timings
+    for light in traci.trafficlight.getIDList():
+        traci.trafficlight.setPhase(light, lightStates[light][0])
+        traci.trafficlight.setPhaseDuration(light, lightStates[light][1])
+
+    #Tell the vehicle to drive to the end of edge
+    traci.vehicle.setRoute(vehicle, [prevedge, edge])
+    
+    #Run simulation, track time to completion
+    t = 0
+    keepGoing = True
+    while(keepGoing):
+        traci.simulationStep()
+        reroute(rerouters, False) #Randomly reroute the non-adopters
+        #NOTE: I'm modeling non-adopters as randomly rerouting at each intersection
+        #So whether or not I reroute them here, I'm still wrong compared to the main simulation (where they will reroute randomly)
+        #This is good - the whole point is we can't simulate exactly what they'll do
+        t+=1
+        for lanenum in range(traci.edge.getLaneNumber(edge)):
+            ids = traci.inductionloop.getLastStepVehicleIDs("IL_"+edge+"_"+str(lanenum))
+            if vehicle in ids:
+                keepGoing = False
+                break
+    traci.switch("main")
+    print("Edge " + edge + " took " + str(t) + " seconds")
+    return t
 
 #Send all cars that hit detector down one of the routes in routes
 #TODO: Once we have A* working, we don't need this function
@@ -138,7 +209,7 @@ def dontBreakEverything():
     traci.simulationStep()
     traci.switch("main")
 
-#TODO: Replace getShortestRoute logic with A* search. Move simulate ahead logic into edgeCosts function
+#TODO: Move simulate ahead logic into edgeCosts function. Once A* is working we don't need this function
 def getShortestRoute(routes, vehicle, rerouters):
     #Save time on trivial cases
     if len(routes) == 1:
@@ -216,9 +287,6 @@ def generate_additionalfile(sumoconfig, networkfile):
                     rerouters.append("IL_"+lane)
         print("</additional>", file=additional)
     return rerouters
-
-#For the A* people:
-#You can use sumolib to get edges following edges/vertices: https://stackoverflow.com/questions/58753690/can-we-get-the-list-of-followed-edges-of-the-current-edge
 
 # this is the main entry point of this script
 if __name__ == "__main__":
