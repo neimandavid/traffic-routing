@@ -91,20 +91,10 @@ def AstarReroute(detector, rerouteAuto=True):
     if len(ids) == 0:
         #No cars to route, we're done here
         return
-    
-    #Extract name of current edge from detector
-    #Doing this string splitty stuff in case someone uses underscores in lane names
-    splitname = detector.split("_")
-    edge = ""
-    for i in range(1, len(splitname)-1): #Drop the "IL_" prefix and the lane number
-        if i > 1:
-            edge = edge + "_"
-        edge = edge+splitname[i]
+    edge = traci.vehicle.getRoadID(ids[0])
     saveStateInfo(edge) #Saves the traffic state and traffic light timings
+    traci.switch("test")
     
-    
-
-    #Test edge costs
     for vehicle in ids:
         #Decide whether we route this vehicle
         if not vehicle in isSmart:
@@ -114,6 +104,7 @@ def AstarReroute(detector, rerouteAuto=True):
             #INSERT A* CODE OR FUNCTION CALL TO A* CODE HERE
             #Note: You can use sumolib to get edges following edges or vertices. Ex: https://stackoverflow.com/questions/58753690/can-we-get-the-list-of-followed-edges-of-the-current-edge
             print("TODO: A* routing")
+            #Test edge costs
             #print(getEdgeCost(vehicle, "L", edge, 0)) #Quick test of edge cost, errors out if next edge can't be "L"
         if not isSmart[vehicle]:
             #TODO: Turn randomly
@@ -121,6 +112,8 @@ def AstarReroute(detector, rerouteAuto=True):
             #Could just turn randomly and stop if you fall off the network...
             #Can deal with this later, for now I'll just set psmart=1
             print("TODO: Turn randomly")
+            
+    traci.switch("main")
     
 def saveStateInfo(edge):
     #Copy state from main sim to test sim
@@ -136,10 +129,7 @@ def saveStateInfo(edge):
     with open("lightstate_"+edge+".pickle", 'wb') as handle:
         pickle.dump(lightStates, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-#I think this works
-#TODO: Consider stopping A* expansions and using current average speed for big g_value
-def getEdgeCost(vehicle, edge, prevedge, g_value):
-    traci.switch("test")
+def loadStateInfo(prevedge):
     #Load traffic state
     traci.simulation.loadState("teststate_"+prevedge+".xml")
     #Load light state
@@ -149,6 +139,13 @@ def getEdgeCost(vehicle, edge, prevedge, g_value):
     for light in traci.trafficlight.getIDList():
         traci.trafficlight.setPhase(light, lightStates[light][0])
         traci.trafficlight.setPhaseDuration(light, lightStates[light][1])
+    
+
+#I think this works
+#TODO: Consider stopping A* expansions and using current average speed for big g_value
+def getEdgeCost(vehicle, edge, prevedge, g_value):
+    traci.switch("test")
+    loadStateInfo(prevedge)
 
     #Tell the vehicle to drive to the end of edge
     traci.vehicle.setRoute(vehicle, [prevedge, edge])
@@ -168,8 +165,9 @@ def getEdgeCost(vehicle, edge, prevedge, g_value):
             if vehicle in ids:
                 keepGoing = False
                 break
+    saveStateInfo(edge) #Need this to continue the A* search
     traci.switch("main")
-    print("Edge " + edge + " took " + str(t) + " seconds")
+    #print("Edge " + edge + " took " + str(t) + " seconds")
     return t
 
 #Send all cars that hit detector down one of the routes in routes
