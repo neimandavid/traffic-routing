@@ -38,18 +38,23 @@ else:
 
 from sumolib import checkBinary  # noqa
 import traci  # noqa
+import sumolib
 
 isSmart = dict(); #Store whether each vehicle does our routing or not
 pSmart = 0.5; #Adoption probability
 
 carsOnNetwork = [];
 
-def run():
+def run(netfile, rerouters):
+    #netfile is the filepath to the network file, so we can call sumolib to get successors
+    #rerouters is the list of induction loops on edges with multiple successor edges
+    #We want to reroute all the cars that passed some induction loop in rerouters using A*
+    
     """execute the TraCI control loop"""
     dontBreakEverything() #Run test simulation for a step to avoid it overwriting the main one or something??
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep() #Tell the simulator to simulate the next time step
-        reroute(True) #Reroute cars (including simulate-ahead cars)
+        reroute(rerouters, True) #Reroute cars (including simulate-ahead cars)
         carsOnNetwork.append(len(traci.vehicle.getIDList())) #Track number of cars on network (for plotting)
 
     #After we're done simulating... 
@@ -63,19 +68,41 @@ def run():
     
 
 #Tell all the detectors to reroute the cars they've seen
-def reroute(rerouteAuto=True):
+def reroute(rerouters, rerouteAuto=True):
+    for r in rerouters:
+        AstarReroute(r)
+    
     #Bottom intersection
-    rerouteDetector("RerouterS0", ["SLL0", "SLR0", "SRL0", "SRR0"], rerouteAuto)
-    rerouteDetector("RerouterS1", ["SLL0", "SLR0", "SRL0", "SRR0"], rerouteAuto)
+    rerouteDetector("IL_start_0", ["SLL0", "SLR0", "SRL0", "SRR0"], rerouteAuto)
+    rerouteDetector("IL_start_1", ["SLL0", "SLR0", "SRL0", "SRR0"], rerouteAuto)
     #Left intersection
-    rerouteDetector("RerouterSL", ["SLR", "SLL"], rerouteAuto)
-    rerouteDetector("RerouterL", ["LR", "LL"], rerouteAuto)
+    rerouteDetector("IL_L_0", ["SLR", "SLL"], rerouteAuto)
+    rerouteDetector("IL_startL_0", ["LR", "LL"], rerouteAuto)
     #Right intersection
-    rerouteDetector("RerouterSR", ["SRL", "SRR"], rerouteAuto)
-    rerouteDetector("RerouterR", ["RL", "RR"], rerouteAuto)
+    rerouteDetector("IL_R_0", ["SRL", "SRR"], rerouteAuto)
+    rerouteDetector("IL_startR_0", ["RL", "RR"], rerouteAuto)
 
+def AstarReroute(detector):
+    ids = traci.inductionloop.getLastStepVehicleIDs(detector)
+    #TODO: Route these cars with A*
+    #print("Warning: A* routing not implemented for router " + detector)
+
+    #Copy state from main sim to test sim
+    traci.simulation.saveState("teststate_"+edge+".xml")
+    #saveState apparently doesn't save traffic light states despite what the docs say
+    #So save all the traffic light states and copy them over
+    lightStates = dict()
+    for light in traci.trafficlight.getIDList():
+        lightStates[light] = [traci.trafficlight.getPhase(light), traci.trafficlight.getPhaseDuration(light)]
+        #Why do the built-in functions have such terrible names?!
+        lightStates[light][1] = traci.trafficlight.getNextSwitch(light) - traci.simulation.getTime()
+
+def getEdgeCost(vehicle, edge, prevedge, g_value):
+    print("Not yet implemented")
+    return 1
 
 #Send all cars that hit detector down one of the routes in routes
+#TODO: Once we have A* working, we don't need this function
 def rerouteDetector(detector, routes, rerouteAuto=True):
     ids = traci.inductionloop.getLastStepVehicleIDs(detector)
     for i in range(len(ids)):
@@ -89,7 +116,7 @@ def rerouteDetector(detector, routes, rerouteAuto=True):
             if detector == "RerouterL" or detector == "RerouterR":
                 traci.vehicle.setColor(ids[i], [0, 255, 255]) #Blue = from side
             if rerouteAuto:
-                traci.vehicle.setRouteID(ids[i], getShortestRoute(routes, ids[i]))
+                traci.vehicle.setRouteID(ids[i], getShortestRoute(routes, ids[i], rerouters))
             continue
         #If we're not routing it, randomly pick a route
         traci.vehicle.setColor(ids[i], [255, 0, 0]) #Red = random routing
@@ -112,7 +139,7 @@ def dontBreakEverything():
     traci.switch("main")
 
 #TODO: Replace getShortestRoute logic with A* search. Move simulate ahead logic into edgeCosts function
-def getShortestRoute(routes, vehicle):
+def getShortestRoute(routes, vehicle, rerouters):
     #Save time on trivial cases
     if len(routes) == 1:
         return routes[0]
@@ -144,7 +171,7 @@ def getShortestRoute(routes, vehicle):
         t = 0
         while(vehicle in traci.vehicle.getIDList() and t < besttime):
             traci.simulationStep()
-            reroute(False) #Randomly reroute the non-adopters
+            reroute(rerouters, False) #Randomly reroute the non-adopters
             #NOTE: I'm modeling non-adopters as randomly rerouting at each intersection
             #So whether or not I reroute them here, I'm still wrong compared to the main simulation (where they will reroute randomly)
             #This is good - the whole point is we can't simulate exactly what they'll do
@@ -162,6 +189,36 @@ def get_options():
     options, args = optParser.parse_args()
     return options
 
+#Generates induction loops on all the edges
+def generate_additionalfile(sumoconfig, networkfile):
+    #Create a third instance of a simulator so I can query the network
+    traci.start([checkBinary('sumo'), "-c", sumoconfig,
+                             "--start", "--no-step-log", "true",
+                             "--xml-validation", "never"], label="setup")
+
+
+    net = sumolib.net.readNet(networkfile)
+    rerouters = []
+    
+    with open("additional_autogen.xml", "w") as additional:
+        print("""<additional>""", file=additional)
+        for edge in traci.edge.getIDList():
+            if edge[0] == ":":
+                #Skip internal edges (=edges for the inside of each intersection)
+                continue
+            print(edge)
+            for lanenum in range(traci.edge.getLaneNumber(edge)):
+                lane = edge+"_"+str(lanenum)
+                print(lane)
+                print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="%i" friendlyPos="true" />' \
+                      % (lane, lane, traci.lane.getLength(lane)-50), file=additional)
+                if len(net.getEdge(edge).getOutgoing()) > 1:
+                    rerouters.append("IL_"+lane)
+        print("</additional>", file=additional)
+    return rerouters
+
+#For the A* people:
+#You can use sumolib to get edges following edges/vertices: https://stackoverflow.com/questions/58753690/can-we-get-the-list-of-followed-edges-of-the-current-edge
 
 # this is the main entry point of this script
 if __name__ == "__main__":
@@ -173,20 +230,22 @@ if __name__ == "__main__":
         sumoBinary = checkBinary('sumo')
     else:
         sumoBinary = checkBinary('sumo-gui')
-
+        
+    sumoconfig = "shortlong.sumocfg"
+    netfile = "shortlong.net.xml" #A* people probably need this passed around in run() as well
+    rerouters = generate_additionalfile(sumoconfig, netfile)
+    print(rerouters)
 
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
     traci.start([sumoBinary, "-c", "shortlong.sumocfg",
-                             "--tripinfo-output", "tripinfo.xml",
-                             "--additional-files", "additional.xml",
+                             "--additional-files", "additional_autogen.xml",
                              "--log", "LOGFILE", "--xml-validation", "never"], label="main")
     #Second simulator for running tests. No GUI
     traci.start([checkBinary('sumo'), "-c", "shortlong.sumocfg",
-                             "--tripinfo-output", "tripinfo.xml",
-                             "--additional-files", "additional.xml",
+                             "--additional-files", "additional_autogen.xml",
                              "--start", "--no-step-log", "true",
                              "--xml-validation", "never",
                              "--step-length", "1"], label="test")
-    run()
+    run(netfile, rerouters)
     traci.close()
