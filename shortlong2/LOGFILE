@@ -1,19 +1,20 @@
-***Starting server on port 49186 ***
-Loading net-file from 'shortlong.net.xml' ... done (5ms).
-Loading additional-files from 'additional.xml' ... done (13ms).
+***Starting server on port 53991 ***
+Loading net-file from 'shortlong.net.xml' ... done (3ms).
+Loading additional-files from 'additional.xml' ... done (14ms).
 Loading done.
 Simulation started with time: 0.00
-Simulation ended at time: 10389.00
-Reason: TraCI requested termination.
+Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
+Quitting (on error).
+Simulation ended at time: 876.00
 Performance: 
- Duration: 31039.58s
- TraCI-Duration: 16538.26s
- Real time factor: 0.334702
- UPS: 54.435523
+ Duration: 500.53s
+ TraCI-Duration: 472.79s
+ Real time factor: 1.75014
+ UPS: 187.300712
 Vehicles: 
- Inserted: 6000
- Running: 0
- Waiting: 0
+ Inserted: 480 (Loaded: 527)
+ Running: 118
+ Waiting: 47
 
-DijkstraRouter answered 6000 queries and explored 10.33 edges on average.
-DijkstraRouter spent 0.02s answering queries (0.00ms on average).
+DijkstraRouter answered 638 queries and explored 10.62 edges on average.
+DijkstraRouter spent 0.00s answering queries (0.01ms on average).

@@ -1,6 +1,6 @@
 <additional>
-	<inductionLoop id="RerouterS0" freq="1" file="output2.xml" lane="start_0" pos="450" friendlyPos="true" />
-	<inductionLoop id="RerouterS1" freq="1" file="output2.xml" lane="start_1" pos="450" friendlyPos="true" />
+	<inductionLoop id="RerouterS0" freq="1" file="output2S0.xml" lane="start_0" pos="450" friendlyPos="true" />
+	<inductionLoop id="RerouterS1" freq="1" file="output2S1.xml" lane="start_1" pos="450" friendlyPos="true" />
 	<inductionLoop id="RerouterSL" freq="1" file="output2SL.xml" lane="L_0" pos="590" friendlyPos="true" />
 	<inductionLoop id="RerouterL" freq="1" file="output2L.xml" lane="startL_0" pos="150" friendlyPos="true" />
 	<inductionLoop id="RerouterSR" freq="1" file="output2SR.xml" lane="R_0" pos="600" friendlyPos="true" />

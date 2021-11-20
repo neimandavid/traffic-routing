@@ -40,7 +40,7 @@ from sumolib import checkBinary  # noqa
 import traci  # noqa
 
 isSmart = dict(); #Store whether each vehicle does our routing or not
-pSmart = 1.0; #Adoption probability
+pSmart = 0.5; #Adoption probability
 
 #Plotting travel times
 entryTimes = dict();
@@ -113,6 +113,7 @@ def plotThings(nCarsOnNetwork, avgTravelTimes, routerPlotInfo):
     ax2.set_ylabel("Average travel time (s)", color=color)
     fig.tight_layout()
     plt.savefig("Plots/NEW/Congestion,AP=" + str(pSmart)+".png")
+    plt.close()
 
     for router in routerPlotInfo:
         plt.figure()
@@ -134,7 +135,7 @@ def plotThings(nCarsOnNetwork, avgTravelTimes, routerPlotInfo):
         fig.legend(legend)
         fig.tight_layout()
         plt.savefig("Plots/NEW/Routing,AP=" + str(pSmart)+",Router="+router+".png")
-
+        plt.close()
 
 ##        plt.figure()
 ##        legend = []
