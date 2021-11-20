@@ -94,15 +94,32 @@ def AstarReroute(detector, network, rerouteAuto=True):
         return
     edge = traci.vehicle.getRoadID(ids[0])
     saveStateInfo(edge) #Saves the traffic state and traffic light timings
-    traci.switch("test")
     
     for vehicle in ids:
+
         #Decide whether we route this vehicle
         if not vehicle in isSmart:
             isSmart[vehicle] = random.random() < pSmart
         if isSmart[vehicle] and rerouteAuto:
+            #Get goal
+            route = traci.vehicle.getRoute(vehicle)
+            goaledge = route[-1]
+
+            #Getting successors
+            netfile = "shortlong.net.xml" #TODO: Pass this in from main so we don't hardcode this in two places!!!
+            net = sumolib.net.readNet(netfile)
+            successors = net.getEdge(edge).getOutgoing() #swap edge with the edge you're expanding
+        
             #TODO: Route these cars using A*.
             #INSERT A* CODE OR FUNCTION CALL TO A* CODE HERE
+
+            #Pick state s to be expanded
+            #Get successor vertices (getOutgoing()) . For each:
+                #Get edge cost of edge to successor vertex using getEdgeCost()
+                #Use that to compute g values (add to previous g value)
+                #Add new state into the priority queue
+            #Keep looping until goal is expanded
+            
             #Note: You can use sumolib to get edges following edges or vertices. Ex: https://stackoverflow.com/questions/58753690/can-we-get-the-list-of-followed-edges-of-the-current-edge
             print("TODO: A* routing")
             #Test edge costs
