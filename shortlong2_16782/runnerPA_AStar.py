@@ -52,10 +52,11 @@ def run(netfile, rerouters):
     #We want to reroute all the cars that passed some induction loop in rerouters using A*
     
     """execute the TraCI control loop"""
+    network = sumolib.net.readNet(netfile)
     dontBreakEverything() #Run test simulation for a step to avoid it overwriting the main one or something??
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep() #Tell the simulator to simulate the next time step
-        reroute(rerouters, True) #Reroute cars (including simulate-ahead cars)
+        reroute(rerouters, network, True) #Reroute cars (including simulate-ahead cars)
         carsOnNetwork.append(len(traci.vehicle.getIDList())) #Track number of cars on network (for plotting)
 
     #After we're done simulating... 
@@ -70,21 +71,21 @@ def run(netfile, rerouters):
 
 #Tell all the detectors to reroute the cars they've seen
 #Devolves into a 2-line for loop once we have A* working, should probably move into AstarReroute then
-def reroute(rerouters, rerouteAuto=True):
+def reroute(rerouters, network, rerouteAuto=True):
     for r in rerouters:
-        AstarReroute(r, rerouteAuto)
+        AstarReroute(r, network, rerouteAuto)
     
     #Bottom intersection
-    rerouteDetector("IL_start_0", ["SLL0", "SLR0", "SRL0", "SRR0"], rerouteAuto)
-    rerouteDetector("IL_start_1", ["SLL0", "SLR0", "SRL0", "SRR0"], rerouteAuto)
+    rerouteDetector("IL_start_0", ["SLL0", "SLR0", "SRL0", "SRR0"], network, rerouteAuto)
+    rerouteDetector("IL_start_1", ["SLL0", "SLR0", "SRL0", "SRR0"], network, rerouteAuto)
     #Left intersection
-    rerouteDetector("IL_L_0", ["SLR", "SLL"], rerouteAuto)
-    rerouteDetector("IL_startL_0", ["LR", "LL"], rerouteAuto)
+    rerouteDetector("IL_L_0", ["SLR", "SLL"], network, rerouteAuto)
+    rerouteDetector("IL_startL_0", ["LR", "LL"], network, rerouteAuto)
     #Right intersection
-    rerouteDetector("IL_R_0", ["SRL", "SRR"], rerouteAuto)
-    rerouteDetector("IL_startR_0", ["RL", "RR"], rerouteAuto)
+    rerouteDetector("IL_R_0", ["SRL", "SRR"], network, rerouteAuto)
+    rerouteDetector("IL_startR_0", ["RL", "RR"], network, rerouteAuto)
 
-def AstarReroute(detector, rerouteAuto=True):
+def AstarReroute(detector, network, rerouteAuto=True):
     #print("Warning: A* routing not implemented for router " + detector)
 
     ids = traci.inductionloop.getLastStepVehicleIDs(detector) #All vehicles to be rerouted
@@ -105,7 +106,14 @@ def AstarReroute(detector, rerouteAuto=True):
             #Note: You can use sumolib to get edges following edges or vertices. Ex: https://stackoverflow.com/questions/58753690/can-we-get-the-list-of-followed-edges-of-the-current-edge
             print("TODO: A* routing")
             #Test edge costs
-            #print(getEdgeCost(vehicle, "L", edge, 0)) #Quick test of edge cost, errors out if next edge can't be "L"
+            #print(getEdgeCost(vehicle, "L", edge, network, 0)) #Quick test of edge cost, errors out if next edge can't be "L"
+
+            # Example: get successors of a given edge and get their edge costs
+            # successors = getSuccessors(edge, network)
+            # for successor_edge_ID in successors:
+            #     edge_cost = getEdgeCost(vehicle, successor_edge_ID, edge, network, 0)
+            #     print("Successor: %s, edge cost: %d" % (successor_edge_ID, edge_cost))
+            
         if not isSmart[vehicle]:
             #TODO: Turn randomly
             #Can't just steal from old rerouteDetector code if we don't know possible routes
@@ -114,7 +122,19 @@ def AstarReroute(detector, rerouteAuto=True):
             print("TODO: Turn randomly")
             
     traci.switch("main")
-    
+
+# Gets successor edges of a given edge in a given network
+# Parameters:
+#   edge: an edge ID string
+#   network: the nwtwork object from sumolib.net.readNet(netfile)
+# Returns:
+#   successors: a list of edge IDs for the successor edges (outgoing edges from the next intersection)
+def getSuccessors(edge, network):
+    successors = []
+    for outgoing_edge in network.getEdge(edge).getOutgoing():
+        successors.append(outgoing_edge.getID())
+    return successors
+
 def saveStateInfo(edge):
     #Copy state from main sim to test sim
     traci.simulation.saveState("teststate_"+edge+".xml")
@@ -143,7 +163,7 @@ def loadStateInfo(prevedge):
 
 #I think this works
 #TODO: Consider stopping A* expansions and using current average speed for big g_value
-def getEdgeCost(vehicle, edge, prevedge, g_value):
+def getEdgeCost(vehicle, edge, prevedge, network, g_value):
     traci.switch("test")
     loadStateInfo(prevedge)
 
@@ -155,7 +175,7 @@ def getEdgeCost(vehicle, edge, prevedge, g_value):
     keepGoing = True
     while(keepGoing):
         traci.simulationStep()
-        reroute(rerouters, False) #Randomly reroute the non-adopters
+        reroute(rerouters, network, False) #Randomly reroute the non-adopters
         #NOTE: I'm modeling non-adopters as randomly rerouting at each intersection
         #So whether or not I reroute them here, I'm still wrong compared to the main simulation (where they will reroute randomly)
         #This is good - the whole point is we can't simulate exactly what they'll do
@@ -172,7 +192,7 @@ def getEdgeCost(vehicle, edge, prevedge, g_value):
 
 #Send all cars that hit detector down one of the routes in routes
 #TODO: Once we have A* working, we don't need this function
-def rerouteDetector(detector, routes, rerouteAuto=True):
+def rerouteDetector(detector, routes, network, rerouteAuto=True):
     ids = traci.inductionloop.getLastStepVehicleIDs(detector)
     for i in range(len(ids)):
         #If we haven't decided whether to route it or not, decide now
@@ -185,7 +205,7 @@ def rerouteDetector(detector, routes, rerouteAuto=True):
             if detector == "RerouterL" or detector == "RerouterR":
                 traci.vehicle.setColor(ids[i], [0, 255, 255]) #Blue = from side
             if rerouteAuto:
-                traci.vehicle.setRouteID(ids[i], getShortestRoute(routes, ids[i], rerouters))
+                traci.vehicle.setRouteID(ids[i], getShortestRoute(routes, ids[i], rerouters, network))
             continue
         #If we're not routing it, randomly pick a route
         traci.vehicle.setColor(ids[i], [255, 0, 0]) #Red = random routing
@@ -208,7 +228,7 @@ def dontBreakEverything():
     traci.switch("main")
 
 #TODO: Move simulate ahead logic into edgeCosts function. Once A* is working we don't need this function
-def getShortestRoute(routes, vehicle, rerouters):
+def getShortestRoute(routes, vehicle, rerouters, network):
     #Save time on trivial cases
     if len(routes) == 1:
         return routes[0]
@@ -240,7 +260,7 @@ def getShortestRoute(routes, vehicle, rerouters):
         t = 0
         while(vehicle in traci.vehicle.getIDList() and t < besttime):
             traci.simulationStep()
-            reroute(rerouters, False) #Randomly reroute the non-adopters
+            reroute(rerouters, network, False) #Randomly reroute the non-adopters
             #NOTE: I'm modeling non-adopters as randomly rerouting at each intersection
             #So whether or not I reroute them here, I'm still wrong compared to the main simulation (where they will reroute randomly)
             #This is good - the whole point is we can't simulate exactly what they'll do
