@@ -106,9 +106,7 @@ def AstarReroute(detector, network, rerouteAuto=True):
             goaledge = route[-1]
 
             #Getting successors
-            netfile = "shortlong.net.xml" #TODO: Pass this in from main so we don't hardcode this in two places!!!
-            net = sumolib.net.readNet(netfile)
-            successors = net.getEdge(edge).getOutgoing() #swap edge with the edge you're expanding
+            successors = getSuccessors(edge, network) #swap edge with the edge you're expanding
         
             #TODO: Route these cars using A*.
             #INSERT A* CODE OR FUNCTION CALL TO A* CODE HERE
@@ -124,12 +122,6 @@ def AstarReroute(detector, network, rerouteAuto=True):
             print("TODO: A* routing")
             #Test edge costs
             #print(getEdgeCost(vehicle, "L", edge, network, 0)) #Quick test of edge cost, errors out if next edge can't be "L"
-
-            # Example: get successors of a given edge and get their edge costs
-            # successors = getSuccessors(edge, network)
-            # for successor_edge_ID in successors:
-            #     edge_cost = getEdgeCost(vehicle, successor_edge_ID, edge, network, 0)
-            #     print("Successor: %s, edge cost: %d" % (successor_edge_ID, edge_cost))
             
         if not isSmart[vehicle]:
             #TODO: Turn randomly
@@ -137,8 +129,7 @@ def AstarReroute(detector, network, rerouteAuto=True):
             #Could just turn randomly and stop if you fall off the network...
             #Can deal with this later, for now I'll just set psmart=1
             print("TODO: Turn randomly")
-            
-    traci.switch("main")
+
 
 # Gets successor edges of a given edge in a given network
 # Parameters:
@@ -147,10 +138,7 @@ def AstarReroute(detector, network, rerouteAuto=True):
 # Returns:
 #   successors: a list of edge IDs for the successor edges (outgoing edges from the next intersection)
 def getSuccessors(edge, network):
-    successors = []
-    for outgoing_edge in network.getEdge(edge).getOutgoing():
-        successors.append(outgoing_edge.getID())
-    return successors
+    return list(network.getEdge(edge).getOutgoing())
 
 def saveStateInfo(edge):
     #Copy state from main sim to test sim
