@@ -1,22 +1,20 @@
-***Starting server on port 54241 ***
-Loading net-file from 'shortlong.net.xml' ... done (4ms).
-Loading additional-files from 'additional.xml' ... done (7ms).
+***Starting server on port 55335 ***
+Loading net-file from 'shortlong.net.xml' ... done (3ms).
+Loading additional-files from 'additional_autogen.xml' ... done (1ms).
 Loading done.
-Warning: Flow 'Lflow' has no instances; will skip it.
-Warning: Flow 'Rflow' has no instances; will skip it.
 Simulation started with time: 0.00
 Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
 Quitting (on error).
-Simulation ended at time: 106.00
+Simulation ended at time: 45.00
 Performance: 
- Duration: 35.11s
- TraCI-Duration: 22.02s
- Real time factor: 3.01934
- UPS: 49.220953
+ Duration: 6.93s
+ TraCI-Duration: 5.49s
+ Real time factor: 6.49538
+ UPS: 82.563510
 Vehicles: 
- Inserted: 32
- Running: 32
+ Inserted: 24
+ Running: 24
  Waiting: 0
 
-DijkstraRouter answered 32 queries and explored 12.00 edges on average.
+DijkstraRouter answered 24 queries and explored 9.92 edges on average.
 DijkstraRouter spent 0.00s answering queries (0.00ms on average).
