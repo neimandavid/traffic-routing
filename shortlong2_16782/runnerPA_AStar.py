@@ -176,7 +176,10 @@ def AstarReroute(detector, network, rerouteAuto=True):
 # Returns:
 #   successors: a list of edge IDs for the successor edges (outgoing edges from the next intersection)
 def getSuccessors(edge, network):
-    return list(network.getEdge(edge).getOutgoing())
+    successors = []
+    for outgoing_edge in network.getEdge(edge).getOutgoing():
+        successors.append(outgoing_edge.getID())
+    return successors
 
 def saveStateInfo(edge):
     #Copy state from main sim to test sim

@@ -1,16 +1,16 @@
-***Starting server on port 49420 ***
-Loading net-file from 'shortlong.net.xml' ... done (4ms).
-Loading additional-files from 'additional_autogen.xml' ... done (1ms).
+***Starting server on port 52523 ***
+Loading net-file from 'shortlong.net.xml' ... done (7ms).
+Loading additional-files from 'additional_autogen.xml' ... done (2ms).
 Loading done.
 Simulation started with time: 0.00
 Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
 Quitting (on error).
 Simulation ended at time: 15.00
 Performance: 
- Duration: 2.93s
+ Duration: 5.19s
  TraCI-Duration: 1.04s
- Real time factor: 5.11771
- UPS: 27.294439
+ Real time factor: 2.89184
+ UPS: 15.423173
 Vehicles: 
  Inserted: 9
  Running: 9

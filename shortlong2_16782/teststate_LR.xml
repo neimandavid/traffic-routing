@@ -37,7 +37,7 @@
 </configuration>
 -->
 
-<snapshot xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/state_file.xsd" version="1.10.0" time="26.00" type="micro">
+<snapshot xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/state_file.xsd" version="1.10.0" time="93.00" type="micro">
     <route id="!Lflow" state="1" edges="startL goal"/>
     <route id="!Lflow.0!var#1" state="1" edges="startL LR C1 C2 goal"/>
     <route id="!Lflow.0!var#2" state="0" edges="startL LR"/>
@@ -65,48 +65,45 @@
     <route id="SRR0" state="1" edges="start R RR1 RR2 goal"/>
     <delay number="9" begin="9" end="0" depart="4.00" time="0.00"/>
     <vType id="noVar" speedFactor="normc(1.00,0.00)"/>
-    <vehicle id="Lflow.0" type="noVar" depart="0.00" route="!Lflow.0!var#2" distance="0 2" speedFactor="1.00" reroute="1" state="131170 0 0 5.10 6000 11.27 25000 0 0" pos="195.80 190.80 0.00" speed="0.00 0.00" angle="90.00" posLat="0.00" waitingTime="100000 1 0 6000">
+    <vehicle id="Lflow.0" type="noVar" depart="0.00" route="!Lflow.0!var#2" distance="207.7 2" speedFactor="1.00" reroute="1" state="131170 0 1 5.10 0 34.56 92000 0 0" pos="592.54 587.54 13.62" speed="13.62 12.96" angle="38.66" posLat="0.00" waitingTime="100000 1 48000 73000">
         <device id="routing_Lflow.0" state="0"/>
     </vehicle>
-    <vehicle id="Lflow.1" type="noVar" depart="10.00" color="green" route="!Lflow.1!var#1" distance="0 1" speedFactor="1.00" reroute="1" state="131171 10000 0 5.10 0 3.61 25000 0 0" pos="163.25 158.25 12.98" speed="12.98 13.71" angle="90.00" posLat="0.00" waitingTime="100000 0">
+    <vehicle id="Lflow.1" type="noVar" depart="10.00" color="green" route="!Lflow.1!var#1" distance="207.7 1" speedFactor="1.00" reroute="1" state="131171 10000 1 5.10 0 26.61 92000 0 0" pos="562.36 557.36 13.48" speed="13.48 13.22" angle="38.66" posLat="0.00" waitingTime="100000 1 47000 63000">
         <device id="routing_Lflow.1" state="0"/>
     </vehicle>
-    <vehicle id="Rflow.0" type="noVar" depart="0.00" color="green" route="!Rflow.0!var#1" distance="203.42 1" speedFactor="1.00" reroute="1" state="131171 0 1 5.10 0 4.63 25000 0 0" pos="82.33 77.33 13.74" speed="13.74 13.47" angle="315.00" posLat="0.00" waitingTime="100000 0">
+    <vehicle id="Rflow.0" type="noVar" depart="0.00" color="green" route="!Rflow.0!var#1" distance="1153.62 1" speedFactor="1.00" reroute="1" state="131171 0 3 5.10 0 8.52 92000 0 0" pos="3.80 245.92 12.76" speed="12.76 12.90" angle="0.00" posLat="0.00" waitingTime="100000 0">
         <device id="routing_Rflow.0" state="0"/>
     </vehicle>
-    <vehicle id="Rflow.1" type="noVar" depart="10.00" color="green" route="!Rflow.1!var#1" distance="0 1" speedFactor="1.00" reroute="1" state="131171 10000 0 5.10 0 3.15 25000 0 0" pos="169.65 164.65 13.09" speed="13.09 13.53" angle="270.00" posLat="0.00" waitingTime="100000 0">
+    <vehicle id="Rflow.1" type="noVar" depart="10.00" color="green" route="!Rflow.1!var#1" distance="906.5 1" speedFactor="1.00" reroute="1" state="131171 10000 2 5.10 0 7.05 92000 0 0" pos="132.39 127.39 12.79" speed="12.79 13.57" angle="0.00" posLat="0.00" waitingTime="100000 0">
         <device id="routing_Rflow.1" state="0"/>
     </vehicle>
-    <vehicle id="Sflow.0" type="noVar" depart="0.00" route="!Sflow.0!var#1" distance="0 1" speedFactor="1.00" reroute="1" state="131170 0 0 5.10 0 3.83 25000 0 0" pos="299.07 294.07 13.28" speed="13.28 13.02" angle="0.00" posLat="0.00" waitingTime="100000 0">
+    <vehicle id="Sflow.0" type="noVar" depart="0.00" color="green" route="!Sflow.0!var#1" distance="1143.94 1" speedFactor="1.00" reroute="1" state="131171 0 2 5.10 0 8.93 92000 0 0" pos="3.88 8.80 6.98" speed="6.98 6.50" angle="36.85" posLat="0.00" waitingTime="100000 0">
         <device id="routing_Sflow.0" state="0"/>
     </vehicle>
-    <vehicle id="Sflow.1" type="noVar" depart="3.33" route="!Sflow.1!var#1" distance="0 1" speedFactor="1.00" reroute="1" state="131170 4000 0 5.10 0 3.87 25000 0 0" pos="243.05 238.05 13.52" speed="13.52 12.73" angle="0.00" posLat="0.00" waitingTime="100000 0">
+    <vehicle id="Sflow.1" type="noVar" depart="3.33" color="green" route="!Sflow.1!var#1" distance="503.02 1" speedFactor="1.00" reroute="1" state="131171 4000 1 5.10 0 7.43 92000 0 0" pos="616.05 611.05 13.31" speed="13.31 13.76" angle="321.34" posLat="0.00" waitingTime="100000 0">
         <device id="routing_Sflow.1" state="0"/>
     </vehicle>
-    <vehicle id="Sflow.2" type="noVar" depart="6.67" route="!Sflow.2!var#1" distance="0 1" speedFactor="1.00" reroute="1" state="131170 7000 0 5.10 0 3.54 25000 0 0" pos="205.88 200.88 13.65" speed="13.65 13.15" angle="0.00" posLat="0.00" waitingTime="100000 0">
+    <vehicle id="Sflow.2" type="noVar" depart="6.67" color="green" route="!Sflow.2!var#1" distance="503.02 1" speedFactor="1.00" reroute="1" state="131171 7000 1 5.10 0 7.78 92000 0 0" pos="569.77 564.77 13.26" speed="13.26 13.88" angle="321.34" posLat="0.00" waitingTime="100000 0">
         <device id="routing_Sflow.2" state="0"/>
     </vehicle>
-    <vehicle id="Sflow.3" type="noVar" depart="10.00" route="!Sflow.3!var#1" distance="0 1" speedFactor="1.00" reroute="1" state="131170 10000 0 5.10 0 3.57 25000 0 0" pos="163.84 158.84 13.37" speed="13.37 12.93" angle="0.00" posLat="0.00" waitingTime="100000 0">
+    <vehicle id="Sflow.3" type="noVar" depart="10.00" color="green" route="!Sflow.3!var#1" distance="503.02 1" speedFactor="1.00" reroute="1" state="131171 10000 1 5.10 0 7.51 92000 0 0" pos="531.19 526.19 12.68" speed="12.68 13.60" angle="321.34" posLat="0.00" waitingTime="100000 0">
         <device id="routing_Sflow.3" state="0"/>
     </vehicle>
-    <vehicle id="Sflow.4" type="noVar" depart="13.33" route="!Sflow.4!var#1" distance="0 1" speedFactor="1.00" reroute="1" state="131170 14000 0 5.10 0 2.94 25000 0 0" pos="117.00 112.00 13.70" speed="13.70 13.67" angle="0.00" posLat="0.00" waitingTime="100000 0">
+    <vehicle id="Sflow.4" type="noVar" depart="13.33" color="green" route="!Sflow.4!var#1" distance="503.02 1" speedFactor="1.00" reroute="1" state="131171 14000 1 5.10 0 6.99 92000 0 0" pos="488.38 483.38 12.91" speed="12.91 13.88" angle="321.34" posLat="0.00" waitingTime="100000 0">
         <device id="routing_Sflow.4" state="0"/>
     </vehicle>
-    <lane id="RL_0">
-        <vehicles value="Rflow.0"/>
-    </lane>
-    <lane id="start_0">
-        <vehicles value="Sflow.4 Sflow.3"/>
-    </lane>
-    <lane id="start_1">
-        <vehicles value="Sflow.2 Sflow.1 Sflow.0"/>
-    </lane>
-    <lane id="startL_0">
-        <vehicles value="Lflow.1 Lflow.0"/>
-    </lane>
-    <lane id="startR_0">
+    <lane id="C1_0">
         <vehicles value="Rflow.1"/>
     </lane>
-    <tlLogic id="gneJ4" programID="0" phase="0" duration="26000"/>
-    <tlLogic id="gneJ5" programID="0" phase="0" duration="26000"/>
+    <lane id="C2_0">
+        <vehicles value="Rflow.0"/>
+    </lane>
+    <lane id="L_0">
+        <vehicles value="Sflow.4 Sflow.3 Sflow.2 Sflow.1"/>
+    </lane>
+    <lane id="LR_0">
+        <vehicles value="Sflow.0 Lflow.1 Lflow.0"/>
+    </lane>
+    <tlLogic id="gneJ4" programID="0" phase="0" duration="3000"/>
+    <tlLogic id="gneJ5" programID="0" phase="0" duration="3000"/>
 </snapshot>
