@@ -29,6 +29,7 @@ from numpy import inf
 import time
 import matplotlib.pyplot as plt
 from heapq import * #priorityqueue
+import math
 
 # we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -86,6 +87,17 @@ def reroute(rerouters, network, rerouteAuto=True):
 ##    rerouteDetector("IL_R_0", ["SRL", "SRR"], network, rerouteAuto)
 ##    rerouteDetector("IL_startR_0", ["RL", "RR"], network, rerouteAuto)
 
+def heuristic(net, curredge, goaledge):
+    goalStart = net.getEdge(goaledge).getFromNode().getCoord() 
+    goalEnd = net.getEdge(goaledge).getToNode().getCoord() 
+    currStart = net.getEdge(curredge).getFromNode().getCoord() 
+    currEnd = net.getEdge(curredge).getToNode().getCoord() 
+
+    goalMid = ((goalStart[0] + goalEnd[0])/2.0, (goalStart[1] + goalEnd[1])/2.0)
+    currMid = ((currStart[0] + currEnd[0])/2.0, (currStart[1] + currEnd[1])/2.0)
+
+    return math.sqrt((goalMid[0] - currMid[0])**2 + (goalMid[1] - currMid[1])**2)
+
 def AstarReroute(detector, network, rerouteAuto=True):
     #print("Warning: A* routing not implemented for router " + detector)
 
@@ -93,6 +105,8 @@ def AstarReroute(detector, network, rerouteAuto=True):
     if len(ids) == 0:
         #No cars to route, we're done here
         return
+
+    # getRoadID: Returns the edge id the vehicle was last on
     edge = traci.vehicle.getRoadID(ids[0])
     
     for vehicle in ids:
@@ -125,13 +139,17 @@ def AstarReroute(detector, network, rerouteAuto=True):
                 if edgeToExpand == goaledge:
                     traci.vehicle.setRoute(vehicle, stateinfo[goaledge]['path'])
                     break #Done routing this vehicle
+
                 succs = getSuccessors(edgeToExpand, network)
                 for succ in succs:
                     c = getEdgeCost(vehicle, succ, edgeToExpand, network, gval)
-                    h = 0 #TODO: Implement heuristic
+
+                    # heuristic: distance from mid-point of edge to mid point of goal edge
+                    h = heuristic(network, succ, goaledge)
                     if succ in stateinfo and stateinfo[succ]['gval'] <= gval+c+h:
                         #Already saw this state, don't requeue
                         continue
+                        
                     #Otherwise it's new or we're now doing better, so requeue it
                     stateinfo[succ] = dict()
                     stateinfo[succ]['gval'] = gval+c
