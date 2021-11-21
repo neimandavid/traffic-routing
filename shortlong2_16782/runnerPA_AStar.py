@@ -76,15 +76,15 @@ def reroute(rerouters, network, rerouteAuto=True):
     for r in rerouters:
         AstarReroute(r, network, rerouteAuto)
     
-    #Bottom intersection
-    rerouteDetector("IL_start_0", ["SLL0", "SLR0", "SRL0", "SRR0"], network, rerouteAuto)
-    rerouteDetector("IL_start_1", ["SLL0", "SLR0", "SRL0", "SRR0"], network, rerouteAuto)
-    #Left intersection
-    rerouteDetector("IL_L_0", ["SLR", "SLL"], network, rerouteAuto)
-    rerouteDetector("IL_startL_0", ["LR", "LL"], network, rerouteAuto)
-    #Right intersection
-    rerouteDetector("IL_R_0", ["SRL", "SRR"], network, rerouteAuto)
-    rerouteDetector("IL_startR_0", ["RL", "RR"], network, rerouteAuto)
+##    #Bottom intersection
+##    rerouteDetector("IL_start_0", ["SLL0", "SLR0", "SRL0", "SRR0"], network, rerouteAuto)
+##    rerouteDetector("IL_start_1", ["SLL0", "SLR0", "SRL0", "SRR0"], network, rerouteAuto)
+##    #Left intersection
+##    rerouteDetector("IL_L_0", ["SLR", "SLL"], network, rerouteAuto)
+##    rerouteDetector("IL_startL_0", ["LR", "LL"], network, rerouteAuto)
+##    #Right intersection
+##    rerouteDetector("IL_R_0", ["SRL", "SRR"], network, rerouteAuto)
+##    rerouteDetector("IL_startR_0", ["RL", "RR"], network, rerouteAuto)
 
 def AstarReroute(detector, network, rerouteAuto=True):
     #print("Warning: A* routing not implemented for router " + detector)
@@ -94,7 +94,6 @@ def AstarReroute(detector, network, rerouteAuto=True):
         #No cars to route, we're done here
         return
     edge = traci.vehicle.getRoadID(ids[0])
-    saveStateInfo(edge) #Saves the traffic state and traffic light timings
     
     for vehicle in ids:
 
@@ -102,6 +101,8 @@ def AstarReroute(detector, network, rerouteAuto=True):
         if not vehicle in isSmart:
             isSmart[vehicle] = random.random() < pSmart
         if isSmart[vehicle] and rerouteAuto:
+            saveStateInfo(edge) #Saves the traffic state and traffic light timings
+        
             #Get goal
             route = traci.vehicle.getRoute(vehicle)
             goaledge = route[-1]
@@ -211,10 +212,6 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value):
     loadStateInfo(prevedge)
 
     #Tell the vehicle to drive to the end of edge
-    print(vehicle)
-    print(traci.vehicle.getRoadID(vehicle))
-    print(traci.vehicle.getRoute(vehicle))
-    print([prevedge, edge])
     traci.vehicle.setRoute(vehicle, [prevedge, edge])
     
     #Run simulation, track time to completion
@@ -365,7 +362,6 @@ if __name__ == "__main__":
     sumoconfig = "shortlong.sumocfg"
     netfile = "shortlong.net.xml" #A* people probably need this passed around in run() as well
     rerouters = generate_additionalfile(sumoconfig, netfile)
-    print(rerouters)
 
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
