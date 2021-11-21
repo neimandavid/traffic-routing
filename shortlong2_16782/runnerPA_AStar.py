@@ -121,13 +121,11 @@ def AstarReroute(detector, network, rerouteAuto=True):
                 gval = stateToExpand[0]
                 edgeToExpand = stateToExpand[1]
                 #TODO check goal, update route, break out of loop
-                if edgeToExpand == 'goal':
-                    traci.vehicle.setRoute(stateinfo[goal]['path'])
+                if edgeToExpand == goaledge:
+                    traci.vehicle.setRoute(vehicle, stateinfo[goaledge]['path'])
                     break #Done routing this vehicle
                 succs = getSuccessors(edgeToExpand, network)
                 for succ in succs:
-                    print(succ)
-                    print(edgeToExpand)
                     c = getEdgeCost(vehicle, succ, edgeToExpand, network, gval)
                     h = 0 #TODO: Implement heuristic
                     if succ in stateinfo and stateinfo[succ]['gval'] <= gval+c+h:
@@ -136,7 +134,7 @@ def AstarReroute(detector, network, rerouteAuto=True):
                     #Otherwise it's new or we're now doing better, so requeue it
                     stateinfo[succ] = dict()
                     stateinfo[succ]['gval'] = gval+c
-                    temppath = stateinfo[edgeToExpand]['path']
+                    temppath = stateinfo[edgeToExpand]['path'].copy()
                     temppath.append(succ)
                     stateinfo[succ]['path'] = temppath
                     heappush(pq, (gval+c+h, succ))
@@ -157,7 +155,6 @@ def AstarReroute(detector, network, rerouteAuto=True):
             #Keep looping until goal is expanded
             
             #Note: You can use sumolib to get edges following edges or vertices. Ex: https://stackoverflow.com/questions/58753690/can-we-get-the-list-of-followed-edges-of-the-current-edge
-            #print("TODO: A* routing")
             #Test edge costs
             #print(getEdgeCost(vehicle, "L", edge, network, 0)) #Quick test of edge cost, errors out if next edge can't be "L"
             
@@ -176,7 +173,10 @@ def AstarReroute(detector, network, rerouteAuto=True):
 # Returns:
 #   successors: a list of edge IDs for the successor edges (outgoing edges from the next intersection)
 def getSuccessors(edge, network):
-    return list(network.getEdge(edge).getOutgoing())
+    ids = []
+    for succ in list(network.getEdge(edge).getOutgoing()):
+        ids.append(succ.getID())
+    return ids
 
 def saveStateInfo(edge):
     #Copy state from main sim to test sim
@@ -211,6 +211,9 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value):
     loadStateInfo(prevedge)
 
     #Tell the vehicle to drive to the end of edge
+    print(vehicle)
+    print(traci.vehicle.getRoadID(vehicle))
+    print(traci.vehicle.getRoute(vehicle))
     print([prevedge, edge])
     traci.vehicle.setRoute(vehicle, [prevedge, edge])
     
@@ -339,10 +342,8 @@ def generate_additionalfile(sumoconfig, networkfile):
             if edge[0] == ":":
                 #Skip internal edges (=edges for the inside of each intersection)
                 continue
-            print(edge)
             for lanenum in range(traci.edge.getLaneNumber(edge)):
                 lane = edge+"_"+str(lanenum)
-                print(lane)
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="%i" friendlyPos="true" />' \
                       % (lane, lane, traci.lane.getLength(lane)-50), file=additional)
                 if len(net.getEdge(edge).getOutgoing()) > 1:
@@ -372,9 +373,14 @@ if __name__ == "__main__":
                              "--additional-files", "additional_autogen.xml",
                              "--log", "LOGFILE", "--xml-validation", "never"], label="main")
     #Second simulator for running tests. No GUI
-    traci.start([checkBinary('sumo'), "-c", "shortlong.sumocfg",
+##    traci.start([checkBinary('sumo'), "-c", "shortlong.sumocfg",
+##                             "--additional-files", "additional_autogen.xml",
+##                             "--start", "--no-step-log", "true",
+##                             "--xml-validation", "never",
+##                             "--step-length", "1"], label="test")
+    traci.start([sumoBinary, "-c", "shortlong.sumocfg",
                              "--additional-files", "additional_autogen.xml",
-                             "--start", "--no-step-log", "true",
+                             "--no-step-log", "true",
                              "--xml-validation", "never",
                              "--step-length", "1"], label="test")
     run(netfile, rerouters)
