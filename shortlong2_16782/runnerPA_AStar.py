@@ -373,14 +373,9 @@ if __name__ == "__main__":
                              "--additional-files", "additional_autogen.xml",
                              "--log", "LOGFILE", "--xml-validation", "never"], label="main")
     #Second simulator for running tests. No GUI
-##    traci.start([checkBinary('sumo'), "-c", "shortlong.sumocfg",
-##                             "--additional-files", "additional_autogen.xml",
-##                             "--start", "--no-step-log", "true",
-##                             "--xml-validation", "never",
-##                             "--step-length", "1"], label="test")
-    traci.start([sumoBinary, "-c", "shortlong.sumocfg",
+    traci.start([checkBinary('sumo'), "-c", "shortlong.sumocfg",
                              "--additional-files", "additional_autogen.xml",
-                             "--no-step-log", "true",
+                             "--start", "--no-step-log", "true",
                              "--xml-validation", "never",
                              "--step-length", "1"], label="test")
     run(netfile, rerouters)
