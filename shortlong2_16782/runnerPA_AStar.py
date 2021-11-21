@@ -28,6 +28,7 @@ import random
 from numpy import inf
 import time
 import matplotlib.pyplot as plt
+from heapq import * #priorityqueue
 
 # we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -105,8 +106,45 @@ def AstarReroute(detector, network, rerouteAuto=True):
             route = traci.vehicle.getRoute(vehicle)
             goaledge = route[-1]
 
+            #NEW CODE STARTS HERE
+            stateinfo = dict()
+            stateinfo[edge] = dict()
+            stateinfo[edge]['gval'] = 0
+            stateinfo[edge]['path'] = [edge]
+            #Store whatever else you need here
+
+            pq = [] #Priority queue
+            heappush(pq, (stateinfo[edge]['gval'], edge))
+
+            while len(pq) > 0:
+                stateToExpand = heappop(pq)
+                gval = stateToExpand[0]
+                edgeToExpand = stateToExpand[1]
+                #TODO check goal, update route, break out of loop
+                if edgeToExpand == 'goal':
+                    traci.vehicle.setRoute(stateinfo[goal]['path'])
+                    break #Done routing this vehicle
+                succs = getSuccessors(edgeToExpand, network)
+                for succ in succs:
+                    print(succ)
+                    print(edgeToExpand)
+                    c = getEdgeCost(vehicle, succ, edgeToExpand, network, gval)
+                    h = 0 #TODO: Implement heuristic
+                    if succ in stateinfo and stateinfo[succ]['gval'] <= gval+c+h:
+                        #Already saw this state, don't requeue
+                        continue
+                    #Otherwise it's new or we're now doing better, so requeue it
+                    stateinfo[succ] = dict()
+                    stateinfo[succ]['gval'] = gval+c
+                    temppath = stateinfo[edgeToExpand]['path']
+                    temppath.append(succ)
+                    stateinfo[succ]['path'] = temppath
+                    heappush(pq, (gval+c+h, succ))
+                
+            #NEW CODE ENDS HERE
+            
             #Getting successors
-            successors = getSuccessors(edge, network) #swap edge with the edge you're expanding
+            #successors = getSuccessors(edge, network) #swap edge with the edge you're expanding
         
             #TODO: Route these cars using A*.
             #INSERT A* CODE OR FUNCTION CALL TO A* CODE HERE
@@ -119,7 +157,7 @@ def AstarReroute(detector, network, rerouteAuto=True):
             #Keep looping until goal is expanded
             
             #Note: You can use sumolib to get edges following edges or vertices. Ex: https://stackoverflow.com/questions/58753690/can-we-get-the-list-of-followed-edges-of-the-current-edge
-            print("TODO: A* routing")
+            #print("TODO: A* routing")
             #Test edge costs
             #print(getEdgeCost(vehicle, "L", edge, network, 0)) #Quick test of edge cost, errors out if next edge can't be "L"
             
@@ -173,6 +211,7 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value):
     loadStateInfo(prevedge)
 
     #Tell the vehicle to drive to the end of edge
+    print([prevedge, edge])
     traci.vehicle.setRoute(vehicle, [prevedge, edge])
     
     #Run simulation, track time to completion
