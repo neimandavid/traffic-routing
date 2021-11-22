@@ -47,6 +47,7 @@ isSmart = dict(); #Store whether each vehicle does our routing or not
 pSmart = 1.0; #Adoption probability
 
 carsOnNetwork = [];
+max_edge_speed = 0.0;
 
 def run(netfile, rerouters):
     #netfile is the filepath to the network file, so we can call sumolib to get successors
@@ -87,16 +88,13 @@ def reroute(rerouters, network, rerouteAuto=True):
 ##    rerouteDetector("IL_R_0", ["SRL", "SRR"], network, rerouteAuto)
 ##    rerouteDetector("IL_startR_0", ["RL", "RR"], network, rerouteAuto)
 
+# Distance between the end points of the two edges as heuristic
 def heuristic(net, curredge, goaledge):
-    goalStart = net.getEdge(goaledge).getFromNode().getCoord() 
     goalEnd = net.getEdge(goaledge).getToNode().getCoord() 
-    currStart = net.getEdge(curredge).getFromNode().getCoord() 
     currEnd = net.getEdge(curredge).getToNode().getCoord() 
+    dist = math.sqrt((goalEnd[0] - currEnd[0])**2 + (goalEnd[1] - currEnd[1])**2)
 
-    goalMid = ((goalStart[0] + goalEnd[0])/2.0, (goalStart[1] + goalEnd[1])/2.0)
-    currMid = ((currStart[0] + currEnd[0])/2.0, (currStart[1] + currEnd[1])/2.0)
-
-    return math.sqrt((goalMid[0] - currMid[0])**2 + (goalMid[1] - currMid[1])**2)
+    return dist / max_edge_speed
 
 def AstarReroute(detector, network, rerouteAuto=True):
     #print("Warning: A* routing not implemented for router " + detector)
@@ -149,7 +147,7 @@ def AstarReroute(detector, network, rerouteAuto=True):
                     if succ in stateinfo and stateinfo[succ]['gval'] <= gval+c+h:
                         #Already saw this state, don't requeue
                         continue
-                        
+
                     #Otherwise it's new or we're now doing better, so requeue it
                     stateinfo[succ] = dict()
                     stateinfo[succ]['gval'] = gval+c
@@ -350,13 +348,18 @@ def generate_additionalfile(sumoconfig, networkfile):
 
     net = sumolib.net.readNet(networkfile)
     rerouters = []
-    
+    global max_edge_speed
+
     with open("additional_autogen.xml", "w") as additional:
         print("""<additional>""", file=additional)
         for edge in traci.edge.getIDList():
             if edge[0] == ":":
                 #Skip internal edges (=edges for the inside of each intersection)
                 continue
+
+            if (net.getEdge(edge).getSpeed() > max_edge_speed):
+                max_edge_speed = net.getEdge(edge).getSpeed()
+
             for lanenum in range(traci.edge.getLaneNumber(edge)):
                 lane = edge+"_"+str(lanenum)
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="%i" friendlyPos="true" />' \
@@ -364,6 +367,7 @@ def generate_additionalfile(sumoconfig, networkfile):
                 if len(net.getEdge(edge).getOutgoing()) > 1:
                     rerouters.append("IL_"+lane)
         print("</additional>", file=additional)
+    
     return rerouters
 
 # this is the main entry point of this script
@@ -380,6 +384,7 @@ if __name__ == "__main__":
     sumoconfig = "shortlong.sumocfg"
     netfile = "shortlong.net.xml" #A* people probably need this passed around in run() as well
     rerouters = generate_additionalfile(sumoconfig, netfile)
+    print("MAX_EDGE_SPEED 2.0: {}".format(max_edge_speed))
 
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
