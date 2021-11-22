@@ -90,10 +90,10 @@ def reroute(rerouters, network, rerouteAuto=True):
 
 # Distance between the end points of the two edges as heuristic
 def heuristic(net, curredge, goaledge):
+    #return 0
     goalEnd = net.getEdge(goaledge).getToNode().getCoord() 
     currEnd = net.getEdge(curredge).getToNode().getCoord() 
     dist = math.sqrt((goalEnd[0] - currEnd[0])**2 + (goalEnd[1] - currEnd[1])**2)
-
     return dist / max_edge_speed
 
 def AstarReroute(detector, network, rerouteAuto=True):
@@ -128,17 +128,20 @@ def AstarReroute(detector, network, rerouteAuto=True):
             pq = [] #Priority queue
             heappush(pq, (stateinfo[edge]['gval'], edge))
 
-            while len(pq) > 0:
+            while len(pq) > 0: #If the queue is empty, the route is impossible. This should never happen, but if it does we don't change the route.
                 stateToExpand = heappop(pq)
-                gval = stateToExpand[0]
+                #fval = stateToExpand[0]
                 edgeToExpand = stateToExpand[1]
-                #TODO check goal, update route, break out of loop
+                gval = stateinfo[edgeToExpand]['gval']
+
+                #Check goal, update route, break out of loop
                 if edgeToExpand == goaledge:
                     traci.vehicle.setRoute(vehicle, stateinfo[goaledge]['path'])
                     break #Done routing this vehicle
 
                 succs = getSuccessors(edgeToExpand, network)
                 for succ in succs:
+                    
                     c = getEdgeCost(vehicle, succ, edgeToExpand, network, gval)
 
                     # heuristic: distance from mid-point of edge to mid point of goal edge
@@ -161,7 +164,6 @@ def AstarReroute(detector, network, rerouteAuto=True):
             #Could just turn randomly and stop if you fall off the network...
             #Can deal with this later, for now I'll just set psmart=1
             print("TODO: Turn randomly")
-
 
 # Gets successor edges of a given edge in a given network
 # Parameters:
@@ -340,10 +342,10 @@ def generate_additionalfile(sumoconfig, networkfile):
             if (net.getEdge(edge).getSpeed() > max_edge_speed):
                 max_edge_speed = net.getEdge(edge).getSpeed()
 
-            print(edge)
+            #print(edge)
             for lanenum in range(traci.edge.getLaneNumber(edge)):
                 lane = edge+"_"+str(lanenum)
-                print(lane)
+                #print(lane)
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-50" friendlyPos="true" />' \
                       % (lane, lane), file=additional)
                 if len(net.getEdge(edge).getOutgoing()) > 1:
