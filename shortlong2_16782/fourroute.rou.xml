@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2021-09-30 20:22:03 by Eclipse SUMO netedit Version 1.9.2
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <sumo-net-file value="shortlong.net.xml"/>
+    </input>
+
+    <output>
+        <output-file value="shortlong.net.xml"/>
+    </output>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="false"/>
+    </processing>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="5"/>
+        <junctions.limit-turn-speed value="5.5"/>
+        <rectangular-lane-cut value="false"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="false"/>
+    </pedestrian>
+
+    <netedit>
+        <route-files value="/usr/local/Cellar/sumo/shortlong2/shortlong.rou.xml"/>
+    </netedit>
+
+    <report>
+        <aggregate-warnings value="5"/>
+    </report>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <route edges="start M3 M2 M1 R11 R12 R13 N1 N2 N3 goal" color="yellow" id="R1"/>
+    <route edges="start M3 M2 R21 R22 R23 N2 N3 goal" color="yellow" id="R2"/>
+    <route edges="start M3 R31 R32 R33 N3 goal" color="yellow" id="R3"/>
+    <route edges="start R41 R42 R43 goal" color="yellow" id="R4"/>
+
+    <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
+
+    <flow id="Sflow" type="noVar" from="start" to="goal" begin="0" end="10000" number="4000"/>
+</routes>

@@ -1,19 +1,4 @@
 
-*.pickle
-shortlong2_16782/LOGFILE
-shortlong2_16782/teststate.xml
-shortlong2_16782/teststate_start.xml
-shortlong2_16782/teststate_R.xml
-shortlong2_16782/teststate_L.xml
-shortlong2_16782/teststate.xml
-*.pickle
-shortlong2_16782/teststate.xml
-*.pickle
-shortlong2_16782/teststate.xml
-shortlong2_16782/teststate_L.xml
-shortlong2_16782/teststate_R.xml
-shortlong2_16782/teststate_start.xml
-shortlong2_16782/teststate_startL.xml
-shortlong2_16782/teststate_startR.xml
 shortlong2_16782/LOGFILE
 shortlong2_16782/outputAuto.xml
+shortlong2_16782/savestates/*

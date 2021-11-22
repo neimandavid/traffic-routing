@@ -197,7 +197,7 @@ def getSuccessors(edge, network):
 
 def saveStateInfo(edge):
     #Copy state from main sim to test sim
-    traci.simulation.saveState("teststate_"+edge+".xml")
+    traci.simulation.saveState("savestates/teststate_"+edge+".xml")
     #saveState apparently doesn't save traffic light states despite what the docs say
     #So save all the traffic light states and copy them over
     lightStates = dict()
@@ -206,14 +206,14 @@ def saveStateInfo(edge):
         #Why do the built-in functions have such terrible names?!
         lightStates[light][1] = traci.trafficlight.getNextSwitch(light) - traci.simulation.getTime()
     #Save lightStates to a file
-    with open("lightstate_"+edge+".pickle", 'wb') as handle:
+    with open("savestates/lightstate_"+edge+".pickle", 'wb') as handle:
         pickle.dump(lightStates, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def loadStateInfo(prevedge):
     #Load traffic state
-    traci.simulation.loadState("teststate_"+prevedge+".xml")
+    traci.simulation.loadState("savestates/teststate_"+prevedge+".xml")
     #Load light state
-    with open("lightstate_"+prevedge+".pickle", 'rb') as handle:
+    with open("savestates/lightstate_"+prevedge+".pickle", 'rb') as handle:
         lightStates = pickle.load(handle)
     #Copy traffic light timings
     for light in traci.trafficlight.getIDList():
