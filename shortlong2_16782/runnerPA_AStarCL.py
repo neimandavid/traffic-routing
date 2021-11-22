@@ -75,18 +75,30 @@ def run(netfile, rerouters):
 #Tell all the detectors to reroute the cars they've seen
 #Devolves into a 2-line for loop once we have A* working, should probably move into AstarReroute then
 def reroute(rerouters, network, rerouteAuto=True):
-    for r in rerouters:
-        AstarReroute(r, network, rerouteAuto)
-    
-##    #Bottom intersection
-##    rerouteDetector("IL_start_0", ["SLL0", "SLR0", "SRL0", "SRR0"], network, rerouteAuto)
-##    rerouteDetector("IL_start_1", ["SLL0", "SLR0", "SRL0", "SRR0"], network, rerouteAuto)
-##    #Left intersection
-##    rerouteDetector("IL_L_0", ["SLR", "SLL"], network, rerouteAuto)
-##    rerouteDetector("IL_startL_0", ["LR", "LL"], network, rerouteAuto)
-##    #Right intersection
-##    rerouteDetector("IL_R_0", ["SRL", "SRR"], network, rerouteAuto)
-##    rerouteDetector("IL_startR_0", ["RL", "RR"], network, rerouteAuto)
+    doAstar = True
+
+    if doAstar:
+        for r in rerouters:
+            AstarReroute(r, network, rerouteAuto)
+    else:
+        #NOTE: This is hard-coded for fourroute.net.xml
+        
+        #Or the old brute-force-all-routes method
+        rerouteDetector("IL_start_0", [
+                        ["start", "R41", "R42", "R43", "goal"],
+                        ["start", "M3", "R31", "R32", "R33", "N3", "goal"],
+                        ["start", "M3", "M2", "R21", "R22", "R23", "N2", "N3", "goal"],
+                        ["start", "M3", "M2", "M1", "R11", "R12", "R13", "N1", "N2", "N3", "goal"]
+                        ], network, rerouteAuto)
+        rerouteDetector("IL_M3_0", [
+                    ["M3", "R31", "R32", "R33", "N3", "goal"],
+                    ["M3", "M2", "R21", "R22", "R23", "N2", "N3", "goal"],
+                    ["M3", "M2", "M1", "R11", "R12", "R13", "N1", "N2", "N3", "goal"]
+                    ], network, rerouteAuto)
+        rerouteDetector("IL_M2_0", [
+                    ["M2", "R21", "R22", "R23", "N2", "N3", "goal"],
+                    ["M2", "M1", "R11", "R12", "R13", "N1", "N2", "N3", "goal"]
+                    ], network, rerouteAuto)
 
 # Distance between the end points of the two edges as heuristic
 def heuristic(net, curredge, goaledge):
@@ -129,6 +141,7 @@ def AstarReroute(detector, network, rerouteAuto=True):
             heappush(pq, (stateinfo[edge]['gval'], edge))
 
             while len(pq) > 0: #If the queue is empty, the route is impossible. This should never happen, but if it does we don't change the route.
+                #print(pq)
                 stateToExpand = heappop(pq)
                 #fval = stateToExpand[0]
                 edgeToExpand = stateToExpand[1]
@@ -247,7 +260,10 @@ def rerouteDetector(detector, routes, network, rerouteAuto=True):
             if detector == "RerouterL" or detector == "RerouterR":
                 traci.vehicle.setColor(ids[i], [0, 255, 255]) #Blue = from side
             if rerouteAuto:
-                traci.vehicle.setRouteID(ids[i], getShortestRoute(routes, ids[i], rerouters, network))
+                #print(traci.vehicle.getRoadID(ids[i]))
+                route = getShortestRoute(routes, ids[i], rerouters, network)
+                #print(route)
+                traci.vehicle.setRoute(ids[i], route)
             continue
         #If we're not routing it, randomly pick a route
         traci.vehicle.setColor(ids[i], [255, 0, 0]) #Red = random routing
@@ -258,7 +274,7 @@ def rerouteDetector(detector, routes, network, rerouteAuto=True):
         nroutes = len(routes)
         for j in range(nroutes):
             if r < 1.0/nroutes:
-                traci.vehicle.setRouteID(ids[i], routes[j])
+                traci.vehicle.setRoute(ids[i], routes[j])
                 break
             else:
                 r -= 1.0/nroutes
@@ -296,7 +312,7 @@ def getShortestRoute(routes, vehicle, rerouters, network):
         for light in traci.trafficlight.getIDList():
             traci.trafficlight.setPhase(light, lightStates[light][0])
             traci.trafficlight.setPhaseDuration(light, lightStates[light][1])
-        traci.vehicle.setRouteID(vehicle, route)
+        traci.vehicle.setRoute(vehicle, route)
 
         #Run simulation, track time to completion
         t = 0
