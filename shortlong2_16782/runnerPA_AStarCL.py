@@ -159,7 +159,7 @@ def AstarReroute(detector, network, rerouteAuto=True):
 
                     # heuristic: distance from mid-point of edge to mid point of goal edge
                     h = heuristic(network, succ, goaledge)
-                    if succ in stateinfo and stateinfo[succ]['gval'] <= gval+c+h:
+                    if succ in stateinfo and stateinfo[succ]['gval'] <= gval+c:
                         #Already saw this state, don't requeue
                         continue
 
