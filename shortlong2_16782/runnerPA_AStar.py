@@ -131,9 +131,11 @@ def AstarReroute(detector, network, rerouteAuto=True):
 
             while len(pq) > 0:
                 stateToExpand = heappop(pq)
-                gval = stateToExpand[0]
+                stateToExpand = heappop(pq)
+                #fval = stateToExpand[0]
                 edgeToExpand = stateToExpand[1]
-                #TODO check goal, update route, break out of loop
+                gval = stateinfo[edgeToExpand]['gval']
+                
                 if edgeToExpand == goaledge:
                     traci.vehicle.setRoute(vehicle, stateinfo[goaledge]['path'])
                     break #Done routing this vehicle

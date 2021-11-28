@@ -39,14 +39,15 @@ from sumolib import checkBinary  # noqa
 import traci  # noqa
 
 
-def runRegret(regrets):
+def runRegret(regrets, p):
     traci.load(['-c', 'shortlong.sumocfg', "--additional-files", "additional.xml",
-                "--start"])
+                "--xml-validation", "never","--start"])
     """execute the TraCI control loop"""
     step = 0
     # we start with phase 2 where EW has green
     #traci.trafficlight.setPhase("0", 2)
     data = dict()
+
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
         #Get travel times
@@ -58,7 +59,7 @@ def runRegret(regrets):
                 data[v][1] = step
 
         ids = traci.multientryexit.getLastStepVehicleIDs("Rerouter")
-        p = regrets[0][0]/np.sum(regrets[0])
+        #p = regrets[0][0]/np.sum(regrets[0])
         #p = 0.9
         for i in range(len(ids)):
             if random.random() < p:
@@ -130,22 +131,31 @@ if __name__ == "__main__":
 
     
     regrets = np.ones([1, 2])
-    regrets[0][1] = 10
+    #regrets[0][1] = 10
     r0 = []
     r1 = []
     p = []
+    psum = 0
+    nps = 0
+    pavg = []
     t = []
     traci.start([sumoBinary, "-c", "shortlong.sumocfg",
                              "--tripinfo-output", "tripinfo.xml",
                              "--additional-files", "additional.xml",
+                             "--xml-validation", "never",
+                             "--log", "LOGFILE", 
                              "--start"])
     while True:
         print(regrets)
         r0.append(regrets[0][0])
         r1.append(regrets[0][1])
-        p.append(regrets[0][0]/np.sum(regrets[0]))
+        newp = regrets[0][0]/(np.sum(regrets[0]))
+        p.append(newp)
+        psum += newp
+        nps += 1
+        pavg.append(psum/nps)
 
-        regrets, avgtime = runRegret(regrets)
+        regrets, avgtime = runRegret(regrets, newp)
         t.append(avgtime)
 
         ##Plot regrets
@@ -163,6 +173,7 @@ if __name__ == "__main__":
         color='tab:blue'
         fig, ax1 = plt.subplots()
         ax1.plot(p, color=color)
+        ax1.plot(pavg, color=color)
         ax1.set_xlabel("# Iterations")
         ax1.set_ylabel("Probability of left turn", color=color)
         plt.title("Probability and Travel Time")

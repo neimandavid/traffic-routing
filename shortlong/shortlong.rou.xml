@@ -46,5 +46,5 @@
 
     <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
 
-    <flow id="0" from="start" to="goal" begin="0" end="200000" number="100000"/>
+    <flow id="0" from="start" to="goal" begin="0" end="50000" number="25000"/>
 </routes>

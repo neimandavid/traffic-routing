@@ -40,7 +40,7 @@ from sumolib import checkBinary  # noqa
 import traci  # noqa
 
 isSmart = dict(); #Store whether each vehicle does our routing or not
-pSmart = 0.5; #Adoption probability
+pSmart = 1.0; #Adoption probability
 
 #Plotting travel times
 entryTimes = dict();
@@ -50,6 +50,7 @@ avgTravelTime = float("nan");
 
 routerInfo = dict();
 routerPlotInfo = dict();
+oldids = dict();
 
 def run():
     """execute the TraCI control loop"""
@@ -192,6 +193,11 @@ def rerouteDetector(detector, routes, rerouteAuto=True):
     
     ids = traci.inductionloop.getLastStepVehicleIDs(detector)
     for i in range(len(ids)):
+        if detector in oldids and ids[i] in oldids[detector]:
+            #We routed this car last time step; don't re-reroute
+            #print("Duplicate car: " + ids[i])
+            #print("Detector: " + detector)
+            continue
         #If we haven't decided whether to route it or not, decide now
         if not ids[i] in isSmart:
             isSmart[ids[i]] = random.random() < pSmart
@@ -237,6 +243,7 @@ def rerouteDetector(detector, routes, rerouteAuto=True):
                 break
             else:
                 r -= 1.0/nroutes
+    oldids[detector] = ids
 
 #Magically makes the vehicle lists stop deleting themselves somehow???
 def dontBreakEverything():

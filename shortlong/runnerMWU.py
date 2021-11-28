@@ -40,8 +40,7 @@ import traci  # noqa
 
 
 def runRegret(regrets):
-    traci.load(['-c', 'shortlong.sumocfg', "--additional-files", "additional.xml",
-                "--start"])
+    #traci.load(['-c', 'shortlong.sumocfg', "--additional-files", "additional.xml", "--start"])
     """execute the TraCI control loop"""
     step = 0
     # we start with phase 2 where EW has green
@@ -49,6 +48,9 @@ def runRegret(regrets):
     data = dict()
 
     ps = []
+    timesum = 0
+    ntimes = 0
+    ts = []
 
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
@@ -64,20 +66,29 @@ def runRegret(regrets):
                 data[v] = [step, -1, 2, 1]
                 
         #Newly exited vehicle
-        eta = 1.0/1000000
+        eta = 1e-4 #1.0/1000000
         ids = traci.inductionloop.getLastStepVehicleIDs("DetectorE0")
         for v in ids:
             data[v][1] = step
             regrets[0][data[v][2]] -= eta*(data[v][1] - data[v][0])/data[v][3]
+            timesum += (data[v][1] - data[v][0])
+            ntimes += 1
+
         ids = traci.inductionloop.getLastStepVehicleIDs("DetectorE1")
         for v in ids:
             data[v][1] = step
             regrets[0][data[v][2]] -= eta*(data[v][1] - data[v][0])/data[v][3]
+            timesum += (data[v][1] - data[v][0])
+            ntimes += 1
 
         #Routing
         ids = traci.multientryexit.getLastStepVehicleIDs("Rerouter")
         p = np.exp(regrets[0][0])/np.sum(np.exp(regrets[0]))
         ps.append(p)
+        if ntimes == 0:
+            ts.append(float('nan'))
+        else:
+            ts.append(timesum/ntimes)
         for i in range(len(ids)):
             if random.random() < p:
                 traci.vehicle.setRouteID(ids[i], "route_0")
@@ -110,10 +121,16 @@ def runRegret(regrets):
         fullnt += 1
 
     plt.figure()
-    plt.plot(ps)
-    plt.xlabel("Timestep")
-    plt.ylabel("P(left)")
+    color='tab:blue'
+    fix, ax1 = plt.subplots()
+    ax1.plot(ps, color=color)
+    ax1.set_xlabel("Timestep")
+    ax1.set_ylabel("P(left)", color=color)
     plt.title("MWU, eta=" + str(eta))
+    color='tab:red'
+    ax2 = ax1.twinx()
+    ax2.plot(ts, color=color)
+    ax2.set_ylabel("Runtime", color=color)
     plt.savefig("MWU, eta=" + str(eta) + ".png")
     return regrets, fullt/fullnt
 
@@ -145,6 +162,8 @@ if __name__ == "__main__":
     traci.start([sumoBinary, "-c", "shortlong.sumocfg",
                              "--tripinfo-output", "tripinfo.xml",
                              "--additional-files", "additional.xml",
+                             "--xml-validation", "never",
+                             "--log", "LOGFILE", 
                              "--start"])
     print(regrets)
     r0.append(regrets[0][0])
