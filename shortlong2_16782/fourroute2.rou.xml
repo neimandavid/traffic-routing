@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    
+    <route edges="mainRoad1 rightRoute1Part1 rightRoute1Part2 rightRoute1Part3 mainRoad5 mainRoad6 mainRoad7 mainRoad8" color="yellow" id="R1"/>
+    <route edges="mainRoad1 mainRoad2 mainRoad3 leftRoutePart1 rightRoute2Part1 rightRoute2Part2 rightRoute2Part3 mainRoad6 mainRoad7 mainRoad8" color="yellow" id="R2"/>
+    
+    <route edges="mainRoad1 mainRoad2 mainRoad3 leftRoutePart1 mainRoad4 mainRoad5 mainRoad6 mainRoad7 mainRoad8" color="yellow" id="Middle1"/>
+    <route edges="mainRoad1 mainRoad2 mainRoad3  leftRoute1Part2 leftRoute1Part3 mainRoad7 mainRoad8" color="yellow" id="L1"/>
+    <route edges="mainRoad1 mainRoad2 mainRoad3  leftRoutePart2 leftRoute2Part2 leftRoute2Part3 mainRoad8" color="yellow" id="L2"/>
+
+    <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
+
+    <flow id="Sflow" type="noVar" from="mainRoad1" to="mainRoad8" begin="0" end="10000" number="4000"/>
+</routes>

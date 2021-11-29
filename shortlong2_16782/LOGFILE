@@ -1,20 +1,18 @@
-***Starting server on port 49417 ***
-Loading net-file from 'fourroute.net.xml' ... done (4ms).
-Loading additional-files from 'additional_autogen.xml' ... done (5ms).
+***Starting server on port 53351 ***
+Loading net-file from 'fourroute2.net.xml' ... done (8ms).
+Loading additional-files from 'additional_autogen.xml' ... done (3ms).
 Loading done.
 Simulation started with time: 0.00
-Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
-Quitting (on error).
-Simulation ended at time: 209.00
+Simulation ended at time: 95.00
 Performance: 
- Duration: 60.48s
- TraCI-Duration: 56.92s
- Real time factor: 3.45569
- UPS: 93.551587
+ Duration: 22.45s
+ TraCI-Duration: 19.39s
+ Real time factor: 4.23181
+ UPS: 69.000846
 Vehicles: 
- Inserted: 70 (Loaded: 84)
- Running: 37
- Waiting: 14
+ Inserted: 32 (Loaded: 38)
+ Running: 32
+ Waiting: 6
 
-DijkstraRouter answered 84 queries and explored 19.18 edges on average.
-DijkstraRouter spent 0.00s answering queries (0.02ms on average).
+DijkstraRouter answered 38 queries and explored 20.00 edges on average.
+DijkstraRouter spent 0.00s answering queries (0.00ms on average).
