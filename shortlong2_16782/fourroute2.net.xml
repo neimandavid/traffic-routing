@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2021-11-30 14:52:05 by Eclipse SUMO netedit Version 1.10.0
+<!-- generated on 2021-11-30 15:11:21 by Eclipse SUMO netedit Version 1.10.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
@@ -211,12 +211,12 @@
         <request index="0" response="00" foes="10" cont="0"/>
         <request index="1" response="01" foes="01" cont="0"/>
     </junction>
-    <junction id="main6" type="priority" x="0.00" y="800.00" incLanes="mainRoad6_0 leftRoute1Part3_0" intLanes=":main6_0_0 :main6_2_0" shape="0.00,804.00 3.20,804.00 3.20,792.80 0.00,792.80 -0.44,795.02 -1.00,795.80 -1.78,796.36 -2.78,796.69 -4.00,796.80 -4.00,800.00 -1.78,800.44 -1.00,801.00 -0.44,801.78 -0.11,802.78">
-        <request index="0" response="00" foes="10" cont="0"/>
+    <junction id="main6" type="zipper" x="0.00" y="800.00" incLanes="mainRoad6_0 leftRoute1Part3_0" intLanes=":main6_0_0 :main6_2_0" shape="0.00,804.00 3.20,804.00 3.20,792.80 0.00,792.80 -0.44,795.02 -1.00,795.80 -1.78,796.36 -2.78,796.69 -4.00,796.80 -4.00,800.00 -1.78,800.44 -1.00,801.00 -0.44,801.78 -0.11,802.78">
+        <request index="0" response="10" foes="10" cont="0"/>
         <request index="1" response="01" foes="01" cont="1"/>
     </junction>
-    <junction id="main7" type="priority" x="0.00" y="900.00" incLanes="mainRoad7_0 leftRoute2Part3_0" intLanes=":main7_0_0 :main7_2_0" shape="0.00,902.84 3.20,902.84 3.20,893.77 0.00,893.77 -0.30,895.24 -0.67,895.67 -1.19,895.88 -1.86,895.88 -2.68,895.67 -3.74,898.69 -1.66,899.73 -0.93,900.38 -0.42,901.12 -0.10,901.93">
-        <request index="0" response="00" foes="10" cont="0"/>
+    <junction id="main7" type="zipper" x="0.00" y="900.00" incLanes="mainRoad7_0 leftRoute2Part3_0" intLanes=":main7_0_0 :main7_2_0" shape="0.00,902.84 3.20,902.84 3.20,893.77 0.00,893.77 -0.30,895.24 -0.67,895.67 -1.19,895.88 -1.86,895.88 -2.68,895.67 -3.74,898.69 -1.66,899.73 -0.93,900.38 -0.42,901.12 -0.10,901.93">
+        <request index="0" response="10" foes="10" cont="0"/>
         <request index="1" response="01" foes="01" cont="1"/>
     </junction>
     <junction id="rightNode1" type="priority" x="200.00" y="125.00" incLanes="rightRoute1Part1_0" intLanes=":rightNode1_0_0" shape="200.00,125.00 203.20,125.00 203.06,124.00 202.88,123.56 202.63,123.15 202.31,122.78 201.92,122.44">
@@ -237,9 +237,9 @@
     <junction id=":main7_2_0" type="internal" x="0.00" y="899.10" incLanes=":main7_1_0 mainRoad7_0" intLanes=":main7_0_0"/>
 
     <connection from="leftRoute1Part2" to="leftRoute1Part3" fromLane="0" toLane="0" via=":leftNode3_0_0" dir="r" state="M"/>
-    <connection from="leftRoute1Part3" to="mainRoad7" fromLane="0" toLane="0" via=":main6_1_0" dir="l" state="m"/>
+    <connection from="leftRoute1Part3" to="mainRoad7" fromLane="0" toLane="0" via=":main6_1_0" dir="l" state="Z"/>
     <connection from="leftRoute2Part2" to="leftRoute2Part3" fromLane="0" toLane="0" via=":leftNode4_0_0" dir="r" state="M"/>
-    <connection from="leftRoute2Part3" to="mainRoad8" fromLane="0" toLane="0" via=":main7_1_0" dir="l" state="m"/>
+    <connection from="leftRoute2Part3" to="mainRoad8" fromLane="0" toLane="0" via=":main7_1_0" dir="l" state="Z"/>
     <connection from="leftRoutePart1" to="rightRoute2Part1" fromLane="0" toLane="0" via=":main3_0_0" dir="s" state="M"/>
     <connection from="leftRoutePart1" to="mainRoad4" fromLane="0" toLane="0" via=":main3_1_0" dir="l" state="M"/>
     <connection from="leftRoutePart2" to="leftRoute2Part2" fromLane="0" toLane="0" via=":leftNode2_0_0" dir="r" state="M"/>
@@ -251,8 +251,8 @@
     <connection from="mainRoad3" to="leftRoutePart2" fromLane="0" toLane="0" via=":leftNode1_2_0" dir="s" state="M"/>
     <connection from="mainRoad4" to="mainRoad5" fromLane="0" toLane="0" via=":main4_1_0" dir="s" state="m"/>
     <connection from="mainRoad5" to="mainRoad6" fromLane="0" toLane="0" via=":main5_1_0" dir="s" state="m"/>
-    <connection from="mainRoad6" to="mainRoad7" fromLane="0" toLane="0" via=":main6_0_0" dir="s" state="M"/>
-    <connection from="mainRoad7" to="mainRoad8" fromLane="0" toLane="0" via=":main7_0_0" dir="s" state="M"/>
+    <connection from="mainRoad6" to="mainRoad7" fromLane="0" toLane="0" via=":main6_0_0" dir="s" state="Z"/>
+    <connection from="mainRoad7" to="mainRoad8" fromLane="0" toLane="0" via=":main7_0_0" dir="s" state="Z"/>
     <connection from="rightRoute1Part1" to="rightRoute1Part2" fromLane="0" toLane="0" via=":rightNode1_0_0" dir="l" state="M"/>
     <connection from="rightRoute1Part2" to="rightRoute1Part3" fromLane="0" toLane="0" via=":rightNode3_0_0" dir="l" state="M"/>
     <connection from="rightRoute1Part3" to="mainRoad5" fromLane="0" toLane="0" via=":main4_0_0" dir="r" state="M"/>
