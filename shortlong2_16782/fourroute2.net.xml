@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2021-11-28 20:34:36 by Eclipse SUMO netedit Version 1.10.0
+<!-- generated on 2021-11-30 14:52:05 by Eclipse SUMO netedit Version 1.10.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
@@ -38,7 +38,7 @@
 
 <net version="1.9" junctionCornerDetail="5" limitTurnSpeed="5.50" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
 
-    <location netOffset="0.00,0.00" convBoundary="-250.00,-150.00,225.00,1000.00" origBoundary="-10000000000.00,-10000000000.00,10000000000.00,10000000000.00" projParameter="!"/>
+    <location netOffset="0.00,0.00" convBoundary="-250.00,-150.00,200.00,1000.00" origBoundary="-10000000000.00,-10000000000.00,10000000000.00,10000000000.00" projParameter="!"/>
 
     <edge id=":leftNode1_0" function="internal">
         <lane id=":leftNode1_0_0" index="0" speed="5.47" length="10.47" shape="-162.69,243.17 -165.33,245.46 -165.93,247.09 -164.49,248.07 -161.01,248.40"/>
@@ -107,13 +107,13 @@
         <lane id=":rightNode1_0_0" index="0" speed="4.08" length="1.49" shape="200.96,123.72 201.24,123.98 201.44,124.28 201.56,124.62 201.60,125.00"/>
     </edge>
     <edge id=":rightNode2_0" function="internal">
-        <lane id=":rightNode2_0_0" index="0" speed="3.90" length="2.58" shape="225.00,248.40 225.70,248.50 226.20,248.80 226.50,249.30 226.60,250.00"/>
+        <lane id=":rightNode2_0_0" index="0" speed="3.90" length="2.58" shape="175.00,248.40 175.70,248.50 176.20,248.80 176.50,249.30 176.60,250.00"/>
     </edge>
     <edge id=":rightNode3_0" function="internal">
         <lane id=":rightNode3_0_0" index="0" speed="3.90" length="2.58" shape="201.60,600.00 201.50,600.70 201.20,601.20 200.70,601.50 200.00,601.60"/>
     </edge>
     <edge id=":rightNode4_0" function="internal">
-        <lane id=":rightNode4_0_0" index="0" speed="3.90" length="2.58" shape="226.60,700.00 226.50,700.70 226.20,701.20 225.70,701.50 225.00,701.60"/>
+        <lane id=":rightNode4_0_0" index="0" speed="3.90" length="2.58" shape="176.60,700.00 176.50,700.70 176.20,701.20 175.70,701.50 175.00,701.60"/>
     </edge>
 
     <edge id="leftRoute1Part2" from="leftNode1" to="leftNode3" priority="1">
@@ -168,13 +168,13 @@
         <lane id="rightRoute1Part3_0" index="0" speed="13.89" length="192.80" shape="200.00,601.60 7.20,601.60"/>
     </edge>
     <edge id="rightRoute2Part1" from="main3" to="rightNode2" priority="1">
-        <lane id="rightRoute2Part1_0" index="0" speed="13.89" length="217.80" shape="7.20,248.40 225.00,248.40"/>
+        <lane id="rightRoute2Part1_0" index="0" speed="13.89" length="167.80" shape="7.20,248.40 175.00,248.40"/>
     </edge>
     <edge id="rightRoute2Part2" from="rightNode2" to="rightNode4" priority="1">
-        <lane id="rightRoute2Part2_0" index="0" speed="13.89" length="450.00" shape="226.60,250.00 226.60,700.00"/>
+        <lane id="rightRoute2Part2_0" index="0" speed="13.89" length="450.00" shape="176.60,250.00 176.60,700.00"/>
     </edge>
     <edge id="rightRoute2Part3" from="rightNode4" to="main5" priority="1">
-        <lane id="rightRoute2Part3_0" index="0" speed="13.89" length="217.80" shape="225.00,701.60 7.20,701.60"/>
+        <lane id="rightRoute2Part3_0" index="0" speed="13.89" length="167.80" shape="175.00,701.60 7.20,701.60"/>
     </edge>
 
     <junction id="endNode" type="dead_end" x="0.00" y="1000.00" incLanes="mainRoad8_0" intLanes="" shape="3.20,1000.00 0.00,1000.00"/>
@@ -222,13 +222,13 @@
     <junction id="rightNode1" type="priority" x="200.00" y="125.00" incLanes="rightRoute1Part1_0" intLanes=":rightNode1_0_0" shape="200.00,125.00 203.20,125.00 203.06,124.00 202.88,123.56 202.63,123.15 202.31,122.78 201.92,122.44">
         <request index="0" response="0" foes="0" cont="0"/>
     </junction>
-    <junction id="rightNode2" type="priority" x="225.00" y="250.00" incLanes="rightRoute2Part1_0" intLanes=":rightNode2_0_0" shape="225.00,250.00 228.20,250.00 227.84,248.22 227.40,247.60 226.78,247.16 225.98,246.89 225.00,246.80">
+    <junction id="rightNode2" type="priority" x="175.00" y="250.00" incLanes="rightRoute2Part1_0" intLanes=":rightNode2_0_0" shape="175.00,250.00 178.20,250.00 177.84,248.22 177.40,247.60 176.78,247.16 175.98,246.89 175.00,246.80">
         <request index="0" response="0" foes="0" cont="0"/>
     </junction>
     <junction id="rightNode3" type="priority" x="200.00" y="600.00" incLanes="rightRoute1Part2_0" intLanes=":rightNode3_0_0" shape="203.20,600.00 200.00,600.00 200.00,603.20 201.78,602.84 202.40,602.40 202.84,601.78 203.11,600.98">
         <request index="0" response="0" foes="0" cont="0"/>
     </junction>
-    <junction id="rightNode4" type="priority" x="225.00" y="700.00" incLanes="rightRoute2Part2_0" intLanes=":rightNode4_0_0" shape="228.20,700.00 225.00,700.00 225.00,703.20 226.78,702.84 227.40,702.40 227.84,701.78 228.11,700.98">
+    <junction id="rightNode4" type="priority" x="175.00" y="700.00" incLanes="rightRoute2Part2_0" intLanes=":rightNode4_0_0" shape="178.20,700.00 175.00,700.00 175.00,703.20 176.78,702.84 177.40,702.40 177.84,701.78 178.11,700.98">
         <request index="0" response="0" foes="0" cont="0"/>
     </junction>
     <junction id="startNode" type="dead_end" x="0.00" y="-150.00" incLanes="" intLanes="" shape="0.00,-150.00 3.20,-150.00"/>
