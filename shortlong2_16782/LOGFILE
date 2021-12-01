@@ -1,18 +1,18 @@
-***Starting server on port 53351 ***
-Loading net-file from 'fourroute2.net.xml' ... done (8ms).
-Loading additional-files from 'additional_autogen.xml' ... done (3ms).
+***Starting server on port 53525 ***
+Loading net-file from 'fourroute.net.xml' ... done (6ms).
+Loading additional-files from 'additional_autogen.xml' ... done (1ms).
 Loading done.
 Simulation started with time: 0.00
-Simulation ended at time: 95.00
+Simulation ended at time: 93.00
 Performance: 
- Duration: 22.45s
- TraCI-Duration: 19.39s
- Real time factor: 4.23181
- UPS: 69.000846
+ Duration: 9.94s
+ TraCI-Duration: 8.15s
+ Real time factor: 9.35896
+ UPS: 149.743383
 Vehicles: 
- Inserted: 32 (Loaded: 38)
- Running: 32
+ Inserted: 31 (Loaded: 37)
+ Running: 31
  Waiting: 6
 
-DijkstraRouter answered 38 queries and explored 20.00 edges on average.
+DijkstraRouter answered 37 queries and explored 19.00 edges on average.
 DijkstraRouter spent 0.00s answering queries (0.00ms on average).

@@ -25,7 +25,7 @@ import os
 import sys
 import optparse
 import random
-from numpy import inf
+from numpy import Inf, inf
 import time
 import matplotlib.pyplot as plt
 from heapq import * #priorityqueue
@@ -57,20 +57,44 @@ def run(netfile, rerouters):
     
     """execute the TraCI control loop"""
     network = sumolib.net.readNet(netfile)
+    startDict = dict()
+    endDict = dict()
+    vehicleIDs = []
     # dontBreakEverything() #Run test simulation for a step to avoid it overwriting the main one or something??
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep() #Tell the simulator to simulate the next time step
         reroute(rerouters, network, True) #Reroute cars (including simulate-ahead cars)
         carsOnNetwork.append(len(traci.vehicle.getIDList())) #Track number of cars on network (for plotting)
+        
+        t = traci.simulation.getTime()
+        for id in traci.simulation.getDepartedIDList():
+            startDict[id] = t
+            vehicleIDs.append(id)
+        for id in traci.simulation.getArrivedIDList():
+            endDict[id] = t
 
     #After we're done simulating... 
     plt.figure()
     plt.plot(carsOnNetwork)
     plt.xlabel("Time (s)")
     plt.ylabel("Cars on Network")
-    plt.title("Congestion, Adoption Prob=" + str(pSmart))
-    #plt.show() #NOTE: Blocks code execution until you close the plot
-    plt.savefig("Plots/Congestion, AP=" + str(pSmart)+".png")
+    plt.title("Congestion, A* Routing")
+    plt.savefig("Plots/congestion_A_star.png")
+
+    avgTime = 0
+    bestTime = Inf
+    worstTime = 0
+    for id in vehicleIDs:
+        t = endDict[id] - startDict[id]
+        avgTime += t
+        if t > worstTime:
+            worstTime = t
+        if t < bestTime:
+            bestTime = t
+    avgTime /= len(vehicleIDs)
+    print("Average time in network: %f" % avgTime)
+    print("Best time: %f" % bestTime)
+    print("Worst time: %f" % worstTime)
     
 
 #Tell all the detectors to reroute the cars they've seen
