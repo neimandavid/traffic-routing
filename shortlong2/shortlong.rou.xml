@@ -58,6 +58,6 @@
     <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
 
     <flow id="Sflow" type="noVar" from="start" to="goal" begin="0" end="10000" number="2500" departSpeed="max" departLane="best"/>
-    <flow id="Lflow" type="noVar" from="startL" to="goal" begin="0" end="10000" number="1000"/>
-    <flow id="Rflow" type="noVar" from="startR" to="goal" begin="0" end="10000" number="1000"/>
+    <flow id="Lflow" type="noVar" from="startL" to="goal" begin="0" end="10000" number="1500"/>
+    <flow id="Rflow" type="noVar" from="startR" to="goal" begin="0" end="10000" number="1500"/>
 </routes>
