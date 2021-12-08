@@ -50,6 +50,8 @@ pSmart = 1.0; #Adoption probability
 carsOnNetwork = [];
 max_edge_speed = 0.0;
 
+hmetadict = dict()
+
 def run(netfile, rerouters):
     #netfile is the filepath to the network file, so we can call sumolib to get successors
     #rerouters is the list of induction loops on edges with multiple successor edges
@@ -133,6 +135,39 @@ def heuristic(net, curredge, goaledge):
     dist = math.sqrt((goalEnd[0] - currEnd[0])**2 + (goalEnd[1] - currEnd[1])**2)
     return dist / max_edge_speed
 
+def backwardDijkstra(network, goal):
+    gvals = dict()
+    gvals[goal] = 0
+    pq = []
+    heappush(pq, (0, goal))
+
+    while len(pq) > 0: #When the queue is empty, we're done
+        #print(pq)
+        stateToExpand = heappop(pq)
+        #fval = stateToExpand[0]
+        edge = stateToExpand[1]
+        gval = gvals[edge]
+
+        #Get predecessor IDs
+        succs = []
+        for succ in list(network.getEdge(edge).getIncoming()):
+            succs.append(succ.getID())
+        
+        for succ in succs:
+            c = traci.lane.getLength(edge+"_0")/network.getEdge(edge).getSpeed()
+            #c = getEdgeCost(vehicle, succ, edgeToExpand, network, gval)
+
+            # heuristic: distance from mid-point of edge to mid point of goal edge
+            h = 0
+            if succ in gvals and gvals[succ] <= gval+c:
+                #Already saw this state, don't requeue
+                continue
+
+            #Otherwise it's new or we're now doing better, so requeue it
+            gvals[succ] = gval+c
+            heappush(pq, (gval+c+h, succ))
+    return gvals
+
 def AstarReroute(detector, network, rerouteAuto=True):
     #print("Warning: A* routing not implemented for router " + detector)
 
@@ -155,6 +190,9 @@ def AstarReroute(detector, network, rerouteAuto=True):
             #Get goal
             route = traci.vehicle.getRoute(vehicle)
             goaledge = route[-1]
+
+            if not goaledge in hmetadict:
+                hmetadict[goaledge] = backwardDijkstra(network, goaledge)
 
             stateinfo = dict()
             stateinfo[edge] = dict()
@@ -179,11 +217,15 @@ def AstarReroute(detector, network, rerouteAuto=True):
 
                 succs = getSuccessors(edgeToExpand, network)
                 for succ in succs:
+                    if not succ in hmetadict[goaledge]:
+                        #Dead end, don't bother
+                        continue
                     
                     c = getEdgeCost(vehicle, succ, edgeToExpand, network, gval)
 
                     # heuristic: distance from mid-point of edge to mid point of goal edge
-                    h = heuristic(network, succ, goaledge)
+                    # h = heuristic(network, succ, goaledge)
+                    h = hmetadict[goaledge][succ]
                     if succ in stateinfo and stateinfo[succ]['gval'] <= gval+c:
                         #Already saw this state, don't requeue
                         continue
