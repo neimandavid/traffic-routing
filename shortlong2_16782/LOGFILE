@@ -1,0 +1,20 @@
+***Starting server on port 61780 ***
+Loading net-file from 'fourroute.net.xml' ... done (7ms).
+Loading additional-files from 'additional_autogen.xml' ... done (3ms).
+Loading done.
+Simulation started with time: 0.00
+Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
+Quitting (on error).
+Simulation ended at time: 442.00
+Performance: 
+ Duration: 425.33s
+ TraCI-Duration: 382.80s
+ Real time factor: 1.03919
+ UPS: 32.903863
+Vehicles: 
+ Inserted: 148 (Loaded: 177)
+ Running: 36
+ Waiting: 29
+
+DijkstraRouter answered 204 queries and explored 19.63 edges on average.
+DijkstraRouter spent 0.01s answering queries (0.04ms on average).

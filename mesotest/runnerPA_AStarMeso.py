@@ -152,7 +152,6 @@ def AstarReroute(detector, network, rerouteAuto=True):
             print("Oops, don't know " + vehicle)
             isSmart[vehicle] = random.random() < pSmart
         if rerouteAuto and isSmart[vehicle]: #and detector[0:5]=="IL_in":
-            tstart = time.time()
             saveStateInfo(edge) #Saves the traffic state and traffic light timings
         
             #Get goal
@@ -205,7 +204,6 @@ def AstarReroute(detector, network, rerouteAuto=True):
                     temppath.append(succ)
                     stateinfo[succ]['path'] = temppath
                     heappush(pq, (gval+c+h, succ))
-            print(time.time() - tstart)
                 
         if vehicle in isSmart and not isSmart[vehicle]: #TODO: Reconsider how we treat the vehicles that somehow haven't entered the network in main yet
             #TODO: Turn randomly
@@ -315,6 +313,7 @@ def get_options():
 def generate_additionalfile(sumoconfig, networkfile):
     #Create a third instance of a simulator so I can query the network
     traci.start([checkBinary('sumo'), "-c", sumoconfig,
+                             "--mesosim", "true",
                              "--start", "--no-step-log", "true",
                              "--xml-validation", "never"], label="setup")
 
@@ -365,10 +364,12 @@ if __name__ == "__main__":
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
     traci.start([sumoBinary, "-c", sumoconfig,
+                             "--mesosim", "true",
                              "--additional-files", "additional_autogen.xml",
                              "--log", "LOGFILE", "--xml-validation", "never"], label="main")
     #Second simulator for running tests. No GUI
     traci.start([checkBinary('sumo'), "-c", sumoconfig,
+                             "--mesosim", "true",
                              "--additional-files", "additional_autogen.xml",
                              "--start", "--no-step-log", "true",
                              "--xml-validation", "never",

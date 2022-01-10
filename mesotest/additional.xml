@@ -1,0 +1,3 @@
+<additional>
+	<inductionLoop id="IL_start" freq="1" file="output2.xml" lane="start_0" pos="-50" friendlyPos="true" />
+</additional>

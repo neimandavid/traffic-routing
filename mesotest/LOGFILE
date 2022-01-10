@@ -1,0 +1,21 @@
+***Starting server on port 63050 ***
+Loading net-file from 'y.net.xml' ... done (1ms).
+Loading additional-files from 'additional.xml' ... done (1ms).
+Loading done.
+Simulation started with time: 0.00
+Error: Answered with error to command 0xc4: Route replacement failed for vehicle 'Sflow.1' (Vehicle is on junction-internal edge leading elsewhere).
+Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
+Quitting (on error).
+Simulation ended at time: 15.00
+Performance: 
+ Duration: 35.87s
+ TraCI-Duration: 0.02s
+ Real time factor: 0.418212
+ UPS: 1.254635
+Vehicles: 
+ Inserted: 5 (Loaded: 6)
+ Running: 5
+ Waiting: 1
+
+DijkstraRouter answered 6 queries and explored 2.00 edges on average.
+DijkstraRouter spent 0.00s answering queries (0.00ms on average).

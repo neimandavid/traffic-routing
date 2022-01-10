@@ -48,7 +48,6 @@ pSmart = 1.0; #Adoption probability
 
 carsOnNetwork = [];
 max_edge_speed = 0.0;
-AStarCutoff = 200;
 
 hmetadict = dict()
 
@@ -88,51 +87,12 @@ def reroute(rerouters, network, rerouteAuto=True):
 
     if doAstar:
         for r in rerouters:
-            AstarReroute(r, network, rerouteAuto)
+            BFReroute(r, network, rerouteAuto)
 
-# Distance between the end points of the two edges as heuristic
-def heuristic(net, curredge, goaledge):
-    #return 0
-    goalEnd = net.getEdge(goaledge).getToNode().getCoord() 
-    currEnd = net.getEdge(curredge).getToNode().getCoord() 
-    dist = math.sqrt((goalEnd[0] - currEnd[0])**2 + (goalEnd[1] - currEnd[1])**2)
-    return dist / max_edge_speed
 
-def backwardDijkstra(network, goal):
-    gvals = dict()
-    gvals[goal] = 0
-    pq = []
-    heappush(pq, (0, goal))
 
-    while len(pq) > 0: #When the queue is empty, we're done
-        #print(pq)
-        stateToExpand = heappop(pq)
-        #fval = stateToExpand[0]
-        edge = stateToExpand[1]
-        gval = gvals[edge]
+def BFReroute(detector, network, rerouteAuto=True):
 
-        #Get predecessor IDs
-        succs = []
-        for succ in list(network.getEdge(edge).getIncoming()):
-            succs.append(succ.getID())
-        
-        for succ in succs:
-            c = traci.lane.getLength(edge+"_0")/network.getEdge(edge).getSpeed()
-            #c = getEdgeCost(vehicle, succ, edgeToExpand, network, gval)
-
-            # heuristic: distance from mid-point of edge to mid point of goal edge
-            h = 0
-            if succ in gvals and gvals[succ] <= gval+c:
-                #Already saw this state, don't requeue
-                continue
-
-            #Otherwise it's new or we're now doing better, so requeue it
-            gvals[succ] = gval+c
-            heappush(pq, (gval+c+h, succ))
-    return gvals
-    
-
-def AstarReroute(detector, network, rerouteAuto=True):
     ids = traci.inductionloop.getLastStepVehicleIDs(detector) #All vehicles to be rerouted
     if len(ids) == 0:
         #No cars to route, we're done here
@@ -142,7 +102,7 @@ def AstarReroute(detector, network, rerouteAuto=True):
     edge = traci.vehicle.getRoadID(ids[0])
     
     for vehicle in ids:
-
+        
         if rerouteAuto and detector in oldids and vehicle in oldids[detector]:
             #print("Duplicate car " + vehicle + " at detector " + detector)
             continue
@@ -152,60 +112,66 @@ def AstarReroute(detector, network, rerouteAuto=True):
             print("Oops, don't know " + vehicle)
             isSmart[vehicle] = random.random() < pSmart
         if rerouteAuto and isSmart[vehicle]: #and detector[0:5]=="IL_in":
-            tstart = time.time()
+            #tstart = time.time()
+            
             saveStateInfo(edge) #Saves the traffic state and traffic light timings
-        
+
+            #Swap to test sim, load current state
+            traci.switch("test")
+            #tstart = time.time()
+            loadStateInfo(edge)
+    
             #Get goal
             route = traci.vehicle.getRoute(vehicle)
             goaledge = route[-1]
 
-            if not goaledge in hmetadict:
-                hmetadict[goaledge] = backwardDijkstra(network, goaledge)
-                #print(hmetadict)
+            t = 0
+            keepGoing = True
+            newids = dict()
+            #tstart = time.time()
 
-            stateinfo = dict()
-            stateinfo[edge] = dict()
-            stateinfo[edge]['gval'] = 0
-            stateinfo[edge]['path'] = [edge]
-            #Store whatever else you need here
+            #Initial split
+            newvs = splitVehicle(vehicle, network)
+            newids[detector] = newvs
+            
+            while(keepGoing):
+                
+                #Continue with counterfactual simulation
+                traci.simulationStep()
+                t+=1
 
-            pq = [] #Priority queue
-            heappush(pq, (stateinfo[edge]['gval'], edge))
+                #Check if we're done
+                for lanenum in range(traci.edge.getLaneNumber(goaledge)):
+                    testids = traci.inductionloop.getLastStepVehicleIDs("IL_"+goaledge+"_"+str(lanenum))
+                    for testv in testids:
+                        if testv in newvs:
+                            #Reroute the car, then say we're done
+                            stuff = testv.split("_")
+                            outroute = [edge]
+                            for i in range(1,len(stuff)):
+                                outroute.append(stuff[i])
+                            keepGoing = False
+                            break
+                        
+                #Check if we need to split anything
+                for rerouter in traci.inductionloop.getIDList():
+                    testids = traci.inductionloop.getLastStepVehicleIDs(rerouter)
+                    for testv in testids:
+                        if testv in newvs and not (rerouter in newids and testv in newids[rerouter]):
+                            #print("Splitting")
+                            #splittime = time.time()
+                            newnewvs = splitVehicle(testv, network)
+                            newvs.remove(testv)
+                            newvs = newvs + newnewvs
+                            if not rerouter in newids:
+                                newids[rerouter] = []
+                            newids[rerouter] += newnewvs
+                            #print(time.time() - splittime)
 
-            while len(pq) > 0: #If the queue is empty, the route is impossible. This should never happen, but if it does we don't change the route.
-                #print(pq)
-                stateToExpand = heappop(pq)
-                #fval = stateToExpand[0]
-                edgeToExpand = stateToExpand[1]
-                gval = stateinfo[edgeToExpand]['gval']
-
-                #Check goal, update route, break out of loop
-                if edgeToExpand == goaledge:
-                    traci.vehicle.setRoute(vehicle, stateinfo[goaledge]['path'])
-                    break #Done routing this vehicle
-
-                succs = getSuccessors(edgeToExpand, network)
-                for succ in succs:
-                    if not succ in hmetadict[goaledge]:
-                        #Dead end, don't bother
-                        continue
-                    c = getEdgeCost(vehicle, succ, edgeToExpand, network, gval)
-
-                    # heuristic: distance from mid-point of edge to mid point of goal edge
-                    #h = heuristic(network, succ, goaledge)
-                    h = hmetadict[goaledge][succ]
-                    if succ in stateinfo and stateinfo[succ]['gval'] <= gval+c:
-                        #Already saw this state, don't requeue
-                        continue
-
-                    #Otherwise it's new or we're now doing better, so requeue it
-                    stateinfo[succ] = dict()
-                    stateinfo[succ]['gval'] = gval+c
-                    temppath = stateinfo[edgeToExpand]['path'].copy()
-                    temppath.append(succ)
-                    stateinfo[succ]['path'] = temppath
-                    heappush(pq, (gval+c+h, succ))
-            print(time.time() - tstart)
+            
+            traci.switch("main")
+            traci.vehicle.setRoute(vehicle, outroute)
+            #print(time.time() - tstart)
                 
         if vehicle in isSmart and not isSmart[vehicle]: #TODO: Reconsider how we treat the vehicles that somehow haven't entered the network in main yet
             #TODO: Turn randomly
@@ -216,6 +182,48 @@ def AstarReroute(detector, network, rerouteAuto=True):
             print("TODO: Turn randomly")
     if rerouteAuto:
         oldids[detector] = ids
+
+def splitVehicle(vehicle, network):
+    newvs = []
+    edge = traci.vehicle.getRoadID(vehicle)
+
+    succs = getSuccessors(edge, network)
+    #TODO make sure these are ordered CCW from current edge
+    for succ in succs:
+        route = [edge, succ]
+
+
+        #rstart = time.time()
+        if not str(route) in traci.route.getIDList():
+            traci.route.add(str(route), route)
+        else:
+            #In case we already have the route, we'll get an error; ignore it
+            pass
+        #print(time.time() - rstart)
+
+    
+        lane = traci.vehicle.getLaneIndex(vehicle)
+        #lane = 0
+        pos = traci.vehicle.getLanePosition(vehicle)
+        speed = traci.vehicle.getSpeed(vehicle)
+        pos = -50
+        #speed = "max"
+    
+        newv = vehicle+"_"+succ
+        traci.vehicle.add(newv, str(route), typeID="ghost", departLane=lane, departPos=pos, departSpeed=speed)
+        newvs.append(newv)
+        traci.vehicle.setColor(newv, [0, 0, 255])
+        traci.vehicle.setLength(newv, traci.vehicle.getLength(vehicle)/len(succs))
+
+    for v in traci.edge.getLastStepVehicleIDs(edge):
+        if traci.vehicle.getLanePosition(v) < traci.vehicle.getLanePosition(vehicle):
+            traci.vehicle.setColor(v, [255, 0, 0])
+            traci.vehicle.remove(v)
+        elif traci.vehicle.getLanePosition(v) > traci.vehicle.getLanePosition(vehicle):
+            traci.vehicle.setColor(v, [0, 255, 0])
+            #traci.vehicle.remove(v)
+    traci.vehicle.remove(vehicle)
+    return newvs
 
 # Gets successor edges of a given edge in a given network
 # Parameters:
@@ -254,49 +262,6 @@ def loadStateInfo(prevedge):
         traci.trafficlight.setPhase(light, lightStates[light][0])
         traci.trafficlight.setPhaseDuration(light, lightStates[light][1])
     
-
-#Calls the simulator (or doesn't, if g_value > AStarCutoff)
-#Timing notes: Sim is about 3x load, load is about 3x save
-def getEdgeCost(vehicle, edge, prevedge, network, g_value):
-    #If we're simulating way into the future, do math instead
-    if g_value > AStarCutoff:
-        print("Stopping A* and doing math")
-        return traci.edge.getTraveltime(edge)
-
-    traci.switch("test")
-    #tstart = time.time()
-    loadStateInfo(prevedge)
-    #print("End load")
-    #print(time.time() - tstart)
-
-    #Tell the vehicle to drive to the end of edge
-    traci.vehicle.setRoute(vehicle, [prevedge, edge])
-    
-    #Run simulation, track time to completion
-    t = 0
-    keepGoing = True
-    #tstart = time.time()
-    while(keepGoing):
-        traci.simulationStep()
-        reroute(rerouters, network, False) #Randomly reroute the non-adopters
-        #NOTE: I'm modeling non-adopters as randomly rerouting at each intersection
-        #So whether or not I reroute them here, I'm still wrong compared to the main simulation (where they will reroute randomly)
-        #This is good - the whole point is we can't simulate exactly what they'll do
-        t+=1
-        for lanenum in range(traci.edge.getLaneNumber(edge)):
-            ids = traci.inductionloop.getLastStepVehicleIDs("IL_"+edge+"_"+str(lanenum))
-            if vehicle in ids:
-                keepGoing = False
-                break
-    #print("End sim")
-    #print(time.time() - tstart)
-    #tstart = time.time()
-    saveStateInfo(edge) #Need this to continue the A* search
-    #print("End save")
-    #print(time.time() - tstart)
-    
-    traci.switch("main")
-    return t
 
 #Magically makes the vehicle lists stop deleting themselves somehow???
 def dontBreakEverything():
@@ -360,7 +325,6 @@ if __name__ == "__main__":
     sumoconfig = sys.argv[2]
     netfile = sys.argv[1]
     rerouters = generate_additionalfile(sumoconfig, netfile)
-    print("MAX_EDGE_SPEED 2.0: {}".format(max_edge_speed))
 
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
@@ -368,7 +332,7 @@ if __name__ == "__main__":
                              "--additional-files", "additional_autogen.xml",
                              "--log", "LOGFILE", "--xml-validation", "never"], label="main")
     #Second simulator for running tests. No GUI
-    traci.start([checkBinary('sumo'), "-c", sumoconfig,
+    traci.start([checkBinary('sumo-gui'), "-c", sumoconfig,
                              "--additional-files", "additional_autogen.xml",
                              "--start", "--no-step-log", "true",
                              "--xml-validation", "never",

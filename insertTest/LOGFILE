@@ -1,0 +1,17 @@
+***Starting server on port 49763 ***
+Loading net-file from 'test.net.xml' ... done (1ms).
+Loading done.
+Simulation started with time: 0.00
+Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
+Quitting (on error).
+Simulation ended at time: 1.00
+Performance: 
+ Duration: 19.96s
+ TraCI-Duration: 0.00s
+ Real time factor: 0.0501027
+ UPS: 0.000000
+Vehicles: 
+ Inserted: 0
+ Running: 0
+ Waiting: 0
+

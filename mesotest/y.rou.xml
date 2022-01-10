@@ -41,12 +41,7 @@
 -->
 
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
-    <route edges="start M3 M2 M1 R11 R12 R13 N1 N2 N3 goal" color="yellow" id="R1"/>
-    <route edges="start M3 M2 R21 R22 R23 N2 N3 goal" color="yellow" id="R2"/>
-    <route edges="start M3 R31 R32 R33 N3 goal" color="yellow" id="R3"/>
-    <route edges="start R41 R42 R43 goal" color="yellow" id="R4"/>
 
     <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
-    <vType id="ghost" speedFactor="1.0" speedDev="0.0" length="0.01" minGap="0"  accel="1000.0" decel="1000.0" />
-    <flow id="Sflow" type="noVar" from="start" to="goal" begin="0" end="10000" number="4000"/>
+    <flow id="Sflow" type="noVar" from="start" to="up" begin="0" end="10000" number="4000"/>
 </routes>
