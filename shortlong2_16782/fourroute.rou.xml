@@ -47,6 +47,5 @@
     <route edges="start R41 R42 R43 goal" color="yellow" id="R4"/>
 
     <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
-    <vType id="ghost" speedFactor="1.0" speedDev="0.0" length="0.01" minGap="0"  accel="1000.0" decel="1000.0" />
     <flow id="Sflow" type="noVar" from="start" to="goal" begin="0" end="10000" number="4000"/>
 </routes>

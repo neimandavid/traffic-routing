@@ -53,6 +53,7 @@ AStarCutoff = 200;
 hmetadict = dict()
 
 oldids = dict()
+timedata = dict()
 
 def run(netfile, rerouters):
     #netfile is the filepath to the network file, so we can call sumolib to get successors
@@ -61,26 +62,81 @@ def run(netfile, rerouters):
     
     """execute the TraCI control loop"""
     network = sumolib.net.readNet(netfile)
+    startDict = dict()
+    endDict = dict()
+    locDict = dict()
+    leftDict = dict()
+
     dontBreakEverything() #Run test simulation for a step to avoid it overwriting the main one or something??
+
+    tstart = time.time()
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep() #Tell the simulator to simulate the next time step
 
         #Decide whether new vehicles use our routing
         for vehicle in traci.simulation.getDepartedIDList():
             isSmart[vehicle] = random.random() < pSmart
+            timedata[vehicle] = [traci.simulation.getTime(), -1, -1]
+        for vehicle in traci.simulation.getArrivedIDList():
+            timedata[vehicle][1] = traci.simulation.getTime()
+            #print("Actual minus expected:")
+            #print( (timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2])
 
         reroute(rerouters, network, True) #Reroute cars (including simulate-ahead cars)
         carsOnNetwork.append(len(traci.vehicle.getIDList())) #Track number of cars on network (for plotting)
+        
+        t = traci.simulation.getTime()
+        for id in traci.simulation.getDepartedIDList():
+            startDict[id] = t
+            locDict[id] = traci.vehicle.getRoadID(id)
+            leftDict[id] = 0
+        for id in traci.simulation.getArrivedIDList():
+            endDict[id] = t
+            locDict.pop(id)
+        for id in locDict:
+            if traci.vehicle.getRoadID(id) != locDict[id] and traci.vehicle.getRoadID(id)[0] != ":":
+                c0 = network.getEdge(locDict[id]).getFromNode().getCoord()
+                c1 = network.getEdge(locDict[id]).getToNode().getCoord()
+                theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
 
-    #After we're done simulating... 
-    plt.figure()
-    plt.plot(carsOnNetwork)
-    plt.xlabel("Time (s)")
-    plt.ylabel("Cars on Network")
-    plt.title("Congestion, Adoption Prob=" + str(pSmart))
-    #plt.show() #NOTE: Blocks code execution until you close the plot
-    plt.savefig("Plots/Congestion, AP=" + str(pSmart)+".png")
-    
+                assert(c1 == network.getEdge(traci.vehicle.getRoadID(id)).getFromNode().getCoord())
+                c2 = network.getEdge(traci.vehicle.getRoadID(id)).getToNode().getCoord()
+                theta1 = math.atan2(c2[1]-c1[1], c2[0]-c1[0])
+
+                if (theta1-theta0+math.pi)%(2*math.pi)-math.pi > 0:
+                    leftDict[id] += 1
+                
+                locDict[id] = traci.vehicle.getRoadID(id)
+
+        if t%100 == 0 or not traci.simulation.getMinExpectedNumber() > 0:
+            #After we're done simulating... 
+            plt.figure()
+            plt.plot(carsOnNetwork)
+            plt.xlabel("Time (s)")
+            plt.ylabel("Cars on Network")
+            plt.title("Congestion, Adoption Prob=" + str(pSmart))
+            #plt.show() #NOTE: Blocks code execution until you close the plot
+            plt.savefig("Plots/Congestion, AP=" + str(pSmart)+".png")
+            plt.close()
+
+            avgTime = 0
+            avgLefts = 0
+            bestTime = inf
+            worstTime = 0
+            for id in endDict:
+                ttemp = endDict[id] - startDict[id]
+                avgTime += ttemp/len(endDict)
+                avgLefts += leftDict[id]/len(endDict)
+                if ttemp > worstTime:
+                    worstTime = ttemp
+                if ttemp < bestTime:
+                    bestTime = ttemp
+            print("\nCurrent simulation time: %f" % t)
+            print("Total run time: %f" % (time.time() - tstart))
+            print("Average time in network: %f" % avgTime)
+            print("Best time: %f" % bestTime)
+            print("Worst time: %f" % worstTime)
+            print("Average number of lefts: %f" % avgLefts)
 
 #Tell all the detectors to reroute the cars they've seen
 def reroute(rerouters, network, rerouteAuto=True):
@@ -132,6 +188,7 @@ def backwardDijkstra(network, goal):
     return gvals
     
 
+#@profile
 def AstarReroute(detector, network, rerouteAuto=True):
     ids = traci.inductionloop.getLastStepVehicleIDs(detector) #All vehicles to be rerouted
     if len(ids) == 0:
@@ -205,7 +262,7 @@ def AstarReroute(detector, network, rerouteAuto=True):
                     temppath.append(succ)
                     stateinfo[succ]['path'] = temppath
                     heappush(pq, (gval+c+h, succ))
-            print(time.time() - tstart)
+            #print(time.time() - tstart)
                 
         if vehicle in isSmart and not isSmart[vehicle]: #TODO: Reconsider how we treat the vehicles that somehow haven't entered the network in main yet
             #TODO: Turn randomly
@@ -255,6 +312,7 @@ def loadStateInfo(prevedge):
         traci.trafficlight.setPhaseDuration(light, lightStates[light][1])
     
 
+#@profile
 #Calls the simulator (or doesn't, if g_value > AStarCutoff)
 #Timing notes: Sim is about 3x load, load is about 3x save
 def getEdgeCost(vehicle, edge, prevedge, network, g_value):
@@ -278,7 +336,8 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value):
     #tstart = time.time()
     while(keepGoing):
         traci.simulationStep()
-        reroute(rerouters, network, False) #Randomly reroute the non-adopters
+        #NOTE: I've given up on explicitly enumerating routes for non-adoptors; for now they do whatever default routing tells them to
+        #reroute(rerouters, network, False) #Randomly reroute the non-adopters
         #NOTE: I'm modeling non-adopters as randomly rerouting at each intersection
         #So whether or not I reroute them here, I'm still wrong compared to the main simulation (where they will reroute randomly)
         #This is good - the whole point is we can't simulate exactly what they'll do
