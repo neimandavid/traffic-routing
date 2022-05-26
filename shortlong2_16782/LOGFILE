@@ -1,19 +1,19 @@
-***Starting server on port 51522 ***
-Loading net-file from 'blocks.net.xml' ... done (16ms).
+***Starting server on port 50532 ***
+Loading net-file from 'blocks.net.xml' ... done (15ms).
 Loading additional-files from 'additional_autogen.xml' ... done (4ms).
 Loading done.
 Simulation started with time: 0.00
-Simulation ended at time: 3162.00
+Simulation ended at time: 3252.00
 Reason: TraCI requested termination.
 Performance: 
- Duration: 14102.39s
- TraCI-Duration: 4816.86s
- Real time factor: 0.224217
- UPS: 25.432290
+ Duration: 69.05s
+ TraCI-Duration: 41.78s
+ Real time factor: 47.097
+ UPS: 5755.000072
 Vehicles: 
  Inserted: 2560
  Running: 0
  Waiting: 0
 
-DijkstraRouter answered 2560 queries and explored 29.94 edges on average.
+DijkstraRouter answered 2560 queries and explored 29.90 edges on average.
 DijkstraRouter spent 0.03s answering queries (0.01ms on average).

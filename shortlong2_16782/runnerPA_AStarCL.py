@@ -174,10 +174,8 @@ def backwardDijkstra(network, goal):
         
         for succ in succs:
             c = traci.lane.getLength(edge+"_0")/network.getEdge(edge).getSpeed()
-            #c = getEdgeCost(vehicle, succ, edgeToExpand, network, gval)
 
-            # heuristic: distance from mid-point of edge to mid point of goal edge
-            h = 0
+            h = 0 #Heuristic not needed here - search is fast
             if succ in gvals and gvals[succ] <= gval+c:
                 #Already saw this state, don't requeue
                 continue

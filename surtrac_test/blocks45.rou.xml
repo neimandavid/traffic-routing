@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2021-09-30 20:22:03 by Eclipse SUMO netedit Version 1.9.2
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <sumo-net-file value="shortlong.net.xml"/>
+    </input>
+
+    <output>
+        <output-file value="shortlong.net.xml"/>
+    </output>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="false"/>
+    </processing>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="5"/>
+        <junctions.limit-turn-speed value="5.5"/>
+        <rectangular-lane-cut value="false"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="false"/>
+    </pedestrian>
+
+    <netedit>
+        <route-files value="/usr/local/Cellar/sumo/shortlong2/shortlong.rou.xml"/>
+    </netedit>
+
+    <report>
+        <aggregate-warnings value="5"/>
+    </report>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
+
+    <!--route id="route01" edges="in7 E18 out8" />
+    <vehicle depart="0" id="test1" route="route01" color="1,0,0" />
+    <route id="route02" edges="in8 -E18 out7" />
+    <vehicle depart="0" id="test2" route="route02" color="1,0,0" /-->
+
+    <flow id="Sflow11" type="noVar" from="in1" to="out1" begin="0" end="3000" number="45"/>
+    <flow id="Sflow21" type="noVar" from="in2" to="out1" begin="0" end="3000" number="45"/>
+    <flow id="Sflow31" type="noVar" from="in3" to="out1" begin="0" end="3000" number="45"/>
+    <flow id="Sflow41" type="noVar" from="in4" to="out1" begin="0" end="3000" number="45"/>
+    <flow id="Sflow51" type="noVar" from="in5" to="out1" begin="0" end="3000" number="45"/>
+    <flow id="Sflow61" type="noVar" from="in6" to="out1" begin="0" end="3000" number="45"/>
+    <flow id="Sflow71" type="noVar" from="in7" to="out1" begin="0" end="3000" number="45"/>
+    <flow id="Sflow81" type="noVar" from="in8" to="out1" begin="0" end="3000" number="45"/>
+    <flow id="Sflow12" type="noVar" from="in1" to="out2" begin="4" end="3004" number="45"/>
+    <flow id="Sflow22" type="noVar" from="in2" to="out2" begin="4" end="3004" number="45"/>
+    <flow id="Sflow32" type="noVar" from="in3" to="out2" begin="4" end="3004" number="45"/>
+    <flow id="Sflow42" type="noVar" from="in4" to="out2" begin="4" end="3004" number="45"/>
+    <flow id="Sflow52" type="noVar" from="in5" to="out2" begin="4" end="3004" number="45"/>
+    <flow id="Sflow62" type="noVar" from="in6" to="out2" begin="4" end="3004" number="45"/>
+    <flow id="Sflow72" type="noVar" from="in7" to="out2" begin="4" end="3004" number="45"/>
+    <flow id="Sflow82" type="noVar" from="in8" to="out2" begin="4" end="3004" number="45"/>
+    <flow id="Sflow13" type="noVar" from="in1" to="out3" begin="8" end="3008" number="45"/>
+    <flow id="Sflow23" type="noVar" from="in2" to="out3" begin="8" end="3008" number="45"/>
+    <flow id="Sflow33" type="noVar" from="in3" to="out3" begin="8" end="3008" number="45"/>
+    <flow id="Sflow43" type="noVar" from="in4" to="out3" begin="8" end="3008" number="45"/>
+    <flow id="Sflow53" type="noVar" from="in5" to="out3" begin="8" end="3008" number="45"/>
+    <flow id="Sflow63" type="noVar" from="in6" to="out3" begin="8" end="3008" number="45"/>
+    <flow id="Sflow73" type="noVar" from="in7" to="out3" begin="8" end="3008" number="45"/>
+    <flow id="Sflow83" type="noVar" from="in8" to="out3" begin="8" end="3008" number="45"/>
+    <flow id="Sflow14" type="noVar" from="in1" to="out4" begin="12" end="3012" number="45"/>
+    <flow id="Sflow24" type="noVar" from="in2" to="out4" begin="12" end="3012" number="45"/>
+    <flow id="Sflow34" type="noVar" from="in3" to="out4" begin="12" end="3012" number="45"/>
+    <flow id="Sflow44" type="noVar" from="in4" to="out4" begin="12" end="3012" number="45"/>
+    <flow id="Sflow54" type="noVar" from="in5" to="out4" begin="12" end="3012" number="45"/>
+    <flow id="Sflow64" type="noVar" from="in6" to="out4" begin="12" end="3012" number="45"/>
+    <flow id="Sflow74" type="noVar" from="in7" to="out4" begin="12" end="3012" number="45"/>
+    <flow id="Sflow84" type="noVar" from="in8" to="out4" begin="12" end="3012" number="45"/>
+    <flow id="Sflow15" type="noVar" from="in1" to="out5" begin="16" end="3016" number="45"/>
+    <flow id="Sflow25" type="noVar" from="in2" to="out5" begin="16" end="3016" number="45"/>
+    <flow id="Sflow35" type="noVar" from="in3" to="out5" begin="16" end="3016" number="45"/>
+    <flow id="Sflow45" type="noVar" from="in4" to="out5" begin="16" end="3016" number="45"/>
+    <flow id="Sflow55" type="noVar" from="in5" to="out5" begin="16" end="3016" number="45"/>
+    <flow id="Sflow65" type="noVar" from="in6" to="out5" begin="16" end="3016" number="45"/>
+    <flow id="Sflow75" type="noVar" from="in7" to="out5" begin="16" end="3016" number="45"/>
+    <flow id="Sflow85" type="noVar" from="in8" to="out5" begin="16" end="3016" number="45"/>
+    <flow id="Sflow16" type="noVar" from="in1" to="out6" begin="20" end="3020" number="45"/>
+    <flow id="Sflow26" type="noVar" from="in2" to="out6" begin="20" end="3020" number="45"/>
+    <flow id="Sflow36" type="noVar" from="in3" to="out6" begin="20" end="3020" number="45"/>
+    <flow id="Sflow46" type="noVar" from="in4" to="out6" begin="20" end="3020" number="45"/>
+    <flow id="Sflow56" type="noVar" from="in5" to="out6" begin="20" end="3020" number="45"/>
+    <flow id="Sflow66" type="noVar" from="in6" to="out6" begin="20" end="3020" number="45"/>
+    <flow id="Sflow76" type="noVar" from="in7" to="out6" begin="20" end="3020" number="45"/>
+    <flow id="Sflow86" type="noVar" from="in8" to="out6" begin="20" end="3020" number="45"/>
+    <flow id="Sflow17" type="noVar" from="in1" to="out7" begin="24" end="3024" number="45"/>
+    <flow id="Sflow27" type="noVar" from="in2" to="out7" begin="24" end="3024" number="45"/>
+    <flow id="Sflow37" type="noVar" from="in3" to="out7" begin="24" end="3024" number="45"/>
+    <flow id="Sflow47" type="noVar" from="in4" to="out7" begin="24" end="3024" number="45"/>
+    <flow id="Sflow57" type="noVar" from="in5" to="out7" begin="24" end="3024" number="45"/>
+    <flow id="Sflow67" type="noVar" from="in6" to="out7" begin="24" end="3024" number="45"/>
+    <flow id="Sflow77" type="noVar" from="in7" to="out7" begin="24" end="3024" number="45"/>
+    <flow id="Sflow87" type="noVar" from="in8" to="out7" begin="24" end="3024" number="45"/>
+    <flow id="Sflow18" type="noVar" from="in1" to="out8" begin="28" end="3028" number="45"/>
+    <flow id="Sflow28" type="noVar" from="in2" to="out8" begin="28" end="3028" number="45"/>
+    <flow id="Sflow38" type="noVar" from="in3" to="out8" begin="28" end="3028" number="45"/>
+    <flow id="Sflow48" type="noVar" from="in4" to="out8" begin="28" end="3028" number="45"/>
+    <flow id="Sflow58" type="noVar" from="in5" to="out8" begin="28" end="3028" number="45"/>
+    <flow id="Sflow68" type="noVar" from="in6" to="out8" begin="28" end="3028" number="45"/>
+    <flow id="Sflow78" type="noVar" from="in7" to="out8" begin="28" end="3028" number="45"/>
+    <flow id="Sflow88" type="noVar" from="in8" to="out8" begin="28" end="3028" number="45"/>
+</routes>

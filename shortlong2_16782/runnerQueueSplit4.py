@@ -68,13 +68,13 @@ timestep = mingap #Amount of time between updates. In practice, mingap rounds up
 
 timedata = dict()
 
-def run(netfile, rerouters):
+def run(network, rerouters):
     #netfile is the filepath to the network file, so we can call sumolib to get successors
     #rerouters is the list of induction loops on edges with multiple successor edges
     #We want to reroute all the cars that passed some induction loop in rerouters using A*
     
     """execute the TraCI control loop"""
-    network = sumolib.net.readNet(netfile)
+    
     startDict = dict()
     endDict = dict()
     locDict = dict()
@@ -192,7 +192,7 @@ def QueueReroute(detector, network, rerouteAuto=True):
             data = doClusterSim(edge, network, vehicle)
             newroute = data[0]
             tcluster = data[1]
-            #print(traci.vehicle.getRoute(vehicle))
+            #print(routes[vehicle])
             #print(edge)
             #print(tcluster)
             if timedata[vehicle][2] == -1:
@@ -214,37 +214,37 @@ def loadClusters(prevedge, net):
     clusters = dict()
 
     #Cluster data structures
-    for edge in traci.edge.getIDList():
+    for edge in edges:
         if edge[0] == ":":
             #Skip internal edges (=edges for the inside of each intersection)
             continue
-        for lanenum in range(traci.edge.getLaneNumber(edge)):
+        for lanenum in range(lanenums[edge]):
             lane = edge + "_" + str(lanenum)
             clusters[lane] = []
             for vehicle in reversed(traci.lane.getLastStepVehicleIDs(lane)): #Reversed so we go from end of edge to start of edge - first clusters to leave are listed first
                 
                 #Process vehicle into cluster somehow
                 #If nearby cluster, add to cluster in sorted order (could probably process in sorted order)
-                if len(clusters[lane]) > 0 and abs(clusters[lane][-1]["time"] - traci.simulation.getTime()) < clusterthresh and abs(clusters[lane][-1]["pos"] - traci.vehicle.getLanePosition(vehicle))/net.getEdge(edge).getSpeed() < clusterthresh:
+                if len(clusters[lane]) > 0 and abs(clusters[lane][-1]["time"] - traci.simulation.getTime()) < clusterthresh and abs(clusters[lane][-1]["pos"] - traci.vehicle.getLanePosition(vehicle))/speeds[edge] < clusterthresh:
                     #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
                     #Departure time (=time to fully clear cluster) increases, arrival doesn't
                     clusters[lane][-1]["pos"] = traci.vehicle.getLanePosition(vehicle)
                     clusters[lane][-1]["time"] = traci.simulation.getTime()
-                    clusters[lane][-1]["departure"] = traci.simulation.getTime() + (traci.lane.getLength(lane)-clusters[lane][-1]["pos"])/net.getEdge(edge).getSpeed()
+                    clusters[lane][-1]["departure"] = traci.simulation.getTime() + (lengths[lane]-clusters[lane][-1]["pos"])/speeds[edge]
                     clusters[lane][-1]["cars"].append((vehicle, clusters[lane][-1]["departure"], "Load append"))
                 else:
                     #Else make a new cluster
                     newcluster = dict()
                     newcluster["pos"] = traci.vehicle.getLanePosition(vehicle)
                     newcluster["time"] = traci.simulation.getTime()
-                    newcluster["arrival"] = traci.simulation.getTime() + (traci.lane.getLength(edge+"_0")-newcluster["pos"])/net.getEdge(edge).getSpeed()
+                    newcluster["arrival"] = traci.simulation.getTime() + (lengths[edge+"_0"]-newcluster["pos"])/speeds[edge]
                     newcluster["departure"] = newcluster["arrival"]
                     newcluster["cars"] = [(vehicle, newcluster["departure"], "Load new")]
                     clusters[lane].append(newcluster)
     
     #Traffic light info
     lightinfo = dict()
-    for light in traci.trafficlight.getIDList():
+    for light in lights:
         lightinfo[light] = dict()
         lightinfo[light]["state"] = traci.trafficlight.getRedYellowGreenState(light)
         lightinfo[light]["switchtime"] = traci.trafficlight.getNextSwitch(light)
@@ -253,8 +253,13 @@ def loadClusters(prevedge, net):
 
 #@profile
 def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
-    #global splitinfo
-    goalEdge = traci.vehicle.getRoute(vehicleOfInterest)[-1]
+    #Store routes once at the start to save time
+    routes = dict()
+    vehicles = traci.vehicle.getIDList()
+    for vehicle in vehicles:
+        routes[vehicle] = traci.vehicle.getRoute(vehicle)
+
+    goalEdge = routes[vehicleOfInterest][-1]
     splitinfo = dict()
     VOIs = [vehicleOfInterest]
 
@@ -263,21 +268,21 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
 
     starttime = time
 
-    edgelist = list(traci.edge.getIDList())
+    edgelist = list(edges)
     edgeind = 0
     while edgeind < len(edgelist):
         if edgelist[edgeind][0] == ":":
             edgelist.pop(edgeind)
         else:
             edgeind += 1
-    
+
     while True:
         time += timestep
 
         #Update lights
-        for light in traci.trafficlight.getIDList():
+        for light in lights:
             while time >= lightinfo[light]["switchtime"]:
-                phases = traci.trafficlight.getCompleteRedYellowGreenDefinition(light)[0].phases
+                phases = lightphasedata[light]
                 lightinfo[light]["index"] += 1
                 if lightinfo[light]["index"] == len(phases):
                     #At end of program, loop back to 0
@@ -286,26 +291,26 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                 lightinfo[light]["switchtime"] += phases[phaseind].duration
                 lightinfo[light]["state"] = phases[phaseind].state
 
-        #Sanity check for debugging infinite loops where the vehicle of interest disappears
-        #This shouldn't actually go off
-        notEmpty = False
-        for thing in clusters:
-            for thingnum in range(len(clusters[thing])):
-                for testcartuple in clusters[thing][thingnum]["cars"]:
-                    if testcartuple[0] in VOIs:
-                        notEmpty = True
-                        break
-        if not notEmpty:
-            print(VOIs)
-            print(clusters)
-            raise Exception("Can't find vehicle of interest!")
-        #End sanity check
+        # #Sanity check for debugging infinite loops where the vehicle of interest disappears
+        # notEmpty = False
+        # for thing in clusters:
+        #     for thingnum in range(len(clusters[thing])):
+        #         for testcartuple in clusters[thing][thingnum]["cars"]:
+        #             if testcartuple[0] in VOIs:
+        #                 notEmpty = True
+        #                 break
+        # if not notEmpty:
+        #     print(VOIs)
+        #     print(clusters)
+        #     raise Exception("Can't find vehicle of interest!")
+        # #End sanity check
 
         blockingLinks = dict()
         reflist = deepcopy(edgelist) #Want to reorder edge list to handle priority stuff, but don't want to mess up the for loop indexing
+        #TODO maybe (for speed): Instead of deepcopy and modifying edgelist, make edgelist2 = [None]*len(edgelist), copy stuff into that, then replace edgelist with edgelist2
         for edge in reflist:
 
-            for lanenum in range(traci.edge.getLaneNumber(edge)):
+            for lanenum in range(lanenums[edge]):
                 lane = edge + "_" + str(lanenum)
 
                 while len(clusters[lane]) > 0:
@@ -330,7 +335,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                             for routepart in splitroute:
                                 fullroute.append(routepart.split("_")[0]) #Only grab the edge, not the lane
                             return (fullroute, time-starttime)
-                        elif not cartuple[0] in VOIs and traci.vehicle.getRoute(cartuple[0])[-1] == edge:
+                        elif not cartuple[0] in VOIs and routes[cartuple[0]][-1] == edge:
                             cluster["cars"].pop(0) #Remove car from this edge
                             break
 
@@ -341,7 +346,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                             blockingLinks[node] = []
                         #print(node.getID()) #Matches the IDs on the traffic light list
                         #print(node.getType()) #zipper #traffic_light_right_on_red #dead_end
-                        #print(traci.trafficlight.getIDList())
+                        #print(lights)
                         #https://sumo.dlr.de/docs/TraCI/Traffic_Lights_Value_Retrieval.html
                         #If light, look up phase, decide who gets to go, merge foe streams somehow
                         #Or just separate left turn phases or something? Would mean no need to merge
@@ -357,12 +362,12 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                             if cartuple[0] in VOIs:
                                 nextedges = []
                                 #Want all edges that current lane connects to
-                                for nextlinktuple in traci.lane.getLinks(lane):
+                                for nextlinktuple in links[lane]:
                                     nextedge = nextlinktuple[0].split("_")[0]
                                     if not nextedge in nextedges:
                                         nextedges.append(nextedge)
                             else:
-                                route = traci.vehicle.getRoute(cartuple[0])
+                                route = routes[cartuple[0]]
                                 routeind = route.index(edge)
                                 nextedges = [route[routeind+1]]
 
@@ -371,7 +376,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                             #Non-splitty cars only want to go to one
                             nextlanes = []
                             for nextedge in nextedges:
-                                for nextlanenum in range(traci.edge.getLaneNumber(nextedge)):
+                                for nextlanenum in range(lanenums[nextedge]):
                                     nextlane = nextedge + "_" + str(nextlanenum)
 
                                     #Apparently this works...
@@ -380,12 +385,10 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                                     
                                     #If non-splitty car and this nextlane doesn't go to nextnextedge, disallow it
                                     if not cartuple[0] in VOIs:
-                                        #route = traci.vehicle.getRoute(cartuple[0])
-                                        #routeind = route.index(edge)
                                         if routeind + 2 < len(route): #Else there's no next next edge, don't be picky
                                             nextnextedge = route[routeind+2]
                                             usableLane = False
-                                            for nextnextlinktuple in traci.lane.getLinks(nextlane):
+                                            for nextnextlinktuple in links[nextlane]:
                                                 if nextnextlinktuple[0].split("_")[0] == nextnextedge: #linktuple[0].split("_")[0] gives edge the link goes to
                                                     usableLane = True
                                                     break
@@ -398,17 +401,17 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                         tempnextedges = deepcopy(splitinfo[(cartuple[0], edge)])
                         for nextlane in tempnextedges:
                             nextedge = nextlane.split("_")[0]
-                            #for nextlanenum in range(traci.edge.getLaneNumber(nextedge)):
+                            #for nextlanenum in range(lanenums[nextedge]):
                             #    nextlane = nextedge+"_"+str(nextlanenum)
 
                             #Check light state
-                            if node in traci.trafficlight.getIDList():
+                            if node in lights:
                                 isGreenLight = False
-                                linklistlist = traci.trafficlight.getControlledLinks(node)
+                                linklistlist = lightlinks[node]
                                 for linklistind in range(len(linklistlist)):
                                     linkstate = lightinfo[node]["state"][linklistind]
 
-                                    if linkstate == "G" or linkstate == "g": #Next TODO: g should be blockable by opposing G
+                                    if linkstate == "G" or linkstate == "g":
                                         linklist = linklistlist[linklistind]
                                         for linktuple in linklist:
                                             if linktuple[0] == lane and linktuple[1].split("_")[0] == nextedge: #If can go from this lane to next edge, it's relevant
@@ -421,9 +424,9 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                                                             continue
                                                         
                                                         for linktuple2 in linklistlist[linklistind2]:
-                                                        
-                                                            conflicting = isIntersecting( (net.getLane(linktuple[0]).getShape()[1], (net.getLane(linktuple[1]).getShape()[0])), 
-                                                            (net.getLane(linktuple2[0]).getShape()[1], (net.getLane(linktuple2[1]).getShape()[0])) )
+                                                            conflicting = lightlinkconflicts[node][linktuple][linktuple2] #Precomputed to save time
+                                                            #conflicting = isIntersecting( (net.getLane(linktuple[0]).getShape()[1], (net.getLane(linktuple[1]).getShape()[0])), 
+                                                            #(net.getLane(linktuple2[0]).getShape()[1], (net.getLane(linktuple2[1]).getShape()[0])) )
 
                                                             if not conflicting:
                                                                 continue
@@ -440,7 +443,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                                                                         willBlock = True
                                                                     
                                                                 else:
-                                                                    blockerroute = traci.vehicle.getRoute(blocker)
+                                                                    blockerroute = routes[blocker]
                                                                     blockerrouteind = blockerroute.index(blockingEdge0)
                                                                     willBlock = blockerroute[blockerrouteind+1] == blockingEdge1
                                                             
@@ -462,7 +465,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                                 continue
 
                             #Check append to previous cluster vs. add new cluster
-                            if len(clusters[nextlane]) > 0 and abs(clusters[nextlane][-1]["time"] - time) < clusterthresh and abs(clusters[nextlane][-1]["pos"])/net.getEdge(nextedge).getSpeed() < clusterthresh:
+                            if len(clusters[nextlane]) > 0 and abs(clusters[nextlane][-1]["time"] - time) < clusterthresh and abs(clusters[nextlane][-1]["pos"])/speeds[nextedge] < clusterthresh:
                                 
                                 #Make sure there's no car on the new road that's too close
                                 if not abs(clusters[nextlane][-1]["time"] - time) < mingap:
@@ -471,7 +474,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                                     #TODO eventually: Be more precise with time and position over partial timesteps, allowing me to use larger timesteps?
                                     clusters[nextlane][-1]["pos"] = 0
                                     clusters[nextlane][-1]["time"] = time
-                                    clusters[nextlane][-1]["departure"] = time + traci.lane.getLength(nextlane)/net.getEdge(nextedge).getSpeed()
+                                    clusters[nextlane][-1]["departure"] = time + lengths[nextlane]/speeds[nextedge]
                                     if cartuple[0] in VOIs:
                                         clusters[nextlane][-1]["cars"].append((cartuple[0]+"|"+nextlane, clusters[nextlane][-1]["departure"], "Zipper append"))
                                         VOIs.append(cartuple[0]+"|"+nextlane)
@@ -486,7 +489,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                                 newcluster = dict()
                                 newcluster["pos"] = 0
                                 newcluster["time"] = time
-                                newcluster["arrival"] = time + traci.lane.getLength(nextlane)/net.getEdge(nextedge).getSpeed()
+                                newcluster["arrival"] = time + lengths[nextlane]/speeds[nextedge]
                                 newcluster["departure"] = newcluster["arrival"]
                                 if cartuple[0] in VOIs:
                                     newcluster["cars"] = [(cartuple[0]+"|"+nextlane, newcluster["departure"], "Zipper new cluster")]
@@ -616,6 +619,8 @@ if __name__ == "__main__":
     #NOTE: Script name is zeroth arg
     sumoconfig = sys.argv[2]
     netfile = sys.argv[1]
+    network = sumolib.net.readNet(netfile)
+    net = network
     rerouters = generate_additionalfile(sumoconfig, netfile)
 
     # this is the normal way of using traci. sumo is started as a
@@ -624,6 +629,40 @@ if __name__ == "__main__":
                              "--additional-files", "additional_autogen.xml",
                              "--log", "LOGFILE", "--xml-validation", "never"], label="main")
 
-    
-    run(netfile, rerouters)
+    #Grab stuff once at the start to avoid slow calls to traci in the routing
+    lightphasedata = dict()
+    lightlinks = dict()
+    lights = traci.trafficlight.getIDList()
+    lightlinkconflicts = dict()
+    for light in lights:
+        lightlinkconflicts[light] = dict()
+        lightphasedata[light] = traci.trafficlight.getCompleteRedYellowGreenDefinition(light)[0].phases
+        lightlinks[light] = traci.trafficlight.getControlledLinks(light)
+
+        linklistlist = lightlinks[light]
+        for linklist in linklistlist:
+
+            for linktuple in linklist:
+                lightlinkconflicts[light][linktuple] = dict()
+                for linklist2 in linklistlist:
+                    for linktuple2 in linklist2:
+                        lightlinkconflicts[light][linktuple][linktuple2] = isIntersecting( (network.getLane(linktuple[0]).getShape()[1], (net.getLane(linktuple[1]).getShape()[0])), 
+                        (net.getLane(linktuple2[0]).getShape()[1], (network.getLane(linktuple2[1]).getShape()[0])) )
+
+
+    lanenums = dict()
+    speeds = dict()
+    edges = traci.edge.getIDList()
+    for edge in edges:
+        if not edge[0] == ":":
+            lanenums[edge] = traci.edge.getLaneNumber(edge)
+            speeds[edge] = network.getEdge(edge).getSpeed()
+
+    links = dict()
+    lengths = dict()
+    for lane in traci.lane.getIDList():
+        links[lane] = traci.lane.getLinks(lane)
+        lengths[lane] = traci.lane.getLength(lane)
+
+    run(network, rerouters)
     traci.close()

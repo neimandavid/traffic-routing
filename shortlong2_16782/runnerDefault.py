@@ -402,6 +402,20 @@ def generate_additionalfile(sumoconfig, networkfile):
     
     return rerouters
 
+def readSumoCfg(sumocfg):
+    netfile = ""
+    roufile = ""
+    with open(sumocfg, "r") as cfgfile:
+        lines = cfgfile.readlines()
+        for line in lines:
+            if "net-file" in line:
+                data = line.split('"')
+                netfile = data[1]
+            if "route-files" in line: #This is scary - probably breaks if there's many of them
+                data = line.split('"')
+                roufile = data[1]
+    return (netfile, roufile)
+
 # this is the main entry point of this script
 if __name__ == "__main__":
     options = get_options()
@@ -414,8 +428,12 @@ if __name__ == "__main__":
         sumoBinary = checkBinary('sumo-gui')
 
     #NOTE: Script name is zeroth arg
-    sumoconfig = sys.argv[2]
-    netfile = sys.argv[1]
+    if len(sys.argv) == 2:
+        sumoconfig = sys.argv[1]
+        (netfile, junk) = readSumoCfg(sumoconfig)
+    else:
+        sumoconfig = sys.argv[2]
+        netfile = sys.argv[1]
     rerouters = generate_additionalfile(sumoconfig, netfile)
     print("MAX_EDGE_SPEED 2.0: {}".format(max_edge_speed))
 

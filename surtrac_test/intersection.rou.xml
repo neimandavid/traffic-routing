@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2021-09-30 20:22:03 by Eclipse SUMO netedit Version 1.9.2
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <sumo-net-file value="intersection.net.xml"/>
+    </input>
+
+    <output>
+        <output-file value="intersection.net.xml"/>
+    </output>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="false"/>
+    </processing>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="5"/>
+        <junctions.limit-turn-speed value="5.5"/>
+        <rectangular-lane-cut value="false"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="false"/>
+    </pedestrian>
+
+    <netedit>
+        <route-files value="/usr/local/Cellar/sumo/shortlong2/shortlong.rou.xml"/>
+    </netedit>
+
+    <report>
+        <aggregate-warnings value="5"/>
+    </report>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+
+    <!--vType id="noVar" accel="0.8" decel="4.5" sigma="0.5" length="5" maxSpeed="70" speedDev="0.0"/-->
+    <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
+
+    <flow id="SflowLR" type="noVar" from="Lin" to="Rout" begin="0" end="2100" number="300"/>
+    <flow id="SflowLU" type="noVar" from="Lin" to="Uout" begin="0" end="2100" number="100"/>
+    <flow id="SflowLD" type="noVar" from="Lin" to="Dout" begin="0" end="2100" number="100"/>
+    <flow id="SflowRL" type="noVar" from="Rin" to="Lout" begin="0" end="2100" number="300"/>
+    <flow id="SflowRU" type="noVar" from="Rin" to="Uout" begin="0" end="2100" number="100"/>
+    <flow id="SflowRD" type="noVar" from="Rin" to="Dout" begin="0" end="2100" number="100"/>
+    <flow id="SflowUD" type="noVar" from="Uin" to="Dout" begin="0" end="2100" number="150"/>
+    <flow id="SflowUL" type="noVar" from="Uin" to="Lout" begin="0" end="2100" number="50"/>
+    <flow id="SflowUR" type="noVar" from="Uin" to="Rout" begin="0" end="2100" number="50"/>
+    <flow id="SflowDU" type="noVar" from="Din" to="Uout" begin="0" end="2100" number="150"/>
+    <flow id="SflowDL" type="noVar" from="Din" to="Lout" begin="0" end="2100" number="50"/>
+    <flow id="SflowDR" type="noVar" from="Din" to="Rout" begin="0" end="2100" number="50"/>
+</routes>
