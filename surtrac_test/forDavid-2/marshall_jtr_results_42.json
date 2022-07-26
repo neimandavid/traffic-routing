@@ -1,0 +1,169 @@
+{
+    "avg_delay": 54.8328346674027,
+    "avg_stop": 2.2922991995583772,
+    "edge_results": [
+        {
+            "delay": 0.516079027355623,
+            "edge": "BrandtSchool_FranklinToSouth",
+            "vehs": 329.0
+        },
+        {
+            "delay": 17.530787589498807,
+            "edge": "BrandtSchool_FranklinToWexfordBayne",
+            "vehs": 419.0
+        },
+        {
+            "delay": 6.524439024390244,
+            "edge": "BrandtSchool_SouthToFranklin",
+            "vehs": 410.0
+        },
+        {
+            "delay": 3.892721382289417,
+            "edge": "BrandtSchool_WexfordBayneToFranklin",
+            "vehs": 463.0
+        },
+        {
+            "delay": 17.565882352941177,
+            "edge": "Childrens_ParkingToWexfordBayne",
+            "vehs": 68.0
+        },
+        {
+            "delay": 1.0040909090909091,
+            "edge": "Childrens_WexfordBayneToParking",
+            "vehs": 44.0
+        },
+        {
+            "delay": 0.7007534246575342,
+            "edge": "Franklin_BrandtSchoolToParking",
+            "vehs": 146.0
+        },
+        {
+            "delay": 14.614782608695652,
+            "edge": "Franklin_ParkingToBrandtSchool",
+            "vehs": 69.0
+        },
+        {
+            "delay": 0.9002479338842976,
+            "edge": "GardenCenter_BrandtSchoolToParking",
+            "vehs": 121.0
+        },
+        {
+            "delay": 14.789102564102564,
+            "edge": "GardenCenter_ParkingToBrandtSchool",
+            "vehs": 78.0
+        },
+        {
+            "delay": 23.98829383886256,
+            "edge": "I79NB_SouthToWexfordBayne",
+            "vehs": 633.0
+        },
+        {
+            "delay": 1.026823734729494,
+            "edge": "I79NB_WexfordBayneToNorth",
+            "vehs": 573.0
+        },
+        {
+            "delay": 38.09167701863354,
+            "edge": "I79SB_NorthToWexfordBayne",
+            "vehs": 644.0
+        },
+        {
+            "delay": 0.6955974842767296,
+            "edge": "I79SB_WexfordBayneToSouth",
+            "vehs": 477.0
+        },
+        {
+            "delay": 16.41232044198895,
+            "edge": "Mingo_MarshallToWexfordBayne",
+            "vehs": 181.0
+        },
+        {
+            "delay": 0.6058823529411765,
+            "edge": "Mingo_WexfordBayneToMarshall",
+            "vehs": 68.0
+        },
+        {
+            "delay": 5.803374384236453,
+            "edge": "Nicholson_CarmodyToWexfordBayne",
+            "vehs": 406.0
+        },
+        {
+            "delay": 1.032962962962963,
+            "edge": "Nicholson_WexfordBayneToCarmody",
+            "vehs": 297.0
+        },
+        {
+            "delay": 13.51,
+            "edge": "VIP_NorthToWexfordBayne",
+            "vehs": 246.0
+        },
+        {
+            "delay": 0.49360655737704917,
+            "edge": "VIP_WexfordBayneToNorth",
+            "vehs": 183.0
+        },
+        {
+            "delay": 11.718677390527256,
+            "edge": "WexfordBayne_BrandtSchoolToI79NB",
+            "vehs": 1119.0
+        },
+        {
+            "delay": 9.621805555555556,
+            "edge": "WexfordBayne_BrandtSchoolToMingo",
+            "vehs": 936.0
+        },
+        {
+            "delay": 11.216480263157894,
+            "edge": "WexfordBayne_GeorgetownToNicholson",
+            "vehs": 304.0
+        },
+        {
+            "delay": 15.25483969465649,
+            "edge": "WexfordBayne_I79NBToBrandtSchool",
+            "vehs": 1310.0
+        },
+        {
+            "delay": 14.71025,
+            "edge": "WexfordBayne_I79NBToI79SB",
+            "vehs": 840.0
+        },
+        {
+            "delay": 18.243319796954314,
+            "edge": "WexfordBayne_I79SBToI79NB",
+            "vehs": 985.0
+        },
+        {
+            "delay": 6.401253822629969,
+            "edge": "WexfordBayne_I79SBToNicholson",
+            "vehs": 654.0
+        },
+        {
+            "delay": 10.657164404223227,
+            "edge": "WexfordBayne_LiedeckerToMingo",
+            "vehs": 663.0
+        },
+        {
+            "delay": 23.845344129554658,
+            "edge": "WexfordBayne_MingoToBrandtSchool",
+            "vehs": 741.0
+        },
+        {
+            "delay": 1.0958805031446541,
+            "edge": "WexfordBayne_MingoToLiedecker",
+            "vehs": 954.0
+        },
+        {
+            "delay": 0.6921090047393365,
+            "edge": "WexfordBayne_NicholsonToGeorgetown",
+            "vehs": 422.0
+        },
+        {
+            "delay": 28.34060185185185,
+            "edge": "WexfordBayne_NicholsonToI79SB",
+            "vehs": 648.0
+        }
+    ],
+    "std_delay": 37.36675812246672,
+    "std_stop": 1.4849930273841125,
+    "total_vehs": 3623
+}

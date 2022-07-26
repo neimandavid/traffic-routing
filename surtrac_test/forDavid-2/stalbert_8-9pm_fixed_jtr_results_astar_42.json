@@ -1,0 +1,326 @@
+{
+    "avg_delay": 64.36326537433158,
+    "edge_results": [
+        {
+            "delay": 0.9819767441860465,
+            "edge": "Akins_BoudreauToSouth",
+            "vehs": 86.0
+        },
+        {
+            "delay": 23.01794117647059,
+            "edge": "Akins_SouthToBoudreau",
+            "vehs": 68.0
+        },
+        {
+            "delay": 0.60125,
+            "edge": "Beaverbrook_BoudreauToSouth",
+            "vehs": 8.0
+        },
+        {
+            "delay": 31.576,
+            "edge": "Beaverbrook_SouthToBoudreau",
+            "vehs": 10.0
+        },
+        {
+            "delay": 0.6547424892703863,
+            "edge": "Bellerose_BoudreauToEvergreen",
+            "vehs": 466.0
+        },
+        {
+            "delay": 0.48892857142857143,
+            "edge": "Bellerose_BoudreauToSouth",
+            "vehs": 224.0
+        },
+        {
+            "delay": 29.302797427652735,
+            "edge": "Bellerose_EvergreenToBoudreau",
+            "vehs": 311.0
+        },
+        {
+            "delay": 18.639375,
+            "edge": "Bellerose_SouthToBoudreau",
+            "vehs": 336.0
+        },
+        {
+            "delay": 16.94698630136986,
+            "edge": "Boudreau_AkinsToCampbell",
+            "vehs": 511.0
+        },
+        {
+            "delay": 10.19566889632107,
+            "edge": "Boudreau_AkinsToHebert",
+            "vehs": 598.0
+        },
+        {
+            "delay": 13.63619341563786,
+            "edge": "Boudreau_BeaverbrookToSWC",
+            "vehs": 486.0
+        },
+        {
+            "delay": 8.907397260273973,
+            "edge": "Boudreau_BeaverbrookToSturgeon",
+            "vehs": 657.0
+        },
+        {
+            "delay": 13.786061320754717,
+            "edge": "Boudreau_BelleroseToErinRidge",
+            "vehs": 424.0
+        },
+        {
+            "delay": 13.878402255639097,
+            "edge": "Boudreau_BelleroseToSturgeon",
+            "vehs": 532.0
+        },
+        {
+            "delay": 4.724251592356688,
+            "edge": "Boudreau_CampbellToAkins",
+            "vehs": 628.0
+        },
+        {
+            "delay": 1.7396875,
+            "edge": "Boudreau_CampbellToCurial",
+            "vehs": 448.0
+        },
+        {
+            "delay": 20.345925925925926,
+            "edge": "Boudreau_CurialToCampbell",
+            "vehs": 270.0
+        },
+        {
+            "delay": 0.5421728395061729,
+            "edge": "Boudreau_CurialToVeness",
+            "vehs": 405.0
+        },
+        {
+            "delay": 16.43650557620818,
+            "edge": "Boudreau_ErinRidgeToBellerose",
+            "vehs": 269.0
+        },
+        {
+            "delay": 0.9284749999999999,
+            "edge": "Boudreau_ErinRidgeToStAlbertTrail",
+            "vehs": 400.0
+        },
+        {
+            "delay": 12.876832298136646,
+            "edge": "Boudreau_ForestToHebert",
+            "vehs": 483.0
+        },
+        {
+            "delay": 17.576808510638298,
+            "edge": "Boudreau_ForestToSWC",
+            "vehs": 611.0
+        },
+        {
+            "delay": 5.554352720450282,
+            "edge": "Boudreau_HebertToAkins",
+            "vehs": 533.0
+        },
+        {
+            "delay": 2.9048298217179904,
+            "edge": "Boudreau_HebertToForest",
+            "vehs": 617.0
+        },
+        {
+            "delay": 7.90984802431611,
+            "edge": "Boudreau_SWCToBeaverbrook",
+            "vehs": 658.0
+        },
+        {
+            "delay": 4.269697580645161,
+            "edge": "Boudreau_SWCToForest",
+            "vehs": 496.0
+        },
+        {
+            "delay": 11.862129963898917,
+            "edge": "Boudreau_StAlbertTrailToErinRidge",
+            "vehs": 277.0
+        },
+        {
+            "delay": 3.7266125760649085,
+            "edge": "Boudreau_SturgeonToBeaverbrook",
+            "vehs": 493.0
+        },
+        {
+            "delay": 32.12938420348059,
+            "edge": "Boudreau_SturgeonToBellerose",
+            "vehs": 747.0
+        },
+        {
+            "delay": 4.286060606060606,
+            "edge": "Boudreau_VenessToCurial",
+            "vehs": 198.0
+        },
+        {
+            "delay": 5.831017441860465,
+            "edge": "Campbell_BoudreauToCarswell",
+            "vehs": 344.0
+        },
+        {
+            "delay": 0.5837426900584795,
+            "edge": "Campbell_BoudreauToPoirier",
+            "vehs": 171.0
+        },
+        {
+            "delay": 8.474880239520958,
+            "edge": "Campbell_CarswellToBoudreau",
+            "vehs": 668.0
+        },
+        {
+            "delay": 0.4531550802139037,
+            "edge": "Campbell_CarswellToSouth",
+            "vehs": 187.0
+        },
+        {
+            "delay": 25.365584415584415,
+            "edge": "Campbell_PoirierToBoudreau",
+            "vehs": 154.0
+        },
+        {
+            "delay": 5.910932944606414,
+            "edge": "Campbell_SouthToCarswell",
+            "vehs": 686.0
+        },
+        {
+            "delay": 0.8426470588235294,
+            "edge": "Carnegie_BoudreauToNorth",
+            "vehs": 34.0
+        },
+        {
+            "delay": 14.064871794871793,
+            "edge": "Carnegie_NorthToBoudreau",
+            "vehs": 78.0
+        },
+        {
+            "delay": 0.7935795454545453,
+            "edge": "Carswell_CampbellToParking",
+            "vehs": 176.0
+        },
+        {
+            "delay": 24.793333333333333,
+            "edge": "Carswell_ParkingToCampbell",
+            "vehs": 12.0
+        },
+        {
+            "delay": 1.0111363636363637,
+            "edge": "Curial_BoudreauToSouth",
+            "vehs": 44.0
+        },
+        {
+            "delay": 15.801290322580645,
+            "edge": "Curial_SouthToBoudreau",
+            "vehs": 31.0
+        },
+        {
+            "delay": 0.4925735294117647,
+            "edge": "ErinRidge_BoudreauToNorth",
+            "vehs": 136.0
+        },
+        {
+            "delay": 22.21140625,
+            "edge": "ErinRidge_NorthToBoudreau",
+            "vehs": 64.0
+        },
+        {
+            "delay": 0.8744999999999999,
+            "edge": "Forest_BoudreauToNorth",
+            "vehs": 40.0
+        },
+        {
+            "delay": 0.605,
+            "edge": "Forest_BoudreauToSouth",
+            "vehs": 26.0
+        },
+        {
+            "delay": 20.336666666666666,
+            "edge": "Forest_NorthToBoudreau",
+            "vehs": 24.0
+        },
+        {
+            "delay": 19.930000000000003,
+            "edge": "Forest_SouthToBoudreau",
+            "vehs": 35.0
+        },
+        {
+            "delay": 0.5900854700854702,
+            "edge": "Hebert_BoudreauToWest",
+            "vehs": 117.0
+        },
+        {
+            "delay": 27.812051282051282,
+            "edge": "Hebert_WestToBoudreau",
+            "vehs": 195.0
+        },
+        {
+            "delay": 0.6141772151898734,
+            "edge": "Inglewood_BoudreauToSouth",
+            "vehs": 79.0
+        },
+        {
+            "delay": 24.20598484848485,
+            "edge": "Inglewood_SouthToBoudreau",
+            "vehs": 132.0
+        },
+        {
+            "delay": 0.8970175438596492,
+            "edge": "Page_BoudreauToNorth",
+            "vehs": 57.0
+        },
+        {
+            "delay": 28.278285714285715,
+            "edge": "Page_NorthToBoudreau",
+            "vehs": 35.0
+        },
+        {
+            "delay": 1.1506306306306306,
+            "edge": "SWC_BoudreauToPark",
+            "vehs": 111.0
+        },
+        {
+            "delay": 0.6409090909090909,
+            "edge": "SWC_BoudreauToSouth",
+            "vehs": 77.0
+        },
+        {
+            "delay": 17.942252747252745,
+            "edge": "SWC_ParkToBoudreau",
+            "vehs": 182.0
+        },
+        {
+            "delay": 42.134,
+            "edge": "SWC_SouthToBoudreau",
+            "vehs": 80.0
+        },
+        {
+            "delay": 0.6175641025641025,
+            "edge": "Sturgeon_BoudreauToNorth",
+            "vehs": 78.0
+        },
+        {
+            "delay": 0.7531428571428571,
+            "edge": "Sturgeon_BoudreauToSouth",
+            "vehs": 35.0
+        },
+        {
+            "delay": 25.47045045045045,
+            "edge": "Sturgeon_NorthToBoudreau",
+            "vehs": 111.0
+        },
+        {
+            "delay": 26.941625,
+            "edge": "Sturgeon_SouthToBoudreau",
+            "vehs": 80.0
+        },
+        {
+            "delay": 1.0145,
+            "edge": "Westwood_BoudreauToNorth",
+            "vehs": 40.0
+        },
+        {
+            "delay": 30.722444444444445,
+            "edge": "Westwood_NorthToBoudreau",
+            "vehs": 45.0
+        }
+    ],
+    "total_vehs": 2992
+}

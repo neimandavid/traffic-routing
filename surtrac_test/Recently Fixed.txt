@@ -1,0 +1,5 @@
+key for dominance in Surtrac needs to use newschedule not schedule. And needs to use newschedule[1].values; by default, it grabs the keys, which is trivial
+
+Added min/max durations into the rou file for blocks2...
+
+Links <50m long could cause problems (don't think there's a detector). Links barely longer than 50m could cause problems if cars need to lane-change after hitting the detector. My current answer is to just not route in these cases, but maybe I can do better?

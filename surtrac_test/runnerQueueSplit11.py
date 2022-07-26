@@ -456,7 +456,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
         #Count left turns
         for id in locDict:
-            if traci.vehicle.getRoadID(id) != locDict[id] and traci.vehicle.getRoadID(id)[0] != ":":
+            if traci.vehicle.getRoadID(id) != locDict[id] and len(traci.vehicle.getRoadID(id)) > 0 and  traci.vehicle.getRoadID(id)[0] != ":": #TODO why is getRoadID returning empty string
                 c0 = network.getEdge(locDict[id]).getFromNode().getCoord()
                 c1 = network.getEdge(locDict[id]).getToNode().getCoord()
                 theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
@@ -581,10 +581,18 @@ def QueueReroute(detector, network, simtime, rerouteAuto=True):
         return
 
     # getRoadID: Returns the edge id the vehicle was last on
-    edge = traci.vehicle.getRoadID(ids[0])
+    #edge = traci.vehicle.getRoadID(ids[0])
+
+    edge = traci.inductionloop.getLaneID(detector).split("_")[0]
     
     for vehicle in ids:
-        
+        try:
+            if traci.vehicle.getRoadID(vehicle) != edge:
+                #Vehicle isn't on same edge as detector. Stuff is going wrong, skip this.
+                continue
+        except: #Vehicle off network already??
+            continue
+
         if rerouteAuto and detector in oldids and vehicle in oldids[detector]:
             #print("Duplicate car " + vehicle + " at detector " + detector)
             continue
@@ -685,6 +693,9 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
             routes[vehicle] = sampleRouteFromTurnData(vehicle, traci.vehicle.getLaneID(vehicle), turndata)
 
     goalEdge = routes[vehicleOfInterest][-1]
+    print(startedge)
+    print(goalEdge)
+    print(routes[vehicleOfInterest])
     splitinfo = dict()
     VOIs = [vehicleOfInterest]
 
@@ -700,6 +711,19 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
         else:
             edgeind += 1
 
+    #Make sure we start in a lane that can go to the next lane
+    startedgeind = routes[vehicleOfInterest].index(startedge)
+    if startedgeind != len(routes[vehicleOfInterest])-1:
+        startLaneBad = True
+        for firstlinktuple in links[traci.vehicle.getLaneID(vehicleOfInterest)]:
+            if firstlinktuple[0].split("_")[0] == routes[vehicleOfInterest][startedgeind+1]:
+                startLaneBad = False
+                break
+        if startLaneBad:
+            #TODO pretend we're in a different starting lane. For now, just give up
+            return (routes[vehicleOfInterest][startedgeind:-1], -1)
+
+
     queueSimPredClusters = pickle.loads(pickle.dumps(sumoPredClusters)) #Initial predicted clusters are whatever SUMO's Surtrac thinks it is
     toUpdate = []
     remainingDuration = []
@@ -711,6 +735,9 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
         #Update lights
         if time%surtracFreq >= (time+timestep)%surtracFreq:
             (toUpdate, queueSimPredClusters, remainingDuration) = doSurtrac(net, time, clusters, lightinfo, queueSimPredClusters)
+            print("\n")
+            print(toUpdate)
+            print(remainingDuration)
 
         #I'm now assuming we won't skip a phase between updates. Hopefully fine.
         for light in toUpdate:
@@ -722,6 +749,8 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
             phaseind = lightinfo[light]["index"]
             lightinfo[light]["switchtime"] += phases[phaseind].duration
             lightinfo[light]["state"] = phases[phaseind].state
+
+        print(lightinfo)
         
         #Keep track of what lights change when, since we're not running Surtrac every timestep
         toUpdate = []
@@ -741,6 +770,9 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                 toUpdate.append(light)
 
         #Sanity check for debugging infinite loops where the vehicle of interest disappears
+        #print("Start sanity check")
+        print("\n")
+        print(clusters)
         notEmpty = False
         for thing in clusters:
             for thingnum in range(len(clusters[thing])):
@@ -908,6 +940,8 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                             if not isGreenLight:
                                 continue
 
+                            #Can reach nextedge (specifically nextlane). Add to it?
+
                             #Check append to previous cluster vs. add new cluster
                             if len(clusters[nextlane]) > 0 and abs(clusters[nextlane][-1]["time"] - time) < clusterthresh and abs(clusters[nextlane][-1]["pos"])/speeds[nextedge] < clusterthresh:
                                 
@@ -945,7 +979,10 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
                                 clusters[nextlane].append(newcluster)
 
                             #We've added a car to nextedge_nextlanenum
-                            blockingLinks[node].append(linktuple)
+                            try:
+                                blockingLinks[node].append(linktuple)
+                            except:
+                                pass
                             splitinfo[(cartuple[0], edge)].remove(nextlane)
                             #Before, we'd break out of the lane loop because we'd only add to each edge once
                             #Now, we only get to break if it's a non-splitty car (splitty car goes to all nextlanes)
@@ -1160,7 +1197,8 @@ def main(sumoconfig, pSmart, verbose = True):
                     for linktuple2 in linklist2:
                         lightlinkconflicts[light][linktuple][linktuple2] = isIntersecting( (network.getLane(linktuple[0]).getShape()[1], (net.getLane(linktuple[1]).getShape()[0])), 
                         (net.getLane(linktuple2[0]).getShape()[1], (network.getLane(linktuple2[1]).getShape()[0])) )
-    
+    print(lightphasedata)
+    asdf
     #Surtrac data
     for light in lights:
         surtracdata[light] = []

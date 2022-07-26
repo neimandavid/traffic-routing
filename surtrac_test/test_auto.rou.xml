@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+
+<vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
+<route id="route_UD.0" edges="Uin Dout" />
+<vehicle type="noVar" depart="0" id="UD.0" route="route_UD.0" />
+<route id="route_DU.0" edges="Din Uout" />
+<vehicle type="noVar" depart="0" id="DU.0" route="route_DU.0" />
+<route id="route_UD.1" edges="Uin Dout" />
+<vehicle type="noVar" depart="4" id="UD.1" route="route_UD.1" />
+<route id="route_DU.1" edges="Din Uout" />
+<vehicle type="noVar" depart="4" id="DU.1" route="route_DU.1" />
+<route id="route_UD.2" edges="Uin Dout" />
+<vehicle type="noVar" depart="8" id="UD.2" route="route_UD.2" />
+<route id="route_DU.2" edges="Din Uout" />
+<vehicle type="noVar" depart="8" id="DU.2" route="route_DU.2" />
+<route id="route_UD.3" edges="Uin Dout" />
+<vehicle type="noVar" depart="12" id="UD.3" route="route_UD.3" />
+<route id="route_DU.3" edges="Din Uout" />
+<vehicle type="noVar" depart="12" id="DU.3" route="route_DU.3" />
+<route id="route_UD.4" edges="Uin Dout" />
+<vehicle type="noVar" depart="16" id="UD.4" route="route_UD.4" />
+<route id="route_DU.4" edges="Din Uout" />
+<vehicle type="noVar" depart="16" id="DU.4" route="route_DU.4" />
+<route id="route_UD.5" edges="Uin Dout" />
+<vehicle type="noVar" depart="20" id="UD.5" route="route_UD.5" />
+<route id="route_DU.5" edges="Din Uout" />
+<vehicle type="noVar" depart="20" id="DU.5" route="route_DU.5" />
+<route id="route_UD.6" edges="Uin Dout" />
+<vehicle type="noVar" depart="24" id="UD.6" route="route_UD.6" />
+<route id="route_DU.6" edges="Din Uout" />
+<vehicle type="noVar" depart="24" id="DU.6" route="route_DU.6" />
+<route id="route_UD.7" edges="Uin Dout" />
+<vehicle type="noVar" depart="28" id="UD.7" route="route_UD.7" />
+<route id="route_DU.7" edges="Din Uout" />
+<vehicle type="noVar" depart="28" id="DU.7" route="route_DU.7" />
+<route id="route_UD.8" edges="Uin Dout" />
+<vehicle type="noVar" depart="32" id="UD.8" route="route_UD.8" />
+<route id="route_DU.8" edges="Din Uout" />
+<vehicle type="noVar" depart="32" id="DU.8" route="route_DU.8" />
+<route id="route_UD.9" edges="Uin Dout" />
+<vehicle type="noVar" depart="36" id="UD.9" route="route_UD.9" />
+<route id="route_DU.9" edges="Din Uout" />
+<vehicle type="noVar" depart="36" id="DU.9" route="route_DU.9" />
+<route id="route_UD.10" edges="Uin Dout" />
+<vehicle type="noVar" depart="40" id="UD.10" route="route_UD.10" />
+<route id="route_DU.10" edges="Din Uout" />
+<vehicle type="noVar" depart="40" id="DU.10" route="route_DU.10" />
+<route id="route_UD.11" edges="Uin Dout" />
+<vehicle type="noVar" depart="44" id="UD.11" route="route_UD.11" />
+<route id="route_DU.11" edges="Din Uout" />
+<vehicle type="noVar" depart="44" id="DU.11" route="route_DU.11" />
+<route id="route_UD.12" edges="Uin Dout" />
+<vehicle type="noVar" depart="48" id="UD.12" route="route_UD.12" />
+<route id="route_DU.12" edges="Din Uout" />
+<vehicle type="noVar" depart="48" id="DU.12" route="route_DU.12" />
+<route id="route_LR.0" edges="Lin Rout" />
+<vehicle type="noVar" depart="50" id="LR.0" route="route_LR.0" />
+<route id="route_RL.0" edges="Rin Lout" />
+<vehicle type="noVar" depart="50" id="RL.0" route="route_RL.0" />
+<route id="route_UD.13" edges="Uin Dout" />
+<vehicle type="noVar" depart="52" id="UD.13" route="route_UD.13" />
+<route id="route_DU.13" edges="Din Uout" />
+<vehicle type="noVar" depart="52" id="DU.13" route="route_DU.13" />
+<route id="route_LR.1" edges="Lin Rout" />
+<vehicle type="noVar" depart="53" id="LR.1" route="route_LR.1" />
+<route id="route_RL.1" edges="Rin Lout" />
+<vehicle type="noVar" depart="53" id="RL.1" route="route_RL.1" />
+<route id="route_UD.14" edges="Uin Dout" />
+<vehicle type="noVar" depart="56" id="UD.14" route="route_UD.14" />
+<route id="route_DU.14" edges="Din Uout" />
+<vehicle type="noVar" depart="56" id="DU.14" route="route_DU.14" />
+<route id="route_LR.2" edges="Lin Rout" />
+<vehicle type="noVar" depart="56" id="LR.2" route="route_LR.2" />
+<route id="route_RL.2" edges="Rin Lout" />
+<vehicle type="noVar" depart="56" id="RL.2" route="route_RL.2" />
+<route id="route_LR.3" edges="Lin Rout" />
+<vehicle type="noVar" depart="59" id="LR.3" route="route_LR.3" />
+<route id="route_RL.3" edges="Rin Lout" />
+<vehicle type="noVar" depart="59" id="RL.3" route="route_RL.3" />
+<route id="route_UD.15" edges="Uin Dout" />
+<vehicle type="noVar" depart="60" id="UD.15" route="route_UD.15" />
+<route id="route_DU.15" edges="Din Uout" />
+<vehicle type="noVar" depart="60" id="DU.15" route="route_DU.15" />
+<route id="route_LR.4" edges="Lin Rout" />
+<vehicle type="noVar" depart="62" id="LR.4" route="route_LR.4" />
+<route id="route_RL.4" edges="Rin Lout" />
+<vehicle type="noVar" depart="62" id="RL.4" route="route_RL.4" />
+<route id="route_UD.16" edges="Uin Dout" />
+<vehicle type="noVar" depart="64" id="UD.16" route="route_UD.16" />
+<route id="route_DU.16" edges="Din Uout" />
+<vehicle type="noVar" depart="64" id="DU.16" route="route_DU.16" />
+<route id="route_LR.5" edges="Lin Rout" />
+<vehicle type="noVar" depart="65" id="LR.5" route="route_LR.5" />
+<route id="route_RL.5" edges="Rin Lout" />
+<vehicle type="noVar" depart="65" id="RL.5" route="route_RL.5" />
+<route id="route_LR.6" edges="Lin Rout" />
+<vehicle type="noVar" depart="68" id="LR.6" route="route_LR.6" />
+<route id="route_RL.6" edges="Rin Lout" />
+<vehicle type="noVar" depart="68" id="RL.6" route="route_RL.6" />
+<route id="route_UD.17" edges="Uin Dout" />
+<vehicle type="noVar" depart="68" id="UD.17" route="route_UD.17" />
+<route id="route_DU.17" edges="Din Uout" />
+<vehicle type="noVar" depart="68" id="DU.17" route="route_DU.17" />
+<route id="route_LR.7" edges="Lin Rout" />
+<vehicle type="noVar" depart="71" id="LR.7" route="route_LR.7" />
+<route id="route_RL.7" edges="Rin Lout" />
+<vehicle type="noVar" depart="71" id="RL.7" route="route_RL.7" />
+<route id="route_UD.18" edges="Uin Dout" />
+<vehicle type="noVar" depart="72" id="UD.18" route="route_UD.18" />
+<route id="route_DU.18" edges="Din Uout" />
+<vehicle type="noVar" depart="72" id="DU.18" route="route_DU.18" />
+<route id="route_LR.8" edges="Lin Rout" />
+<vehicle type="noVar" depart="74" id="LR.8" route="route_LR.8" />
+<route id="route_RL.8" edges="Rin Lout" />
+<vehicle type="noVar" depart="74" id="RL.8" route="route_RL.8" />
+<route id="route_UD.19" edges="Uin Dout" />
+<vehicle type="noVar" depart="76" id="UD.19" route="route_UD.19" />
+<route id="route_DU.19" edges="Din Uout" />
+<vehicle type="noVar" depart="76" id="DU.19" route="route_DU.19" />
+<route id="route_LR.9" edges="Lin Rout" />
+<vehicle type="noVar" depart="77" id="LR.9" route="route_LR.9" />
+<route id="route_RL.9" edges="Rin Lout" />
+<vehicle type="noVar" depart="77" id="RL.9" route="route_RL.9" />
+<route id="route_LR.10" edges="Lin Rout" />
+<vehicle type="noVar" depart="80" id="LR.10" route="route_LR.10" />
+<route id="route_UD.20" edges="Uin Dout" />
+<vehicle type="noVar" depart="80" id="UD.20" route="route_UD.20" />
+<route id="route_DU.20" edges="Din Uout" />
+<vehicle type="noVar" depart="80" id="DU.20" route="route_DU.20" />
+<route id="route_RL.10" edges="Rin Lout" />
+<vehicle type="noVar" depart="81" id="RL.10" route="route_RL.10" />
+<route id="route_LR.11" edges="Lin Rout" />
+<vehicle type="noVar" depart="83" id="LR.11" route="route_LR.11" />
+<route id="route_RL.11" edges="Rin Lout" />
+<vehicle type="noVar" depart="84" id="RL.11" route="route_RL.11" />
+<route id="route_UD.21" edges="Uin Dout" />
+<vehicle type="noVar" depart="84" id="UD.21" route="route_UD.21" />
+<route id="route_DU.21" edges="Din Uout" />
+<vehicle type="noVar" depart="84" id="DU.21" route="route_DU.21" />
+<route id="route_LR.12" edges="Lin Rout" />
+<vehicle type="noVar" depart="86" id="LR.12" route="route_LR.12" />
+<route id="route_RL.12" edges="Rin Lout" />
+<vehicle type="noVar" depart="87" id="RL.12" route="route_RL.12" />
+<route id="route_UD.22" edges="Uin Dout" />
+<vehicle type="noVar" depart="88" id="UD.22" route="route_UD.22" />
+<route id="route_DU.22" edges="Din Uout" />
+<vehicle type="noVar" depart="88" id="DU.22" route="route_DU.22" />
+<route id="route_LR.13" edges="Lin Rout" />
+<vehicle type="noVar" depart="89" id="LR.13" route="route_LR.13" />
+<route id="route_RL.13" edges="Rin Lout" />
+<vehicle type="noVar" depart="90" id="RL.13" route="route_RL.13" />
+<route id="route_LR.14" edges="Lin Rout" />
+<vehicle type="noVar" depart="92" id="LR.14" route="route_LR.14" />
+<route id="route_UD.23" edges="Uin Dout" />
+<vehicle type="noVar" depart="92" id="UD.23" route="route_UD.23" />
+<route id="route_DU.23" edges="Din Uout" />
+<vehicle type="noVar" depart="92" id="DU.23" route="route_DU.23" />
+<route id="route_RL.14" edges="Rin Lout" />
+<vehicle type="noVar" depart="93" id="RL.14" route="route_RL.14" />
+<route id="route_LR.15" edges="Lin Rout" />
+<vehicle type="noVar" depart="94" id="LR.15" route="route_LR.15" />
+<route id="route_RL.15" edges="Rin Lout" />
+<vehicle type="noVar" depart="96" id="RL.15" route="route_RL.15" />
+<route id="route_UD.24" edges="Uin Dout" />
+<vehicle type="noVar" depart="96" id="UD.24" route="route_UD.24" />
+<route id="route_DU.24" edges="Din Uout" />
+<vehicle type="noVar" depart="96" id="DU.24" route="route_DU.24" />
+<route id="route_LR.16" edges="Lin Rout" />
+<vehicle type="noVar" depart="97" id="LR.16" route="route_LR.16" />
+<route id="route_RL.16" edges="Rin Lout" />
+<vehicle type="noVar" depart="99" id="RL.16" route="route_RL.16" />
+<route id="route_LR.17" edges="Lin Rout" />
+<vehicle type="noVar" depart="100" id="LR.17" route="route_LR.17" />
+<route id="route_RL.17" edges="Rin Lout" />
+<vehicle type="noVar" depart="102" id="RL.17" route="route_RL.17" />
+<route id="route_LR.18" edges="Lin Rout" />
+<vehicle type="noVar" depart="103" id="LR.18" route="route_LR.18" />
+<route id="route_RL.18" edges="Rin Lout" />
+<vehicle type="noVar" depart="105" id="RL.18" route="route_RL.18" />
+<route id="route_LR.19" edges="Lin Rout" />
+<vehicle type="noVar" depart="106" id="LR.19" route="route_LR.19" />
+<route id="route_RL.19" edges="Rin Lout" />
+<vehicle type="noVar" depart="108" id="RL.19" route="route_RL.19" />
+<route id="route_LR.20" edges="Lin Rout" />
+<vehicle type="noVar" depart="109" id="LR.20" route="route_LR.20" />
+<route id="route_UD2.0" edges="Uin Dout" />
+<vehicle type="noVar" depart="110" id="UD2.0" route="route_UD2.0" />
+<route id="route_DU2.0" edges="Din Uout" />
+<vehicle type="noVar" depart="110" id="DU2.0" route="route_DU2.0" />
+<route id="route_RL.20" edges="Rin Lout" />
+<vehicle type="noVar" depart="111" id="RL.20" route="route_RL.20" />
+<route id="route_LR.21" edges="Lin Rout" />
+<vehicle type="noVar" depart="112" id="LR.21" route="route_LR.21" />
+<route id="route_RL.21" edges="Rin Lout" />
+<vehicle type="noVar" depart="114" id="RL.21" route="route_RL.21" />
+<route id="route_LR.22" edges="Lin Rout" />
+<vehicle type="noVar" depart="115" id="LR.22" route="route_LR.22" />
+<route id="route_UD2.1" edges="Uin Dout" />
+<vehicle type="noVar" depart="116" id="UD2.1" route="route_UD2.1" />
+<route id="route_DU2.1" edges="Din Uout" />
+<vehicle type="noVar" depart="116" id="DU2.1" route="route_DU2.1" />
+<route id="route_RL.22" edges="Rin Lout" />
+<vehicle type="noVar" depart="117" id="RL.22" route="route_RL.22" />
+<route id="route_LR.23" edges="Lin Rout" />
+<vehicle type="noVar" depart="118" id="LR.23" route="route_LR.23" />
+<route id="route_RL.23" edges="Rin Lout" />
+<vehicle type="noVar" depart="120" id="RL.23" route="route_RL.23" />
+<route id="route_LR.24" edges="Lin Rout" />
+<vehicle type="noVar" depart="121" id="LR.24" route="route_LR.24" />
+<route id="route_UD2.2" edges="Uin Dout" />
+<vehicle type="noVar" depart="122" id="UD2.2" route="route_UD2.2" />
+<route id="route_DU2.2" edges="Din Uout" />
+<vehicle type="noVar" depart="122" id="DU2.2" route="route_DU2.2" />
+<route id="route_RL.24" edges="Rin Lout" />
+<vehicle type="noVar" depart="123" id="RL.24" route="route_RL.24" />
+<route id="route_UD2.3" edges="Uin Dout" />
+<vehicle type="noVar" depart="128" id="UD2.3" route="route_UD2.3" />
+<route id="route_DU2.3" edges="Din Uout" />
+<vehicle type="noVar" depart="128" id="DU2.3" route="route_DU2.3" />
+<route id="route_UD2.4" edges="Uin Dout" />
+<vehicle type="noVar" depart="134" id="UD2.4" route="route_UD2.4" />
+<route id="route_DU2.4" edges="Din Uout" />
+<vehicle type="noVar" depart="134" id="DU2.4" route="route_DU2.4" />
+<route id="route_UD2.5" edges="Uin Dout" />
+<vehicle type="noVar" depart="140" id="UD2.5" route="route_UD2.5" />
+<route id="route_DU2.5" edges="Din Uout" />
+<vehicle type="noVar" depart="140" id="DU2.5" route="route_DU2.5" />
+<route id="route_UD2.6" edges="Uin Dout" />
+<vehicle type="noVar" depart="146" id="UD2.6" route="route_UD2.6" />
+<route id="route_DU2.6" edges="Din Uout" />
+<vehicle type="noVar" depart="146" id="DU2.6" route="route_DU2.6" />
+<route id="route_UD2.7" edges="Uin Dout" />
+<vehicle type="noVar" depart="152" id="UD2.7" route="route_UD2.7" />
+<route id="route_DU2.7" edges="Din Uout" />
+<vehicle type="noVar" depart="152" id="DU2.7" route="route_DU2.7" />
+<route id="route_UD2.8" edges="Uin Dout" />
+<vehicle type="noVar" depart="158" id="UD2.8" route="route_UD2.8" />
+<route id="route_DU2.8" edges="Din Uout" />
+<vehicle type="noVar" depart="158" id="DU2.8" route="route_DU2.8" />
+<route id="route_UD2.9" edges="Uin Dout" />
+<vehicle type="noVar" depart="164" id="UD2.9" route="route_UD2.9" />
+<route id="route_DU2.9" edges="Din Uout" />
+<vehicle type="noVar" depart="164" id="DU2.9" route="route_DU2.9" />
+<route id="route_UD2.10" edges="Uin Dout" />
+<vehicle type="noVar" depart="170" id="UD2.10" route="route_UD2.10" />
+<route id="route_DU2.10" edges="Din Uout" />
+<vehicle type="noVar" depart="170" id="DU2.10" route="route_DU2.10" />
+<route id="route_UD2.11" edges="Uin Dout" />
+<vehicle type="noVar" depart="176" id="UD2.11" route="route_UD2.11" />
+<route id="route_DU2.11" edges="Din Uout" />
+<vehicle type="noVar" depart="176" id="DU2.11" route="route_DU2.11" />
+<route id="route_UD2.12" edges="Uin Dout" />
+<vehicle type="noVar" depart="182" id="UD2.12" route="route_UD2.12" />
+<route id="route_DU2.12" edges="Din Uout" />
+<vehicle type="noVar" depart="182" id="DU2.12" route="route_DU2.12" />
+<route id="route_UD2.13" edges="Uin Dout" />
+<vehicle type="noVar" depart="188" id="UD2.13" route="route_UD2.13" />
+<route id="route_DU2.13" edges="Din Uout" />
+<vehicle type="noVar" depart="188" id="DU2.13" route="route_DU2.13" />
+<route id="route_UD2.14" edges="Uin Dout" />
+<vehicle type="noVar" depart="194" id="UD2.14" route="route_UD2.14" />
+<route id="route_DU2.14" edges="Din Uout" />
+<vehicle type="noVar" depart="194" id="DU2.14" route="route_DU2.14" />
+<route id="route_UD2.15" edges="Uin Dout" />
+<vehicle type="noVar" depart="200" id="UD2.15" route="route_UD2.15" />
+<route id="route_DU2.15" edges="Din Uout" />
+<vehicle type="noVar" depart="200" id="DU2.15" route="route_DU2.15" />
+<route id="route_UD2.16" edges="Uin Dout" />
+<vehicle type="noVar" depart="206" id="UD2.16" route="route_UD2.16" />
+<route id="route_DU2.16" edges="Din Uout" />
+<vehicle type="noVar" depart="206" id="DU2.16" route="route_DU2.16" />
+<route id="route_UD2.17" edges="Uin Dout" />
+<vehicle type="noVar" depart="212" id="UD2.17" route="route_UD2.17" />
+<route id="route_DU2.17" edges="Din Uout" />
+<vehicle type="noVar" depart="212" id="DU2.17" route="route_DU2.17" />
+<route id="route_UD2.18" edges="Uin Dout" />
+<vehicle type="noVar" depart="218" id="UD2.18" route="route_UD2.18" />
+<route id="route_DU2.18" edges="Din Uout" />
+<vehicle type="noVar" depart="218" id="DU2.18" route="route_DU2.18" />
+<route id="route_UD2.19" edges="Uin Dout" />
+<vehicle type="noVar" depart="224" id="UD2.19" route="route_UD2.19" />
+<route id="route_DU2.19" edges="Din Uout" />
+<vehicle type="noVar" depart="224" id="DU2.19" route="route_DU2.19" />
+<route id="route_UD2.20" edges="Uin Dout" />
+<vehicle type="noVar" depart="230" id="UD2.20" route="route_UD2.20" />
+<route id="route_DU2.20" edges="Din Uout" />
+<vehicle type="noVar" depart="230" id="DU2.20" route="route_DU2.20" />
+<route id="route_UD2.21" edges="Uin Dout" />
+<vehicle type="noVar" depart="236" id="UD2.21" route="route_UD2.21" />
+<route id="route_DU2.21" edges="Din Uout" />
+<vehicle type="noVar" depart="236" id="DU2.21" route="route_DU2.21" />
+<route id="route_UD2.22" edges="Uin Dout" />
+<vehicle type="noVar" depart="242" id="UD2.22" route="route_UD2.22" />
+<route id="route_DU2.22" edges="Din Uout" />
+<vehicle type="noVar" depart="242" id="DU2.22" route="route_DU2.22" />
+<route id="route_UD2.23" edges="Uin Dout" />
+<vehicle type="noVar" depart="248" id="UD2.23" route="route_UD2.23" />
+<route id="route_DU2.23" edges="Din Uout" />
+<vehicle type="noVar" depart="248" id="DU2.23" route="route_DU2.23" />
+<route id="route_LR2.0" edges="Lin Rout" />
+<vehicle type="noVar" depart="250" id="LR2.0" route="route_LR2.0" />
+<route id="route_RL2.0" edges="Rin Lout" />
+<vehicle type="noVar" depart="250" id="RL2.0" route="route_RL2.0" />
+<route id="route_LR2.1" edges="Lin Rout" />
+<vehicle type="noVar" depart="253" id="LR2.1" route="route_LR2.1" />
+<route id="route_RL2.1" edges="Rin Lout" />
+<vehicle type="noVar" depart="253" id="RL2.1" route="route_RL2.1" />
+<route id="route_UD2.24" edges="Uin Dout" />
+<vehicle type="noVar" depart="254" id="UD2.24" route="route_UD2.24" />
+<route id="route_DU2.24" edges="Din Uout" />
+<vehicle type="noVar" depart="254" id="DU2.24" route="route_DU2.24" />
+<route id="route_LR2.2" edges="Lin Rout" />
+<vehicle type="noVar" depart="256" id="LR2.2" route="route_LR2.2" />
+<route id="route_RL2.2" edges="Rin Lout" />
+<vehicle type="noVar" depart="256" id="RL2.2" route="route_RL2.2" />
+<route id="route_LR2.3" edges="Lin Rout" />
+<vehicle type="noVar" depart="259" id="LR2.3" route="route_LR2.3" />
+<route id="route_RL2.3" edges="Rin Lout" />
+<vehicle type="noVar" depart="259" id="RL2.3" route="route_RL2.3" />
+<route id="route_LR2.4" edges="Lin Rout" />
+<vehicle type="noVar" depart="262" id="LR2.4" route="route_LR2.4" />
+<route id="route_RL2.4" edges="Rin Lout" />
+<vehicle type="noVar" depart="262" id="RL2.4" route="route_RL2.4" />
+<route id="route_LR2.5" edges="Lin Rout" />
+<vehicle type="noVar" depart="265" id="LR2.5" route="route_LR2.5" />
+<route id="route_RL2.5" edges="Rin Lout" />
+<vehicle type="noVar" depart="265" id="RL2.5" route="route_RL2.5" />
+<route id="route_LR2.6" edges="Lin Rout" />
+<vehicle type="noVar" depart="268" id="LR2.6" route="route_LR2.6" />
+<route id="route_RL2.6" edges="Rin Lout" />
+<vehicle type="noVar" depart="268" id="RL2.6" route="route_RL2.6" />
+<route id="route_LR2.7" edges="Lin Rout" />
+<vehicle type="noVar" depart="271" id="LR2.7" route="route_LR2.7" />
+<route id="route_RL2.7" edges="Rin Lout" />
+<vehicle type="noVar" depart="271" id="RL2.7" route="route_RL2.7" />
+<route id="route_LR2.8" edges="Lin Rout" />
+<vehicle type="noVar" depart="274" id="LR2.8" route="route_LR2.8" />
+<route id="route_RL2.8" edges="Rin Lout" />
+<vehicle type="noVar" depart="274" id="RL2.8" route="route_RL2.8" />
+<route id="route_LR2.9" edges="Lin Rout" />
+<vehicle type="noVar" depart="277" id="LR2.9" route="route_LR2.9" />
+<route id="route_RL2.9" edges="Rin Lout" />
+<vehicle type="noVar" depart="277" id="RL2.9" route="route_RL2.9" />
+<route id="route_LR2.10" edges="Lin Rout" />
+<vehicle type="noVar" depart="280" id="LR2.10" route="route_LR2.10" />
+<route id="route_RL2.10" edges="Rin Lout" />
+<vehicle type="noVar" depart="280" id="RL2.10" route="route_RL2.10" />
+<route id="route_LR2.11" edges="Lin Rout" />
+<vehicle type="noVar" depart="283" id="LR2.11" route="route_LR2.11" />
+<route id="route_RL2.11" edges="Rin Lout" />
+<vehicle type="noVar" depart="283" id="RL2.11" route="route_RL2.11" />
+<route id="route_RL2.12" edges="Rin Lout" />
+<vehicle type="noVar" depart="286" id="RL2.12" route="route_RL2.12" />
+<route id="route_LR2.12" edges="Lin Rout" />
+<vehicle type="noVar" depart="287" id="LR2.12" route="route_LR2.12" />
+<route id="route_RL2.13" edges="Rin Lout" />
+<vehicle type="noVar" depart="289" id="RL2.13" route="route_RL2.13" />
+<route id="route_LR2.13" edges="Lin Rout" />
+<vehicle type="noVar" depart="290" id="LR2.13" route="route_LR2.13" />
+<route id="route_RL2.14" edges="Rin Lout" />
+<vehicle type="noVar" depart="292" id="RL2.14" route="route_RL2.14" />
+<route id="route_LR2.14" edges="Lin Rout" />
+<vehicle type="noVar" depart="293" id="LR2.14" route="route_LR2.14" />
+<route id="route_RL2.15" edges="Rin Lout" />
+<vehicle type="noVar" depart="295" id="RL2.15" route="route_RL2.15" />
+<route id="route_LR2.15" edges="Lin Rout" />
+<vehicle type="noVar" depart="296" id="LR2.15" route="route_LR2.15" />
+<route id="route_RL2.16" edges="Rin Lout" />
+<vehicle type="noVar" depart="298" id="RL2.16" route="route_RL2.16" />
+<route id="route_LR2.16" edges="Lin Rout" />
+<vehicle type="noVar" depart="299" id="LR2.16" route="route_LR2.16" />
+<route id="route_RL2.17" edges="Rin Lout" />
+<vehicle type="noVar" depart="301" id="RL2.17" route="route_RL2.17" />
+<route id="route_LR2.17" edges="Lin Rout" />
+<vehicle type="noVar" depart="302" id="LR2.17" route="route_LR2.17" />
+<route id="route_RL2.18" edges="Rin Lout" />
+<vehicle type="noVar" depart="304" id="RL2.18" route="route_RL2.18" />
+<route id="route_LR2.18" edges="Lin Rout" />
+<vehicle type="noVar" depart="305" id="LR2.18" route="route_LR2.18" />
+<route id="route_LR2.19" edges="Lin Rout" />
+<vehicle type="noVar" depart="307" id="LR2.19" route="route_LR2.19" />
+<route id="route_RL2.19" edges="Rin Lout" />
+<vehicle type="noVar" depart="307" id="RL2.19" route="route_RL2.19" />
+<route id="route_LR2.20" edges="Lin Rout" />
+<vehicle type="noVar" depart="310" id="LR2.20" route="route_LR2.20" />
+<route id="route_RL2.20" edges="Rin Lout" />
+<vehicle type="noVar" depart="310" id="RL2.20" route="route_RL2.20" />
+<route id="route_LR2.21" edges="Lin Rout" />
+<vehicle type="noVar" depart="312" id="LR2.21" route="route_LR2.21" />
+<route id="route_RL2.21" edges="Rin Lout" />
+<vehicle type="noVar" depart="312" id="RL2.21" route="route_RL2.21" />
+<route id="route_LR2.22" edges="Lin Rout" />
+<vehicle type="noVar" depart="315" id="LR2.22" route="route_LR2.22" />
+<route id="route_RL2.22" edges="Rin Lout" />
+<vehicle type="noVar" depart="315" id="RL2.22" route="route_RL2.22" />
+<route id="route_LR2.23" edges="Lin Rout" />
+<vehicle type="noVar" depart="316" id="LR2.23" route="route_LR2.23" />
+<route id="route_RL2.23" edges="Rin Lout" />
+<vehicle type="noVar" depart="316" id="RL2.23" route="route_RL2.23" />
+<route id="route_LR2.24" edges="Lin Rout" />
+<vehicle type="noVar" depart="319" id="LR2.24" route="route_LR2.24" />
+<route id="route_RL2.24" edges="Rin Lout" />
+<vehicle type="noVar" depart="319" id="RL2.24" route="route_RL2.24" />
+</routes>

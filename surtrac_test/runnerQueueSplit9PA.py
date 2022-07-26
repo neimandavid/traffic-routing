@@ -93,7 +93,7 @@ def mergePredictions(clusters, predClusters):
             mergedClusters[lane] += predClusters[lane] #Concatenate known clusters with predicted clusters
     return mergedClusters
 
-@profile
+#@profile
 def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=None):
     #print("Starting Surtrac")
     sult = 3 #Startup loss time
@@ -567,7 +567,7 @@ def loadClusters(net):
         lightinfo[light]["index"] = traci.trafficlight.getPhase(light)
     return (clusters, lightinfo)
 
-@profile
+#@profile
 def runClusters(net, time, vehicleOfInterest, startedge, loaddata):
     #print("Starting queuesim")
     #Store routes once at the start to save time

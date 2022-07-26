@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2021-09-30 20:22:03 by Eclipse SUMO netedit Version 1.9.2
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <sumo-net-file value="shortlong.net.xml"/>
+    </input>
+
+    <output>
+        <output-file value="shortlong.net.xml"/>
+    </output>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="false"/>
+    </processing>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="5"/>
+        <junctions.limit-turn-speed value="5.5"/>
+        <rectangular-lane-cut value="false"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="false"/>
+    </pedestrian>
+
+    <netedit>
+        <route-files value="/usr/local/Cellar/sumo/shortlong2/shortlong.rou.xml"/>
+    </netedit>
+
+    <report>
+        <aggregate-warnings value="5"/>
+    </report>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
+
+    <!--route id="route01" edges="in7 E18 out8" />
+    <vehicle depart="0" id="test1" route="route01" color="1,0,0" />
+    <route id="route02" edges="in8 -E18 out7" />
+    <vehicle depart="0" id="test2" route="route02" color="1,0,0" /-->
+
+    <flow id="UD" type="noVar" from="Uin" to="Dout" begin="0" end="100" number="25"/>
+    <flow id="DU" type="noVar" from="Din" to="Uout" begin="0" end="100" number="25"/>
+    <flow id="LR" type="noVar" from="Lin" to="Rout" begin="50" end="120" number="25"/>
+    <flow id="RL" type="noVar" from="Rin" to="Lout" begin="50" end="120" number="25"/>
+    <flow id="UD2" type="noVar" from="Uin" to="Dout" begin="110" end="260" number="25"/>
+    <flow id="DU2" type="noVar" from="Din" to="Uout" begin="110" end="260" number="25"/>
+    <flow id="LR2" type="noVar" from="Lin" to="Rout" begin="250" end="300" number="25"/>
+    <flow id="RL2" type="noVar" from="Rin" to="Lout" begin="250" end="300" number="25"/>
+</routes>

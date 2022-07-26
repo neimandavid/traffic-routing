@@ -25,7 +25,7 @@
 #New in QueueSplit8: Adding communication between intersections. Which then requires re-compacting clusters, etc. For now, don't take advantage of known routes
 #New in QueueSplit9: Take advantage of known routes from vehicle routing (NOTE: route may change as vehicle approaches intersection...)
 #New in QueueSplit10: Optimize for speed (calling Surtrac less often in routing, merging predicted clusters)
-#New in QueueSplit11: Compute delay, not just average travel time, for cars
+#New in QueueSplit11: Compute delay, not just average travel time, for cars. Also fixed a bug with Surtrac code DP (was removing sequences it shouldn't have)
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -43,6 +43,7 @@ from copy import deepcopy, copy
 from collections import Counter
 from heapq import * #priorityqueue
 import threading
+import xml.etree.ElementTree as ET
 
 # we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -60,7 +61,7 @@ isSmart = dict() #Store whether each vehicle does our routing or not
 pSmart = 1.0 #Adoption probability
 
 carsOnNetwork = []
-max_edge_speed = 0.0
+max_edge_speed = 0.0 #Overwritten when we read the route file
 
 oldids = dict()
 
@@ -92,6 +93,9 @@ lastswitchtimes = dict()
 currentRoutes = dict()
 routeStats = dict()
 hmetadict = dict()
+delay3adjdict = dict()
+lightphases = dict()
+laneDict = dict()
 
 #Threading routing
 toReroute = []
@@ -104,8 +108,6 @@ def mergePredictions(clusters, predClusters):
     mergedClusters = pickle.loads(pickle.dumps(clusters)) #Because pass-by-value stuff
     for lane in clusters:
         if lane in predClusters:
-            #TODO later: Allen thesis says we might need to interpolate route-based clusters (any reason these wouldn't just be single vehicles? Maybe if an entire cluster was known to be going the same way)
-            #That's using routes as super-long-term lookahead, rather than just not sampling next-road-forward predictions... not going to do that now
             mergedClusters[lane] += predClusters[lane] #Concatenate known clusters with predicted clusters
     return mergedClusters
 
@@ -113,7 +115,7 @@ def mergePredictions(clusters, predClusters):
 def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=None):
     #print("Starting Surtrac")
     sult = 3 #Startup loss time
-    predictionCutoff = 0 #Overwritten if not in sim
+    predictionCutoff = 0 #Cutoff for routing ONLY! Overwritten if not in routing
 
     toSwitch = []
     remainingDuration = dict()
@@ -122,7 +124,7 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
     if realclusters == None and lightinfo == None:
         inQueueSim = False
         (realclusters, lightinfo) = loadClusters(network)
-        predictionCutoff = 60 #Drop predicted clusters that'll happen more than this far in the future
+        predictionCutoff = 30 #Cutoff for main SUMO simulation. Drop predicted clusters that'll happen more than this far in the future
 
     
 
@@ -148,7 +150,7 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
         #1: schedule status (how many clusters from each lane we've scheduled)
         #2: current light phase
         #3: time when each direction will have finished its last scheduled cluster
-        #4: time when all directions are finished with scheduled clusters ("total makespan", but also add starting time...)
+        #4: time when all directions are finished with scheduled clusters ("total makespan" + starting time...)
         #5: total delay
         #6: last switch time
         #7: planned total durations of all phases
@@ -200,13 +202,26 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
                             currentDuration = max(ist, ast)+newdur-schedule[6] #Total duration of current light phase if we send this cluster without changing phase
                             
                         if not phase == i or currentDuration > surtracdata[light][i]["maxDur"]:
-                            #Have to switch light phases. TODO: In the event that we exceeded maxDur, I'm assuming we switch immediately, though it would be better to split the cluster at maxDur
-                            newFirstSwitch = max(schedule[6] + surtracdata[light][phase]["minDur"], schedule[4]-mingap) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed
+
+                            if not phase == i:
+                                #Have to switch light phases.
+                                newFirstSwitch = max(schedule[6] + surtracdata[light][phase]["minDur"], schedule[4]-mingap) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed
+
+                            else:
+                                #This cluster is too long to fit entirely in the current phase
+                                newFirstSwitch = schedule[6] + surtracdata[light][phase]["maxDur"] #Set current phase to max duration
+                                #Figure out how long the remaining part of the cluster is
+                                tSent = surtracdata[light][i]["maxDur"] - (max(ist, ast)-schedule[6])
+                                if mindur > 0 and dur > 0: #Having issues with negative weights, possibly related to cars contributing less than 1 to weight having left the edge
+                                    mindur *= tSent/dur #Assuming uniform density
+                                dur -= tSent
+
                             pst = newFirstSwitch + surtracdata[light][(phase+1)%nPhases]["timeTo"][i] + sult #Total makespan + switching time + startup loss time
-                            #TODO: Technically this sult implementation isn't quite right, as a cluster might reach the light as the light turns green and not have to stop and restart
+                            #Technically this sult implementation isn't quite right, as a cluster might reach the light as the light turns green and not have to stop and restart
                             directionalMakespans = [pst]*nLanes #Other directions can't schedule a cluster before the light switches
                             newLastSwitch = newFirstSwitch + surtracdata[light][(phase+1)%nPhases]["timeTo"][i] #Switch right after previous cluster finishes (why not when next cluster arrives minus sult? Maybe try both?)
                             newDurations[-1] = newFirstSwitch - schedule[6] #Previous phase lasted from when it started to when it switched
+
                             tempphase = (phase+1)%nPhases
                             while tempphase != i:
                                 newDurations.append(surtracdata[light][i]["minDur"])
@@ -214,17 +229,18 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
                             newDurations.append(0) #Duration of new phase i. To be updated on future loops once we figure out when the cluster finishes
 
                         ast = max(ist, pst)
-                        newdur = max(dur - (ast-ist), mindur)
+                        newdur = max(dur - (ast-ist), mindur) #Compress cluster once cars start stopping
                         directionalMakespans = [pst]*nLanes #Other directions can't schedule a cluster before this one
                         directionalMakespans[j] = ast+newdur+mingap
                         delay = schedule[5] + clusters[surtracdata[light][i]["lanes"][j]][clusterind]["weight"]*((ast-ist)-1/2*(dur-newdur) ) #Delay += #cars * (actual-desired). 1/2(dur-newdur) compensates for the cluster packing together as it waits (I assume uniform compression)
+                        assert(delay >= schedule[5])
                         newMakespan = max(directionalMakespans)
                         currentDuration = newMakespan - newLastSwitch
 
                         newPredClusters = pickle.loads(pickle.dumps(schedule[8])) #Deep copy needed if I'm going to merge clusters #copy(schedule[8]) #Shallow copy is okay? This is a dict that points to lists of clusters, and I'm hopefully only ever changing the list of clusters (and the newly created clusters), never the old clusters. #pickle.loads(pickle.dumps(schedule[8]))
                         predLanes = []
                         for outlane in turndata[lane]: #lightoutlanes[light]: #Can't just be turndata[lane] since that might not have data for everything
-                            arr = ast + fftimes[outlane] #.split("_")[0] to extract the edge name
+                            arr = ast + fftimes[outlane]
                             if arr > simtime + predictionCutoff:
                                 #Cluster is farther in the future than we want to predict; skip it
                                 continue
@@ -242,6 +258,7 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
                         edge = lane.split("_")[0]
                         for cartuple in clusters[lane][clusterind]["cars"]:
                             #cartuple[0] is name of car; cartuple[1] is departure time; cartuple[2] is debug info
+                            #assert(cartuple[0] in isSmart)
                             if not cartuple[0] in isSmart or isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
                                 route = currentRoutes[cartuple[0].split("|")[0]] #traci.vehicle.getRoute(cartuple[0].split("|")[0]) #.split to deal with the possibility of splitty cars in QueueSim
                                 if not edge in route:
@@ -267,12 +284,12 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
                                 #Should probably do something cleverer based on the rest of the route, but hopefully this is fine
                                 normprob = 0
                                 for nextlaneind in range(lanenums[nextedge]):
-                                    nextlane = nextedge+"_"+str(nextlaneind)
+                                    nextlane = nextedge+"_"+str(nextlaneind) #Might not be a valid lane to transition to...
                                     if lane in turndata and nextlane in turndata[lane]: #NOT predLanes; it's possible the car takes a path we don't care to predict, and we don't want to normalize that out
                                         normprob += turndata[lane][nextedge+"_"+str(nextlaneind)]
                                 if normprob == 0:
-                                    #TODO: Send to a uniform random lane because no data? Or do something clever.
-                                    #Next TODO: This shouldn't happen now that I've added psuedocounts to turndata, but apparently is???
+                                    #Might be happening if the car needs to make a last-minute lane change to stay on its route?
+                                    #TODO: Find a lane where it can continue with the route and go from there? Ignoring for now
                                     #print("Warning, no data, having Surtrac prediction ignore this car instead of making something up")
                                     #print(lane)
                                     continue
@@ -305,7 +322,7 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
                         newDurations[-1] = currentDuration 
                         newschedule = (schedule[0]+[(i, j)], newScheduleStatus, i, directionalMakespans, newMakespan, delay, newLastSwitch, newDurations, newPredClusters)
 
-                        key = (tuple(schedule[1]), newschedule[2]) #Key needs to be something immutable (like a tuple, not a list)
+                        key = (tuple(newschedule[1].values()), newschedule[2]) #Key needs to be something immutable (like a tuple, not a list)
                         
                         if not key in scheduleHashDict:
                             scheduleHashDict[key] = [newschedule]
@@ -314,6 +331,10 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
                             testscheduleind = 0
                             while testscheduleind < len(scheduleHashDict[key]):
                                 testschedule = scheduleHashDict[key][testscheduleind]
+
+                                #These asserts should follow from how I set up scheduleHashDict
+                                assert(newschedule[1] == testschedule[1])
+                                assert(newschedule[2] == testschedule[2])
                                 
                                 greedy = True
                                 #NOTE: If we're going to go for truly optimal, I think we also need to check all makespans, plus the current phase duration
@@ -342,23 +363,30 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
                 bestschedule = schedule
 
         if not bestschedule[0] == []:
-            #remainingDuration = traci.trafficlight.getNextSwitch(light) - simtime
             spentDuration = simtime - lastswitchtimes[light]
-            if bestschedule[7][0] - spentDuration > 0 and not inQueueSim:
-                #Update duration
-                traci.trafficlight.setPhaseDuration(light, bestschedule[7][0] - spentDuration) #setPhaseDuration sets the remaining duration in the phase
-            else:
-                #Light needs to change
-                toSwitch.append(light)
-                if not inQueueSim:
-                    traci.trafficlight.setPhase(light, (traci.trafficlight.getPhase(light)+1)%nPhases) #Increment phase, duration defaults to default
-                    lastswitchtimes[light] = simtime
-                    if len(bestschedule[7]) > 1:
-                        #And set the new duration if possible
-                        traci.trafficlight.setPhaseDuration(light, bestschedule[7][1]) #Update duration if we know it
-                        #pass
             remainingDuration[light] = bestschedule[7]
             remainingDuration[light][0] -= spentDuration
+
+            if remainingDuration[light][0] >= 0 and not inQueueSim:
+                #Update duration
+                traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #setPhaseDuration sets the remaining duration in the phase
+            
+            if remainingDuration[light][0] <= 0: #Light needs to change
+                #Light needs to change
+                toSwitch.append(light)
+                bestschedule[7].pop(0)
+                if not inQueueSim: #Actually change the light
+                    #assert(lightinfo[light]["index"] == traci.trafficlight.getPhase(light)) #Should be true, but slowish to assess
+                    curphase = lightinfo[light]["index"]
+                    assert(simtime - lastswitchtimes[light] >= lightphasedata[light][curphase].minDur)
+                    assert(simtime - lastswitchtimes[light] <= lightphasedata[light][curphase].maxDur)
+                    traci.trafficlight.setPhase(light, (curphase+1)%nPhases) #Increment phase, duration defaults to default
+                    lastswitchtimes[light] = simtime
+                    if len(bestschedule[7]) > 0:
+                        #And set the new duration if possible
+                        traci.trafficlight.setPhaseDuration(light, bestschedule[7][0]) #Update duration if we know it
+                        #pass
+            
         catpreds.update(bestschedule[8])
 
     return (toSwitch, catpreds, remainingDuration)
@@ -401,6 +429,9 @@ def run(network, rerouters, pSmart, verbose = True):
     global sumoPredClusters
     global currentRoutes
     global hmetadict
+    global delay3adjdict
+    global actualStartDict
+    global laneDict
     #netfile is the filepath to the network file, so we can call sumolib to get successors
     #rerouters is the list of induction loops on edges with multiple successor edges
     #We want to reroute all the cars that passed some induction loop in rerouters using A*
@@ -410,7 +441,10 @@ def run(network, rerouters, pSmart, verbose = True):
     startDict = dict()
     endDict = dict()
     delayDict = dict()
+    delay2adjdict = dict()
+    delay3adjdict = dict()
     locDict = dict()
+    laneDict = dict()
     leftDict = dict()
     carsOnNetwork = []
 
@@ -418,9 +452,13 @@ def run(network, rerouters, pSmart, verbose = True):
     simtime = 0
     while traci.simulation.getMinExpectedNumber() > 0:
         simtime += 1
-
         traci.simulationStep() #Tell the simulator to simulate the next time step
-        #print("Sim time: " + str(simtime))
+
+        for light in lights:
+            temp = traci.trafficlight.getPhase(light)
+            if temp != lightphases[light]:
+                lastswitchtimes[light] = simtime
+                lightphases[light] = temp
 
         #Decide whether new vehicles use our routing
         for vehicle in traci.simulation.getDepartedIDList():
@@ -436,14 +474,18 @@ def run(network, rerouters, pSmart, verbose = True):
             if not goaledge in hmetadict:
                 hmetadict[goaledge] = backwardDijkstra(network, goaledge)
             delayDict[vehicle] = -hmetadict[goaledge][currentRoutes[vehicle][0]] #I'll add the actual travel time once the vehicle arrives
+            laneDict[vehicle] = traci.vehicle.getLaneID(vehicle)
+            currentRoutes[vehicle] = traci.vehicle.getRoute(vehicle)
 
         for vehicle in traci.simulation.getArrivedIDList():
             timedata[vehicle][1] = simtime
             #print("Actual minus expected:")
             #print( (timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2])
 
-        temp = doSurtrac(network, simtime, None, None, sumoPredClusters)
-        sumoPredClusters = temp[1]
+        surtracFreq = 20 #Period between updates in main SUMO sim
+        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
+            temp = doSurtrac(network, simtime, None, None, sumoPredClusters)
+            sumoPredClusters = temp[1]
 
         reroute(rerouters, network, simtime, True) #Reroute cars (including simulate-ahead cars)
         carsOnNetwork.append(len(traci.vehicle.getIDList())) #Track number of cars on network (for plotting)
@@ -458,7 +500,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
         #Count left turns
         for id in locDict:
-            if traci.vehicle.getRoadID(id) != locDict[id] and traci.vehicle.getRoadID(id)[0] != ":":
+            if traci.vehicle.getRoadID(id) != locDict[id] and len(traci.vehicle.getRoadID(id)) > 0 and  traci.vehicle.getRoadID(id)[0] != ":":
                 c0 = network.getEdge(locDict[id]).getFromNode().getCoord()
                 c1 = network.getEdge(locDict[id]).getToNode().getCoord()
                 theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
@@ -468,8 +510,12 @@ def run(network, rerouters, pSmart, verbose = True):
 
                 if (theta1-theta0+math.pi)%(2*math.pi)-math.pi > 0:
                     leftDict[id] += 1
-                
+                laneDict[id] = traci.vehicle.getLaneID(id)
                 locDict[id] = traci.vehicle.getRoadID(id)
+
+                #Store data to compute delay after first intersection
+                if not id in delay2adjdict:
+                    delay2adjdict[id] = simtime
 
         #Plot and print things
         if simtime%100 == 0 or not traci.simulation.getMinExpectedNumber() > 0:
@@ -507,6 +553,18 @@ def run(network, rerouters, pSmart, verbose = True):
             totalswaps = 0
             nswapped = 0
 
+            avgTime2 = 0
+            avgTimeSmart2 = 0
+            avgTimeNot2 = 0
+
+            avgTime3 = 0
+            avgTimeSmart3 = 0
+            avgTimeNot3 = 0
+
+            avgTime0 = 0
+            avgTimeSmart0 = 0
+            avgTimeNot0 = 0
+
             for id in endDict:
                 ttemp = (endDict[id] - startDict[id])+delayDict[id]
                 avgTime += ttemp/len(endDict)
@@ -531,10 +589,34 @@ def run(network, rerouters, pSmart, verbose = True):
                     if ttemp < bestTimeNot:
                         bestTimeNot = ttemp
 
-                totalcalls += routeStats[id]["nCalls"]
-                totalswaps += routeStats[id]["nSwaps"]
-                if routeStats[id]["swapped"] == True:
-                    nswapped += 1
+                #Delay2 computation (start clock after first intersection)
+                if not id in delay2adjdict:
+                    delay2adjdict[id] = startDict[id]
+                ttemp2 = (endDict[id] - delay2adjdict[id])+delayDict[id]
+                avgTime2 += ttemp2/len(endDict)
+                if isSmart[id]:
+                    avgTimeSmart2 += ttemp2/nSmart
+                else:
+                    avgTimeNot2 += ttemp2/(len(endDict)-nSmart)
+
+                #Delay3 computation (start clock after first routing call)
+                if not id in delay3adjdict:
+                    delay3adjdict[id] = startDict[id]
+                ttemp3 = (endDict[id] - delay3adjdict[id])+delayDict[id]
+                avgTime3 += ttemp3/len(endDict)
+                if isSmart[id]:
+                    avgTimeSmart3 += ttemp3/nSmart
+                else:
+                    avgTimeNot3 += ttemp3/(len(endDict)-nSmart)
+
+                #Delay0 computation (start clock at intended entrance time)
+                ttemp0 = (endDict[id] - actualStartDict[id])+delayDict[id]
+                avgTime0 += ttemp0/len(endDict)
+                if isSmart[id]:
+                    avgTimeSmart0 += ttemp0/nSmart
+                else:
+                    avgTimeNot0 += ttemp0/(len(endDict)-nSmart)
+
         
             if verbose or not traci.simulation.getMinExpectedNumber() > 0:
                 print("\nCurrent simulation time: %f" % simtime)
@@ -561,7 +643,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 print("Best delay: %f" % bestTimeNot)
                 print("Worst delay: %f" % worstTimeNot)
                 print("Average number of lefts: %f" % avgLeftsNot)
-    return [avgTime, avgTimeSmart, avgTimeNot]
+    return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0]
 
     
 
@@ -583,12 +665,13 @@ def reroute(rerouters, network, simtime, rerouteAuto=True):
             QueueReroute(r, network, simtime, rerouteAuto)
 
         for vehicle in toReroute:
-            threads[vehicle].join()
+            threads[vehicle].join() #Comment for single-threaded
             data = reroutedata[vehicle]
             
             newroute = data[0]
 
             routeStats[vehicle]["nCalls"] += 1
+
             if not tuple(newroute) == currentRoutes[vehicle] and not newroute == currentRoutes[vehicle][1:]:
                 #print(newroute)
                 #print(currentRoutes[vehicle])
@@ -607,15 +690,21 @@ def reroute(rerouters, network, simtime, rerouteAuto=True):
                 timedata[vehicle][2] = tcluster
                 
             #traci.switch("main")
-            traci.vehicle.setRoute(vehicle, newroute)
-            currentRoutes[vehicle] = newroute
+            try:
+                traci.vehicle.setRoute(vehicle, newroute)
+                currentRoutes[vehicle] = newroute
+            except Exception as e:
+                print("Routing fail fail")
+                print(e)
+                pass
+            
 
 #@profile
 def QueueReroute(detector, network, simtime, rerouteAuto=True):
     global toReroute
     global reroutedata
     global threads
-    
+    global delay3adjdict
 
     ids = traci.inductionloop.getLastStepVehicleIDs(detector) #All vehicles to be rerouted
 
@@ -623,14 +712,23 @@ def QueueReroute(detector, network, simtime, rerouteAuto=True):
         #No cars to route, we're done here
         return
 
-    # getRoadID: Returns the edge id the vehicle was last on
-    edge = traci.vehicle.getRoadID(ids[0])
-    
+    edge = traci.inductionloop.getLaneID(detector).split("_")[0]
+
     for vehicle in ids:
-        
-        if rerouteAuto and detector in oldids and vehicle in oldids[detector]:
-            #print("Duplicate car " + vehicle + " at detector " + detector)
+        try:
+            if traci.vehicle.getRoadID(vehicle) != edge:
+                #Vehicle isn't on same edge as detector. Stuff is going wrong, skip this.
+                continue
+        except: #Vehicle off network already??
             continue
+
+        #NOTE: This part got deleted before for no good reason, might've caused some slowdown...
+        if detector in oldids and vehicle in oldids[detector]:
+            #Just routed this, don't try again
+            continue
+
+        if rerouteAuto and not vehicle in delay3adjdict: #rerouteAuto to make sure we're in the main simulation
+                delay3adjdict[vehicle] = simtime
 
         if rerouteAuto and isSmart[vehicle]:
             #Convert current state
@@ -656,6 +754,8 @@ def QueueReroute(detector, network, simtime, rerouteAuto=True):
 
             threads[vehicle] = threading.Thread(target=doClusterSimThreaded, args=(edge, network, vehicle, simtime, reroutedata[vehicle], deepcopy(loaddata), routes))
             threads[vehicle].start()
+
+            #doClusterSimThreaded(edge, network, vehicle, simtime, reroutedata[vehicle], deepcopy(loaddata), routes) #If we want non-threaded
         
     if rerouteAuto:
         oldids[detector] = ids
@@ -711,8 +811,10 @@ def loadClusters(net):
         lightinfo[light]["index"] = traci.trafficlight.getPhase(light)
     return (clusters, lightinfo)
 
+#NOTE: Multithreaded stuff doesn't get profiled...
 #@profile
 def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
+    global laneDict #Need this to sanity-check the starting lane
 
     goalEdge = routes[vehicleOfInterest][-1]
     splitinfo = dict()
@@ -730,10 +832,32 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
         else:
             edgeind += 1
 
+    #Make sure we start in a lane that can go to the next lane
+    startedgeind = routes[vehicleOfInterest].index(startedge)
+    if startedgeind != len(routes[vehicleOfInterest])-1:
+        startLaneBad = True
+        for firstlinktuple in laneDict[vehicleOfInterest]:
+            if firstlinktuple[0].split("_")[0] == routes[vehicleOfInterest][startedgeind+1]:
+                startLaneBad = False
+                break
+        if startLaneBad:
+            #TODO pretend we're in a different starting lane. For now, just give up and don't reroute
+            #print("Routing fail")
+            return (routes[vehicleOfInterest][startedgeind:-1], -1)
+
+    starttime = time
+    edgelist = list(edges)
+    edgeind = 0
+    while edgeind < len(edgelist):
+        if edgelist[edgeind][0] == ":":
+            edgelist.pop(edgeind)
+        else:
+            edgeind += 1
+
     queueSimPredClusters = pickle.loads(pickle.dumps(sumoPredClusters)) #Initial predicted clusters are whatever SUMO's Surtrac thinks it is
     toUpdate = []
     remainingDuration = []
-    surtracFreq = 1 #Time between Surtrac updates, in seconds. (Technically the period between updates)
+    surtracFreq = 20 #Time between Surtrac updates, in seconds. (Technically the period between updates)
     #Loop through time and simulate things
     while True:
         time += timestep
@@ -742,7 +866,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
         if time%surtracFreq >= (time+timestep)%surtracFreq:
             (toUpdate, queueSimPredClusters, remainingDuration) = doSurtrac(net, time, clusters, lightinfo, queueSimPredClusters)
 
-        #I'm now assuming we won't skip a phase between updates. Hopefully fine.
+        #Switch phase on any light that needs to
         for light in toUpdate:
             phases = lightphasedata[light]
             lightinfo[light]["index"] += 1
@@ -757,17 +881,11 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
         toUpdate = []
         for light in remainingDuration:
             if len(remainingDuration[light]) == 0:
+                #TODO check whether we need to update lights without schedules? We're in sim, so not sure we care
                 break #Avoid errors - schedule doesn't go out this far
-            while remainingDuration[light][0] < 0:
-                remainingDuration[light].pop(0)
-                #remainingDuration.pop(light) #Can't change dict size during iteration?? Annoying... TODO use full schedules here
-                if len(remainingDuration[light]) == 0:
-                    break #Avoid errors - schedule doesn't go out this far
-            if len(remainingDuration[light]) == 0:
-                    break #Avoid errors - schedule doesn't go out this far
-        
             remainingDuration[light][0] -= 1
             if remainingDuration[light][0] <= 0:
+                remainingDuration[light].pop(0)
                 toUpdate.append(light)
 
         #Sanity check for debugging infinite loops where the vehicle of interest disappears
@@ -778,6 +896,8 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                     if testcartuple[0] in VOIs:
                         notEmpty = True
                         break
+                        #print(testcartuple[0])
+                        #print(thing)
         if not notEmpty:
             print(VOIs)
             print(clusters)
@@ -920,7 +1040,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                                                         else:
                                                             blockerroute = routes[blocker]
                                                             blockerrouteind = blockerroute.index(blockingEdge0)
-                                                            willBlock = blockerroute[blockerrouteind+1] == blockingEdge1
+                                                            willBlock = (blockerrouteind+1<len(blockerroute) and blockerroute[blockerrouteind+1] == blockingEdge1)
                                                     
                                                     if willBlock:
                                                         isBlocked = True
@@ -975,7 +1095,10 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                                 clusters[nextlane].append(newcluster)
 
                             #We've added a car to nextedge_nextlanenum
-                            blockingLinks[node].append(linktuple)
+                            try: #Can fail if linktuple isn't defined, which happens at non-traffic-lights
+                                blockingLinks[node].append(linktuple)
+                            except:
+                                pass #It's a zipper?
                             splitinfo[(cartuple[0], edge)].remove(nextlane)
                             #Before, we'd break out of the lane loop because we'd only add to each edge once
                             #Now, we only get to break if it's a non-splitty car (splitty car goes to all nextlanes)
@@ -1129,6 +1252,8 @@ def main(sumoconfig, pSmart, verbose = True):
     global lengths
     global turndata
     global timedata
+    global actualStartDict
+    global lightphases
     options = get_options()
 
     # this script has been called from the command line. It will start sumo as a
@@ -1170,6 +1295,7 @@ def main(sumoconfig, pSmart, verbose = True):
         lightlinkconflicts[light] = dict()
         lightphasedata[light] = traci.trafficlight.getCompleteRedYellowGreenDefinition(light)[0].phases
         lightlinks[light] = traci.trafficlight.getControlledLinks(light)
+        lightphases[light] = traci.trafficlight.getPhase(light)
 
         lightlanes[light] = []
         lightoutlanes[light] = []
@@ -1191,6 +1317,7 @@ def main(sumoconfig, pSmart, verbose = True):
                         lightlinkconflicts[light][linktuple][linktuple2] = isIntersecting( (network.getLane(linktuple[0]).getShape()[1], (net.getLane(linktuple[1]).getShape()[0])), 
                         (net.getLane(linktuple2[0]).getShape()[1], (network.getLane(linktuple2[1]).getShape()[0])) )
     
+    #print(lightphasedata)
     #Surtrac data
     for light in lights:
         surtracdata[light] = []
@@ -1278,9 +1405,22 @@ def main(sumoconfig, pSmart, verbose = True):
         if not lane[0] == ":":
             fftimes[lane] = fftimes[lane.split("_")[0]]
 
-    [avgTime, avgTimeSmart, avgTimeNot] = run(network, rerouters, pSmart, verbose)
+    #Parse route file to get intended departure times (to account for delayed SUMO insertions due to lack of space)
+    #Based on: https://www.geeksforgeeks.org/xml-parsing-python/
+    # create element tree object
+    tree = ET.parse(routefile)
+
+    # get root element
+    root = tree.getroot() #Route root? Punny...
+
+    actualStartDict = dict()
+    # iterate news items
+    for item in root.findall('./vehicle'):
+        actualStartDict[item.attrib["id"]] = int(item.attrib["depart"])
+
+    outdata = run(network, rerouters, pSmart, verbose)
     traci.close()
-    return [avgTime, avgTimeSmart, avgTimeNot]
+    return outdata
 
 
 # this is the main entry point of this script

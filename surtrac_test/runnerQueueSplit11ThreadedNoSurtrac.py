@@ -561,7 +561,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 print("Best delay: %f" % bestTimeNot)
                 print("Worst delay: %f" % worstTimeNot)
                 print("Average number of lefts: %f" % avgLeftsNot)
-    return [avgTime, avgTimeSmart, avgTimeNot]
+    return [avgTime, avgTimeSmart, avgTimeNot] #NOTE: Should be returning delays 2, 3, and 0, but this is old code I'd only use for regression tests anyway
 
     
 
@@ -583,7 +583,7 @@ def reroute(rerouters, network, simtime, rerouteAuto=True):
             QueueReroute(r, network, simtime, rerouteAuto)
 
         for vehicle in toReroute:
-            threads[vehicle].join()
+            #threads[vehicle].join()
             data = reroutedata[vehicle]
             
             newroute = data[0]
@@ -624,9 +624,16 @@ def QueueReroute(detector, network, simtime, rerouteAuto=True):
         return
 
     # getRoadID: Returns the edge id the vehicle was last on
-    edge = traci.vehicle.getRoadID(ids[0])
-    
+
+    edge = traci.inductionloop.getLaneID(detector).split("_")[0]
+
     for vehicle in ids:
+        try:
+            if traci.vehicle.getRoadID(vehicle) != edge:
+                #Vehicle isn't on same edge as detector. Stuff is going wrong, skip this.
+                continue
+        except: #Vehicle off network already??
+            continue
         
         if rerouteAuto and detector in oldids and vehicle in oldids[detector]:
             #print("Duplicate car " + vehicle + " at detector " + detector)
@@ -654,8 +661,10 @@ def QueueReroute(detector, network, simtime, rerouteAuto=True):
                     #Sample random routes for non-adopters
                     routes[vehicletemp] = sampleRouteFromTurnData(vehicletemp, traci.vehicle.getLaneID(vehicletemp), turndata)
 
-            threads[vehicle] = threading.Thread(target=doClusterSimThreaded, args=(edge, network, vehicle, simtime, reroutedata[vehicle], deepcopy(loaddata), routes))
-            threads[vehicle].start()
+            #threads[vehicle] = threading.Thread(target=doClusterSimThreaded, args=(edge, network, vehicle, simtime, reroutedata[vehicle], deepcopy(loaddata), routes))
+            #threads[vehicle].start()
+
+            doClusterSimThreaded(edge, network, vehicle, simtime, reroutedata[vehicle], deepcopy(loaddata), routes)
         
     if rerouteAuto:
         oldids[detector] = ids
@@ -712,7 +721,7 @@ def loadClusters(net):
     return (clusters, lightinfo)
 
 #@profile
-def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
+def runClusters(net, routesimtime, vehicleOfInterest, startedge, loaddata, routes):
 
     goalEdge = routes[vehicleOfInterest][-1]
     splitinfo = dict()
@@ -721,7 +730,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
     clusters = loaddata[0]
     lightinfo = loaddata[1]
 
-    starttime = time
+    starttime = routesimtime
     edgelist = list(edges)
     edgeind = 0
     while edgeind < len(edgelist):
@@ -730,17 +739,51 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
         else:
             edgeind += 1
 
+    #Make sure we start in a lane that can go to the next lane
+    #Without this, everything's fine on blocks2. How does this just work? Can find another (bad) route anyway?
+    startedgeind = routes[vehicleOfInterest].index(startedge)
+
     queueSimPredClusters = pickle.loads(pickle.dumps(sumoPredClusters)) #Initial predicted clusters are whatever SUMO's Surtrac thinks it is
     toUpdate = []
     remainingDuration = []
-    surtracFreq = 1 #Time between Surtrac updates, in seconds. (Technically the period between updates)
+    surtracFreq = 200000 #Time between Surtrac updates, in seconds. (Technically the period between updates)
+
+    #Cutoff in case of infinite loop?
+    routestartwctime = time.time()
+    timeout = 60
+
     #Loop through time and simulate things
     while True:
-        time += timestep
+
+        #Timeout if things have gone wrong somehow
+        if time.time()-routestartwctime > timeout:
+            print("Routing timeout: Edge " + startedge + ", time: " + str(starttime))
+            return (routes[vehicleOfInterest][startedgeind:], -1)
+
+        #Sanity check for debugging infinite loops where the vehicle of interest disappears
+        notEmpty = False
+        for thing in clusters:
+            for thingnum in range(len(clusters[thing])):
+                for testcartuple in clusters[thing][thingnum]["cars"]:
+                    if testcartuple[0] in VOIs:
+                        notEmpty = True
+                        break
+        if not notEmpty:
+            print(VOIs)
+            print(clusters)
+            raise Exception("Can't find vehicle of interest!")
+        #End sanity check
+
+        routesimtime += timestep
+
+
+        # #Update lights
+        # if time%surtracFreq >= (time+timestep)%surtracFreq:
+        #     (toUpdate, queueSimPredClusters, remainingDuration) = doSurtrac(net, time, clusters, lightinfo, queueSimPredClusters)
 
         #Update lights
         for light in lights:
-            while time >= lightinfo[light]["switchtime"]:
+            while routesimtime >= lightinfo[light]["switchtime"]:
                 phases = lightphasedata[light]
                 lightinfo[light]["index"] += 1
                 if lightinfo[light]["index"] == len(phases):
@@ -749,10 +792,6 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                 phaseind = lightinfo[light]["index"]
                 lightinfo[light]["switchtime"] += phases[phaseind].duration
                 lightinfo[light]["state"] = phases[phaseind].state
-
-        # #Update lights
-        # if time%surtracFreq >= (time+timestep)%surtracFreq:
-        #     (toUpdate, queueSimPredClusters, remainingDuration) = doSurtrac(net, time, clusters, lightinfo, queueSimPredClusters)
 
         # #I'm now assuming we won't skip a phase between updates. Hopefully fine.
         # for light in toUpdate:
@@ -782,20 +821,6 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
         #     if remainingDuration[light][0] <= 0:
         #         toUpdate.append(light)
 
-        #Sanity check for debugging infinite loops where the vehicle of interest disappears
-        notEmpty = False
-        for thing in clusters:
-            for thingnum in range(len(clusters[thing])):
-                for testcartuple in clusters[thing][thingnum]["cars"]:
-                    if testcartuple[0] in VOIs:
-                        notEmpty = True
-                        break
-        if not notEmpty:
-            print(VOIs)
-            print(clusters)
-            raise Exception("Can't find vehicle of interest!")
-        #End sanity check
-
         blockingLinks = dict()
         reflist = pickle.loads(pickle.dumps(edgelist)) #deepcopy(edgelist) #Want to reorder edge list to handle priority stuff, but don't want to mess up the for loop indexing
         for edge in reflist:
@@ -806,7 +831,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                 while len(clusters[lane]) > 0:
                     cluster = clusters[lane][0]
 
-                    if cluster["arrival"] > time:
+                    if cluster["arrival"] > routesimtime:
                         #This and future clusters don't arrive yet, done on this edge
                         break
                     if len(cluster["cars"]) == 0:
@@ -815,7 +840,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                         continue
                     cartuple = cluster["cars"][0]
                     
-                    while cartuple[1] < time:
+                    while cartuple[1] < routesimtime:
                         #Check if route is done; if so, stop
                         if cartuple[0] in VOIs and edge == goalEdge:
                             #Check if we're done simulating
@@ -824,7 +849,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                             fullroute = [startedge]
                             for routepart in splitroute:
                                 fullroute.append(routepart.split("_")[0]) #Only grab the edge, not the lane
-                            return (fullroute, time-starttime)
+                            return (fullroute, routesimtime-starttime)
                         elif not cartuple[0] in VOIs and routes[cartuple[0]][-1] == edge:
                             cluster["cars"].pop(0) #Remove car from this edge
                             break
@@ -920,7 +945,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                                                         continue
 
                                                     willBlock = False
-                                                    if len(clusters[linktuple2[0]]) > 0 and clusters[linktuple2[0]][0]["cars"][0][1] <= time: #clusters[linktuple2[0]][0]["arrival"] <= time:
+                                                    if len(clusters[linktuple2[0]]) > 0 and clusters[linktuple2[0]][0]["cars"][0][1] <= routesimtime: #clusters[linktuple2[0]][0]["arrival"] <= time:
                                                         blocker = clusters[linktuple2[0]][0]["cars"][0][0]
                                                         blockingEdge0 = linktuple2[0].split("_")[0]
                                                         blockingEdge1 = linktuple2[1].split("_")[0]
@@ -932,7 +957,7 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                                                         else:
                                                             blockerroute = routes[blocker]
                                                             blockerrouteind = blockerroute.index(blockingEdge0)
-                                                            willBlock = blockerroute[blockerrouteind+1] == blockingEdge1
+                                                            willBlock = (blockerrouteind+1<len(blockerroute) and blockerroute[blockerrouteind+1] == blockingEdge1)
                                                     
                                                     if willBlock:
                                                         isBlocked = True
@@ -951,16 +976,16 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                                 continue
 
                             #Check append to previous cluster vs. add new cluster
-                            if len(clusters[nextlane]) > 0 and abs(clusters[nextlane][-1]["time"] - time) < clusterthresh and abs(clusters[nextlane][-1]["pos"])/speeds[nextedge] < clusterthresh:
+                            if len(clusters[nextlane]) > 0 and abs(clusters[nextlane][-1]["time"] - routesimtime) < clusterthresh and abs(clusters[nextlane][-1]["pos"])/speeds[nextedge] < clusterthresh:
                                 
                                 #Make sure there's no car on the new road that's too close
-                                if not abs(clusters[nextlane][-1]["time"] - time) < mingap:
+                                if not abs(clusters[nextlane][-1]["time"] - routesimtime) < mingap:
                                     #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
                                     #Departure time (=time to fully clear cluster) increases, arrival doesn't
                                     #TODO eventually: Be more precise with time and position over partial timesteps, allowing me to use larger timesteps?
                                     clusters[nextlane][-1]["pos"] = 0
-                                    clusters[nextlane][-1]["time"] = time
-                                    clusters[nextlane][-1]["departure"] = time + fftimes[nextedge]
+                                    clusters[nextlane][-1]["time"] = routesimtime
+                                    clusters[nextlane][-1]["departure"] = routesimtime + fftimes[nextedge]
                                     if cartuple[0] in VOIs:
                                         clusters[nextlane][-1]["cars"].append((cartuple[0]+"|"+nextlane, clusters[nextlane][-1]["departure"], "Zipper append"))
                                         VOIs.append(cartuple[0]+"|"+nextlane)
@@ -975,8 +1000,8 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                                 #So make a new cluster
                                 newcluster = dict()
                                 newcluster["pos"] = 0
-                                newcluster["time"] = time
-                                newcluster["arrival"] = time + fftimes[nextedge]
+                                newcluster["time"] = routesimtime
+                                newcluster["arrival"] = routesimtime + fftimes[nextedge]
                                 newcluster["departure"] = newcluster["arrival"]
                                 if cartuple[0] in VOIs:
                                     newcluster["cars"] = [(cartuple[0]+"|"+nextlane, newcluster["departure"], "Zipper new cluster")]
@@ -987,7 +1012,11 @@ def runClusters(net, time, vehicleOfInterest, startedge, loaddata, routes):
                                 clusters[nextlane].append(newcluster)
 
                             #We've added a car to nextedge_nextlanenum
-                            blockingLinks[node].append(linktuple)
+                            try: #Can fail if linktuple isn't defined, which happens at non-traffic-lights
+                                blockingLinks[node].append(linktuple)
+                            except:
+                                print("Zipper test")
+                                pass #It's a zipper?
                             splitinfo[(cartuple[0], edge)].remove(nextlane)
                             #Before, we'd break out of the lane loop because we'd only add to each edge once
                             #Now, we only get to break if it's a non-splitty car (splitty car goes to all nextlanes)
@@ -1292,7 +1321,7 @@ def main(sumoconfig, pSmart, verbose = True):
 
     [avgTime, avgTimeSmart, avgTimeNot] = run(network, rerouters, pSmart, verbose)
     traci.close()
-    return [avgTime, avgTimeSmart, avgTimeNot]
+    return [avgTime, avgTimeSmart, avgTimeNot]*4
 
 
 # this is the main entry point of this script
