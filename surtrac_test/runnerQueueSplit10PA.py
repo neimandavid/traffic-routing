@@ -114,7 +114,7 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
     if realclusters == None and lightinfo == None:
         inQueueSim = False
         (realclusters, lightinfo) = loadClusters(network)
-        predictionCutoff = 60 #Drop predicted clusters that'll happen more than this far in the future
+        predictionCutoff = 0 #Drop predicted clusters that'll happen more than this far in the future
 
     
 
@@ -401,7 +401,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
         #Count left turns
         for id in locDict:
-            if traci.vehicle.getRoadID(id) != locDict[id] and traci.vehicle.getRoadID(id)[0] != ":":
+            if traci.vehicle.getRoadID(id) != locDict[id] and len(traci.vehicle.getRoadID(id)) > 0 and traci.vehicle.getRoadID(id)[0] != ":":
                 c0 = network.getEdge(locDict[id]).getFromNode().getCoord()
                 c1 = network.getEdge(locDict[id]).getToNode().getCoord()
                 theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])

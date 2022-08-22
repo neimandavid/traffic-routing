@@ -4,17 +4,20 @@ import runnerQueueSplit13 as runnerQueueSplit12
 import pickle
 import statistics
 import matplotlib.pyplot as plt
+from importlib import reload
 
 nIters = 1
 
 try:
-    with open("delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
+    with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
         data = pickle.load(handle)
 except:
+    #If no data found, start fresh
     data = dict()
 print(data)
 
-for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]*3:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]*3:
+for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]*5:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]*3:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]*3:
+    reload(runnerQueueSplit12)
     print(p)
     if not p in data:
         data[p] = dict()
@@ -36,7 +39,7 @@ for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]*3:#[0.01, 0.05, 0.25, 0.
         data[p]["All0"].append(newdata[9])
         data[p]["Adopters0"].append(newdata[10])
         data[p]["Non-Adopters0"].append(newdata[11])
-        with open("delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
+        with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
             pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         # #Dump stats

@@ -26,9 +26,13 @@ import random
 import numpy as np
 import pickle
 import runnerDefaultWriter
+from importlib import reload
+
 
 preoptcarcounter = dict()
 postoptcarcounter = dict()
+
+trafficmultfactor = 1.0
 
 #Assume we have a network, edge-to-edge turn data, and #vehicles/hr on input roads (pass these in)
 #For each input road, generate n (=vehicles/hr) vehicles, pick starting times uniformly at random from [0, 3599].
@@ -90,12 +94,12 @@ def parseData(datafilepath, netfilename, routefilename, configfilename):
 
     for edge in nout:
         if not edge in nin:
-            nToGenerate = nout[edge]
+            nToGenerate = int(nout[edge]*trafficmultfactor)
             print("Generating " + str(nToGenerate) + " cars on edge " + edge)
             for carindex in range(nToGenerate):
                 cars.append(makeCar(edge, carindex, edgeturnratios, nin, nout))
         else:
-            nToGenerate = nout[edge]-nin[edge]
+            nToGenerate = int((nout[edge]-nin[edge])*trafficmultfactor)
             if nToGenerate > 0:
                 print("Warning: " + str(nToGenerate) + " cars appear on edge " + edge + ". Double-check data to make sure that's intended.")
                 for carindex in range(nToGenerate):
@@ -116,6 +120,8 @@ def parseData(datafilepath, netfilename, routefilename, configfilename):
     runnerDefaultWriter.writeSumoCfg(configfilename, netfilename, routefilename)
 
     postoptcarcounter = runnerDefaultWriter.main(netfilename, configfilename)
+    reload(runnerDefaultWriter)
+
 
     preoptcountererr = dict()
     postoptcountererr = dict()
@@ -129,12 +135,46 @@ def parseData(datafilepath, netfilename, routefilename, configfilename):
     print("Preopt: Mean error " + str(np.mean(list(preoptcountererr.values()))) + ", std dev " + str(np.std(list(preoptcountererr.values()))))
     print("Postopt: Mean error " + str(np.mean(list(postoptcountererr.values()))) + ", std dev " + str(np.std(list(postoptcountererr.values()))))
 
-
+    newroutefilename = routefilename.split(".")[0] + "_fixedroutes.rou.xml"
+    newconfigfilename = configfilename.split(".")[0] + "_fixedroutes.sumocfg"
+    #Generate another route file with the original routes
+    with open(newroutefilename, "w") as routefile:
+        print("""<?xml version="1.0" encoding="UTF-8"?>""", file=routefile)
+        print("""<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+""", file=routefile)
+        print("""<vType id="noVar" speedFactor="1.0" speedDev="0.0"/>""", file=routefile)
+        for car in cars:
+            if len(car[4]) > 0:
+                viastring = 'via="' + car[4] + '" '
+            else:
+                viastring = ""
+            print("""<trip type="noVar" depart="%i" id="%s" from="%s" to="%s" %s />""" % (car[1], car[0], car[2], car[3], viastring), file=routefile)
+            #Can't explicitly define a route because the route would skip the extra edges added by merge/unmerge stuff
             
+        print("""</routes>""", file=routefile)
+
+    runnerDefaultWriter.writeSumoCfg(newconfigfilename, netfilename, newroutefilename)
+    #TODO: This is throwing an error and I don't know why
+    preoptcarcounter2 = runnerDefaultWriter.main(netfilename, newconfigfilename)
+
+    preoptcounter2err = dict()
+    for edge in preoptcarcounter:
+        if not edge in preoptcarcounter2:
+            preoptcarcounter2[edge] = 0
+        assert(edge in nin)
+        preoptcounter2err[edge] = preoptcarcounter2[edge] - nin[edge]
+
+    print("Preopt: Mean error " + str(np.mean(list(preoptcountererr.values()))) + ", std dev " + str(np.std(list(preoptcountererr.values()))))
+    print("Preopt2: Mean error " + str(np.mean(list(preoptcounter2err.values()))) + ", std dev " + str(np.std(list(postoptcountererr.values()))))
+
+
+#Also does a blind copy routes rather than just O-D pairs so we match the input data better
+#I'm still not sure I like this - it'll make routing look better just by throwing out trivial inefficiencies like going in circles
 def makeCar(edge, carindex, edgeturnratios, nin, nout):
     starttime = np.floor(random.random()*3600)
     startedge = edge
     prevedge = startedge
+    route = [startedge]
     while edge in nout:
         #Sample next edge using edgeturnratios
         r = random.random()
@@ -144,15 +184,21 @@ def makeCar(edge, carindex, edgeturnratios, nin, nout):
                 #Use this as nextedge
                 prevedge = edge
                 edge = nextedge
+                route.append(edge)
                 if not edge in preoptcarcounter:
                     preoptcarcounter[edge] = 0
                 preoptcarcounter[edge] += 1
                 break
     if edge == "EXIT":
         endedge = prevedge
+        route.pop(-1)
     else:
         endedge = edge
-    return (startedge+"."+str(carindex), starttime, startedge, endedge)
+    routestr = ""
+    for road in route[1:-1]:
+        routestr += road + " "
+    routestr = routestr[0:-1]
+    return (startedge+"."+str(carindex), starttime, startedge, endedge, routestr)
 
 
 # this is the main entry point of this script

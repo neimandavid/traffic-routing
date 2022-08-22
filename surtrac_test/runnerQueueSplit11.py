@@ -303,7 +303,11 @@ def doSurtrac(network, simtime, realclusters=None, lightinfo=None, predClusters=
                         newDurations[-1] = currentDuration 
                         newschedule = (schedule[0]+[(i, j)], newScheduleStatus, i, directionalMakespans, newMakespan, delay, newLastSwitch, newDurations, newPredClusters)
 
-                        key = (tuple(schedule[1]), newschedule[2]) #Key needs to be something immutable (like a tuple, not a list)
+                        #WRONG!!!!
+                        key = (tuple(newschedule[1]), newschedule[2]) #Key needs to be something immutable (like a tuple, not a list)
+                        #Fixed
+                        #key = (tuple(newschedule[1].values()), newschedule[2]) #Key needs to be something immutable (like a tuple, not a list)
+                        
                         
                         if not key in scheduleHashDict:
                             scheduleHashDict[key] = [newschedule]
@@ -1197,8 +1201,7 @@ def main(sumoconfig, pSmart, verbose = True):
                     for linktuple2 in linklist2:
                         lightlinkconflicts[light][linktuple][linktuple2] = isIntersecting( (network.getLane(linktuple[0]).getShape()[1], (net.getLane(linktuple[1]).getShape()[0])), 
                         (net.getLane(linktuple2[0]).getShape()[1], (network.getLane(linktuple2[1]).getShape()[0])) )
-    print(lightphasedata)
-    asdf
+
     #Surtrac data
     for light in lights:
         surtracdata[light] = []

@@ -267,9 +267,18 @@ def writeSumoCfg(sumocfg, netfile, routefile):
 #Generates induction loops on all the edges
 def generate_additionalfile(sumoconfig, networkfile):
     #Create a third instance of a simulator so I can query the network
-    traci.start([checkBinary('sumo'), "-c", sumoconfig,
-                             "--start", "--no-step-log", "true",
-                             "--xml-validation", "never"], label="setup")
+    print(sumoconfig)
+    
+    try:
+        traci.start([checkBinary('sumo'), "-c", sumoconfig,
+                            "--start", "--no-step-log", "true",
+                            "--xml-validation", "never"], label="setup")
+    except:
+        #Worried about re-calling this without old main instance being removed
+        #TODO: Something better than hard-coding a second name
+        traci.start([checkBinary('sumo'), "-c", sumoconfig,
+                            "--start", "--no-step-log", "true",
+                            "--xml-validation", "never"], label="setup2")
 
 
     net = sumolib.net.readNet(networkfile)
@@ -305,12 +314,17 @@ def main(netfile, sumoconfig):
     rerouters = generate_additionalfile(sumoconfig, netfile)
     print("MAX_EDGE_SPEED 2.0: {}".format(max_edge_speed))
 
-    # this is the normal way of using traci. sumo is started as a
-    # subprocess and then the python script connects and runs
-    traci.start([sumoBinary, "-c", sumoconfig,
-                             "--additional-files", "additional_autogen.xml",
-                             "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
-
+    try:
+        traci.start([sumoBinary, "-c", sumoconfig,
+                            "--additional-files", "additional_autogen.xml",
+                            "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
+    except:
+        #Worried about re-calling this without old main instance being removed
+        #TODO: Something better than just creating a second name and failing on the third...
+        traci.start([sumoBinary, "-c", sumoconfig,
+                            "--additional-files", "additional_autogen.xml",
+                            "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main2")
+                                
     roadcarcounter = run(netfile, rerouters, sumoconfig)
     traci.close()
     return roadcarcounter
