@@ -1,0 +1,87 @@
+<intersection alias="10.0.0.184" host="10.0.0.184" id="BrandtSchool_Franklin">
+	<neighbors>
+		<neighbor host="10.0.0.184" id="WexfordBayne_BrandtSchool" port="35021" />
+	</neighbors>
+	<edges>
+		<edge exitLaneNumber="1" id="BrandtSchool_FranklinToSouth" laneNumber="1" length="68007" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="3" id="BrandtSchool_FranklinToWexfordBayne" laneNumber="2" length="98577" maxSpeed="17.0" neighbor="WexfordBayne_BrandtSchool" tolerance="0" weight="1" />
+		<edge exitLaneNumber="3" id="BrandtSchool_SouthToFranklin" laneNumber="2" length="67936" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="2" id="BrandtSchool_WexfordBayneToFranklin" laneNumber="1" length="99255" maxSpeed="17.0" neighbor="WexfordBayne_BrandtSchool" tolerance="0" weight="1" />
+		<edge exitLaneNumber="1" id="Franklin_BrandtSchoolToParking" laneNumber="1" length="23940" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="1" id="Franklin_ParkingToBrandtSchool" laneNumber="1" length="22924" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="1" id="GardenCenter_BrandtSchoolToParking" laneNumber="1" length="26428" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="2" id="GardenCenter_ParkingToBrandtSchool" laneNumber="1" length="25939" maxSpeed="17.0" tolerance="0" weight="1" />
+	</edges>
+	<connections>
+		<connection from="BrandtSchool_SouthToFranklin" fromLane="2" linkIndex="0" to="GardenCenter_BrandtSchoolToParking" toLane="0" viaLength="14905" />
+		<connection from="BrandtSchool_SouthToFranklin" fromLane="0" linkIndex="1" to="Franklin_BrandtSchoolToParking" toLane="0" viaLength="6938" />
+		<connection from="BrandtSchool_SouthToFranklin" fromLane="0" linkIndex="2" to="BrandtSchool_FranklinToWexfordBayne" toLane="0" viaLength="15782" />
+		<connection from="BrandtSchool_SouthToFranklin" fromLane="1" linkIndex="3" to="BrandtSchool_FranklinToWexfordBayne" toLane="1" viaLength="15782" />
+		<connection from="GardenCenter_ParkingToBrandtSchool" fromLane="0" linkIndex="4" to="BrandtSchool_FranklinToSouth" toLane="0" viaLength="7075" />
+		<connection from="GardenCenter_ParkingToBrandtSchool" fromLane="1" linkIndex="5" to="BrandtSchool_FranklinToWexfordBayne" toLane="1" viaLength="13060" />
+		<connection from="GardenCenter_ParkingToBrandtSchool" fromLane="1" linkIndex="6" to="Franklin_BrandtSchoolToParking" toLane="0" viaLength="16313" />
+		<connection from="BrandtSchool_WexfordBayneToFranklin" fromLane="1" linkIndex="7" to="Franklin_BrandtSchoolToParking" toLane="0" viaLength="15264" />
+		<connection from="BrandtSchool_WexfordBayneToFranklin" fromLane="0" linkIndex="8" to="GardenCenter_BrandtSchoolToParking" toLane="0" viaLength="5296" />
+		<connection from="BrandtSchool_WexfordBayneToFranklin" fromLane="0" linkIndex="9" to="BrandtSchool_FranklinToSouth" toLane="0" viaLength="17022" />
+		<connection from="Franklin_ParkingToBrandtSchool" fromLane="0" linkIndex="10" to="BrandtSchool_FranklinToSouth" toLane="0" viaLength="17453" />
+		<connection from="Franklin_ParkingToBrandtSchool" fromLane="0" linkIndex="11" to="BrandtSchool_FranklinToWexfordBayne" toLane="0" viaLength="7296" />
+		<connection from="Franklin_ParkingToBrandtSchool" fromLane="0" linkIndex="12" to="GardenCenter_BrandtSchoolToParking" toLane="0" viaLength="15865" />
+	</connections>
+	<tlLogics defaultID="AM">
+		<tlLogic PhaseTimeout="255000" calltag="" defaultExtension="1000" deltaAdvance="0" deltaPassage="0" effectiveGreen="0" offset="0" passage="1000" pedExtend="True" polling="100" programID="AM" sumo_total="8" watchdog="300000">
+			<phase duration="35000" index="0" intergreen="6000" maxDur="60000" minDur="10000" nextIndices="1" pedtag="[[2,2],[6,6]]" pedtime="9000,15000" state="GGGGrrrGGGrrr" sumoIndex="0" tag="2,6" />
+			<phase duration="2000" state="GGGGrrrGGGrrr" />
+			<phase duration="2000" state="yyyyrrryyyrrr" />
+			<phase duration="2000" state="rrrrrrrrrrrrr" />
+			<phase duration="10000" index="1" intergreen="7000" maxDur="15000" minDur="5000" nextIndices="2" pedtag="[[4,4],[8,8]]" pedtime="10000,15000" state="rrrrGGGrrrGGG" sumoIndex="4" tag="4,8" />
+			<phase duration="2000" state="rrrrGGGrrrGGG" />
+			<phase duration="2000" state="rrrryyyrrryyy" />
+			<phase duration="3000" state="rrrrrrrrrrrrr" />
+		</tlLogic>
+	</tlLogics>
+	<detectors>
+		<detector edge="BrandtSchool_SouthToFranklin" id="BrandtSchool_SouthToFranklin_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_SouthToFranklin" id="BrandtSchool_SouthToFranklin_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="BrandtSchool_SouthToFranklin" id="BrandtSchool_SouthToFranklin_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_SouthToFranklin" id="BrandtSchool_SouthToFranklin_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="BrandtSchool_SouthToFranklin" id="BrandtSchool_SouthToFranklin_2_0" lane="2" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_SouthToFranklin" id="BrandtSchool_SouthToFranklin_2_0" lane="2" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="BrandtSchool_WexfordBayneToFranklin" id="BrandtSchool_WexfordBayneToFranklin_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_WexfordBayneToFranklin" id="BrandtSchool_WexfordBayneToFranklin_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="BrandtSchool_WexfordBayneToFranklin" id="BrandtSchool_WexfordBayneToFranklin_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_WexfordBayneToFranklin" id="BrandtSchool_WexfordBayneToFranklin_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Franklin_ParkingToBrandtSchool" id="Franklin_ParkingToBrandtSchool_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Franklin_ParkingToBrandtSchool" id="Franklin_ParkingToBrandtSchool_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="GardenCenter_ParkingToBrandtSchool" id="GardenCenter_ParkingToBrandtSchool_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="GardenCenter_ParkingToBrandtSchool" id="GardenCenter_ParkingToBrandtSchool_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="GardenCenter_ParkingToBrandtSchool" id="GardenCenter_ParkingToBrandtSchool_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="GardenCenter_ParkingToBrandtSchool" id="GardenCenter_ParkingToBrandtSchool_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="BrandtSchool_SouthToFranklin" id="BrandtSchool_SouthToFranklin_0_1" lane="0" pos="67935" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_SouthToFranklin" id="BrandtSchool_SouthToFranklin_0_1" lane="0" pos="67935" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="BrandtSchool_SouthToFranklin" id="BrandtSchool_SouthToFranklin_1_1" lane="1" pos="67935" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_SouthToFranklin" id="BrandtSchool_SouthToFranklin_1_1" lane="1" pos="67935" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Franklin_ParkingToBrandtSchool" id="Franklin_ParkingToBrandtSchool_0_1" lane="0" pos="22923" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Franklin_ParkingToBrandtSchool" id="Franklin_ParkingToBrandtSchool_0_1" lane="0" pos="22923" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="GardenCenter_ParkingToBrandtSchool" id="GardenCenter_ParkingToBrandtSchool_0_1" lane="0" pos="25938" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="GardenCenter_ParkingToBrandtSchool" id="GardenCenter_ParkingToBrandtSchool_0_1" lane="0" pos="25938" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="BrandtSchool_FranklinToSouth" id="BrandtSchool_FranklinToSouth_0_2" lane="0" pos="68007" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_FranklinToSouth" id="BrandtSchool_FranklinToSouth_0_2" lane="0" pos="68007" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="BrandtSchool_FranklinToWexfordBayne" id="BrandtSchool_FranklinToWexfordBayne_0_2" lane="0" pos="98577" ratio="1.0" send="WexfordBayne_BrandtSchool" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_FranklinToWexfordBayne" id="BrandtSchool_FranklinToWexfordBayne_0_2" lane="0" pos="98577" ratio="1.0" send="WexfordBayne_BrandtSchool" tag="None" type="vehicle" />
+		<detector edge="BrandtSchool_FranklinToWexfordBayne" id="BrandtSchool_FranklinToWexfordBayne_1_2" lane="1" pos="98577" ratio="1.0" send="WexfordBayne_BrandtSchool" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_FranklinToWexfordBayne" id="BrandtSchool_FranklinToWexfordBayne_1_2" lane="1" pos="98577" ratio="1.0" send="WexfordBayne_BrandtSchool" tag="None" type="vehicle" />
+		<detector edge="BrandtSchool_WexfordBayneToFranklin" id="BrandtSchool_WexfordBayneToFranklin_0_2" lane="0" pos="99254" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="BrandtSchool_WexfordBayneToFranklin" id="BrandtSchool_WexfordBayneToFranklin_0_2" lane="0" pos="99254" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Franklin_BrandtSchoolToParking" id="Franklin_BrandtSchoolToParking_0_2" lane="0" pos="23939" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Franklin_BrandtSchoolToParking" id="Franklin_BrandtSchoolToParking_0_2" lane="0" pos="23939" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="GardenCenter_BrandtSchoolToParking" id="GardenCenter_BrandtSchoolToParking_0_2" lane="0" pos="26428" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="GardenCenter_BrandtSchoolToParking" id="GardenCenter_BrandtSchoolToParking_0_2" lane="0" pos="26428" ratio="1.0" send="" tag="None" type="vehicle" />
+	</detectors>
+	<services>
+		<service batch="50" expire="600000" host="10.0.0.184" id="transmitter" port="35013" retry="3" />
+		<service host="0.0.0.0" id="executor" port="35014" />
+		<service host="10.0.0.184" id="detector" port="35015" />
+		<service host="10.0.0.184" id="dispatcher" port="35012" />
+		<service host="0.0.0.0" id="receiver" port="35011" />
+	</services>
+</intersection>

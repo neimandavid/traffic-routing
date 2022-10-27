@@ -1,0 +1,98 @@
+<intersection alias="10.0.0.184" host="10.0.0.184" id="WexfordBayne_Nicholson">
+	<neighbors>
+		<neighbor host="10.0.0.184" id="WexfordBayne_I79SB" port="35041" />
+	</neighbors>
+	<edges>
+		<edge exitLaneNumber="2" id="Childrens_ParkingToWexfordBayne" laneNumber="1" length="52374" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="1" id="Childrens_WexfordBayneToParking" laneNumber="1" length="53231" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="3" id="Nicholson_CarmodyToWexfordBayne" laneNumber="2" length="133603" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="1" id="Nicholson_WexfordBayneToCarmody" laneNumber="1" length="133620" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="2" id="WexfordBayne_GeorgetownToNicholson" laneNumber="1" length="89103" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="3" id="WexfordBayne_I79SBToNicholson" laneNumber="2" length="240160" maxSpeed="17.0" neighbor="WexfordBayne_I79SB" tolerance="0" weight="1" />
+		<edge exitLaneNumber="1" id="WexfordBayne_NicholsonToGeorgetown" laneNumber="1" length="89742" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="3" id="WexfordBayne_NicholsonToI79SB" laneNumber="3" length="235583" maxSpeed="17.0" neighbor="WexfordBayne_I79SB" tolerance="0" weight="1" />
+	</edges>
+	<connections>
+		<connection from="WexfordBayne_GeorgetownToNicholson" fromLane="0" linkIndex="0" to="Nicholson_WexfordBayneToCarmody" toLane="0" viaLength="8702" />
+		<connection from="WexfordBayne_GeorgetownToNicholson" fromLane="1" linkIndex="1" to="Childrens_WexfordBayneToParking" toLane="0" viaLength="26605" />
+		<connection from="WexfordBayne_GeorgetownToNicholson" fromLane="0" linkIndex="2" to="WexfordBayne_NicholsonToI79SB" toLane="1" viaLength="41148" />
+		<connection from="WexfordBayne_I79SBToNicholson" fromLane="1" linkIndex="3" to="WexfordBayne_NicholsonToGeorgetown" toLane="0" viaLength="39411" />
+		<connection from="WexfordBayne_I79SBToNicholson" fromLane="2" linkIndex="4" to="Nicholson_WexfordBayneToCarmody" toLane="0" viaLength="37809" />
+		<connection from="WexfordBayne_I79SBToNicholson" fromLane="0" linkIndex="5" to="Childrens_WexfordBayneToParking" toLane="0" viaLength="15437" />
+		<connection from="Nicholson_CarmodyToWexfordBayne" fromLane="2" linkIndex="6" to="WexfordBayne_NicholsonToGeorgetown" toLane="0" viaLength="18713" />
+		<connection from="Nicholson_CarmodyToWexfordBayne" fromLane="1" linkIndex="7" to="Childrens_WexfordBayneToParking" toLane="0" viaLength="27853" />
+		<connection from="Nicholson_CarmodyToWexfordBayne" fromLane="0" linkIndex="8" to="WexfordBayne_NicholsonToI79SB" toLane="0" viaLength="22418" />
+		<connection from="Childrens_ParkingToWexfordBayne" fromLane="1" linkIndex="9" to="WexfordBayne_NicholsonToI79SB" toLane="2" viaLength="32961" />
+		<connection from="Childrens_ParkingToWexfordBayne" fromLane="0" linkIndex="10" to="WexfordBayne_NicholsonToGeorgetown" toLane="0" viaLength="21777" />
+		<connection from="Childrens_ParkingToWexfordBayne" fromLane="0" linkIndex="11" to="Nicholson_WexfordBayneToCarmody" toLane="0" viaLength="27837" />
+	</connections>
+	<tlLogics defaultID="AM">
+		<tlLogic PhaseTimeout="255000" calltag="" defaultExtension="1000" deltaAdvance="0" deltaPassage="0" effectiveGreen="0" offset="0" passage="1000" pedExtend="True" polling="100" programID="AM" sumo_total="12" watchdog="300000">
+			<phase duration="20000" index="0" intergreen="6000" maxDur="35000" minDur="5000" nextIndices="1" skippable="true" state="rGrGGGrrGrrr" sumoIndex="0" tag="1,6" />
+			<phase duration="2000" state="rGrGGGrrGrrr" />
+			<phase duration="2000" state="rGrGyGrrGrrr" />
+			<phase duration="2000" state="rGrGrGrrGrrr" />
+			<phase duration="58000" index="1" intergreen="6000" maxDur="90000" minDur="25000" nextIndices="2" pedtag="[[2,2],[6,6]]" pedtime="13000,21000" state="GGGGrGrrGrrr" sumoIndex="4" tag="2,6" />
+			<phase duration="2000" state="GGGGrGrrGrrr" />
+			<phase duration="2000" state="yyyyrGrrGrrr" />
+			<phase duration="2000" state="rrrrrGrrGrrr" />
+			<phase duration="26000" index="2" intergreen="6000" maxDur="45000" minDur="6000" nextIndices="3" pedtag="[[4,4],[8,8]]" pedtime="15000,22000" state="rrrrrGGGGGGG" sumoIndex="8" tag="4,8" />
+			<phase duration="1500" state="rrrrrGGGGGGG" />
+			<phase duration="1500" state="rrrrrGyyGyyy" />
+			<phase duration="3000" state="rrrrrGrrGrrr" />
+		</tlLogic>
+	</tlLogics>
+	<detectors>
+		<detector edge="Childrens_ParkingToWexfordBayne" id="Childrens_ParkingToWexfordBayne_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Childrens_ParkingToWexfordBayne" id="Childrens_ParkingToWexfordBayne_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Childrens_ParkingToWexfordBayne" id="Childrens_ParkingToWexfordBayne_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Childrens_ParkingToWexfordBayne" id="Childrens_ParkingToWexfordBayne_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Nicholson_CarmodyToWexfordBayne" id="Nicholson_CarmodyToWexfordBayne_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Nicholson_CarmodyToWexfordBayne" id="Nicholson_CarmodyToWexfordBayne_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Nicholson_CarmodyToWexfordBayne" id="Nicholson_CarmodyToWexfordBayne_1_0" lane="1" pos="522" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Nicholson_CarmodyToWexfordBayne" id="Nicholson_CarmodyToWexfordBayne_1_0" lane="1" pos="522" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Nicholson_CarmodyToWexfordBayne" id="Nicholson_CarmodyToWexfordBayne_2_0" lane="2" pos="522" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Nicholson_CarmodyToWexfordBayne" id="Nicholson_CarmodyToWexfordBayne_2_0" lane="2" pos="522" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_GeorgetownToNicholson" id="WexfordBayne_GeorgetownToNicholson_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_GeorgetownToNicholson" id="WexfordBayne_GeorgetownToNicholson_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_GeorgetownToNicholson" id="WexfordBayne_GeorgetownToNicholson_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_GeorgetownToNicholson" id="WexfordBayne_GeorgetownToNicholson_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_1_0" lane="1" pos="1811" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_1_0" lane="1" pos="1811" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_2_0" lane="2" pos="1811" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_2_0" lane="2" pos="1811" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Childrens_ParkingToWexfordBayne" id="Childrens_ParkingToWexfordBayne_0_1" lane="0" pos="52374" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Childrens_ParkingToWexfordBayne" id="Childrens_ParkingToWexfordBayne_0_1" lane="0" pos="52374" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Nicholson_CarmodyToWexfordBayne" id="Nicholson_CarmodyToWexfordBayne_0_1" lane="0" pos="133602" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Nicholson_CarmodyToWexfordBayne" id="Nicholson_CarmodyToWexfordBayne_0_1" lane="0" pos="133602" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Nicholson_CarmodyToWexfordBayne" id="Nicholson_CarmodyToWexfordBayne_1_1" lane="1" pos="133602" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Nicholson_CarmodyToWexfordBayne" id="Nicholson_CarmodyToWexfordBayne_1_1" lane="1" pos="133602" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_GeorgetownToNicholson" id="WexfordBayne_GeorgetownToNicholson_0_1" lane="0" pos="89102" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_GeorgetownToNicholson" id="WexfordBayne_GeorgetownToNicholson_0_1" lane="0" pos="89102" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Childrens_WexfordBayneToParking" id="Childrens_WexfordBayneToParking_0_2" lane="0" pos="53230" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Childrens_WexfordBayneToParking" id="Childrens_WexfordBayneToParking_0_2" lane="0" pos="53230" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Nicholson_WexfordBayneToCarmody" id="Nicholson_WexfordBayneToCarmody_0_2" lane="0" pos="133619" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Nicholson_WexfordBayneToCarmody" id="Nicholson_WexfordBayneToCarmody_0_2" lane="0" pos="133619" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_0_2" lane="0" pos="240159" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_0_2" lane="0" pos="240159" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_1_2" lane="1" pos="240159" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_1_2" lane="1" pos="240159" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_NicholsonToGeorgetown" id="WexfordBayne_NicholsonToGeorgetown_0_2" lane="0" pos="89741" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_NicholsonToGeorgetown" id="WexfordBayne_NicholsonToGeorgetown_0_2" lane="0" pos="89741" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_0_2" lane="0" pos="235583" ratio="1.0" send="WexfordBayne_I79SB" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_0_2" lane="0" pos="235583" ratio="1.0" send="WexfordBayne_I79SB" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_1_2" lane="1" pos="235583" ratio="1.0" send="WexfordBayne_I79SB" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_1_2" lane="1" pos="235583" ratio="1.0" send="WexfordBayne_I79SB" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_2_2" lane="2" pos="235583" ratio="1.0" send="WexfordBayne_I79SB" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_2_2" lane="2" pos="235583" ratio="1.0" send="WexfordBayne_I79SB" tag="None" type="vehicle" />
+	</detectors>
+	<services>
+		<service batch="50" expire="600000" host="10.0.0.184" id="transmitter" port="35063" retry="3" />
+		<service host="0.0.0.0" id="executor" port="35064" />
+		<service host="10.0.0.184" id="detector" port="35065" />
+		<service host="10.0.0.184" id="dispatcher" port="35062" />
+		<service host="0.0.0.0" id="receiver" port="35061" />
+	</services>
+</intersection>

@@ -1,0 +1,95 @@
+<intersection alias="10.0.0.184" host="10.0.0.184" id="WexfordBayne_I79SB">
+	<neighbors>
+		<neighbor host="10.0.0.184" id="WexfordBayne_I79NB" port="35031" />
+		<neighbor host="10.0.0.184" id="WexfordBayne_Nicholson" port="35061" />
+	</neighbors>
+	<edges>
+		<edge exitLaneNumber="2" id="I79SB_NorthToWexfordBayne" laneNumber="2" length="75009" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="2" id="I79SB_WexfordBayneToSouth" laneNumber="2" length="74394" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="4" id="WexfordBayne_I79NBToI79SB" laneNumber="2" length="227606" maxSpeed="17.0" neighbor="WexfordBayne_I79NB" tolerance="0" weight="1" />
+		<edge exitLaneNumber="3" id="WexfordBayne_I79SBToI79NB" laneNumber="2" length="226715" maxSpeed="17.0" neighbor="WexfordBayne_I79NB" tolerance="0" weight="1" />
+		<edge exitLaneNumber="3" id="WexfordBayne_I79SBToNicholson" laneNumber="2" length="240160" maxSpeed="17.0" neighbor="WexfordBayne_Nicholson" tolerance="0" weight="1" />
+		<edge exitLaneNumber="3" id="WexfordBayne_NicholsonToI79SB" laneNumber="3" length="235583" maxSpeed="17.0" neighbor="WexfordBayne_Nicholson" tolerance="0" weight="1" />
+	</edges>
+	<connections>
+		<connection from="WexfordBayne_NicholsonToI79SB" fromLane="0" linkIndex="0" to="I79SB_WexfordBayneToSouth" toLane="0" viaLength="10975" />
+		<connection from="WexfordBayne_NicholsonToI79SB" fromLane="1" linkIndex="1" to="WexfordBayne_I79SBToI79NB" toLane="0" viaLength="26912" />
+		<connection from="WexfordBayne_NicholsonToI79SB" fromLane="2" linkIndex="2" to="WexfordBayne_I79SBToI79NB" toLane="1" viaLength="26912" />
+		<connection from="I79SB_NorthToWexfordBayne" fromLane="1" linkIndex="3" to="I79SB_WexfordBayneToSouth" toLane="1" viaLength="34155" />
+		<connection from="I79SB_NorthToWexfordBayne" fromLane="0" linkIndex="4" to="WexfordBayne_I79SBToNicholson" toLane="0" viaLength="20532" />
+		<connection from="I79SB_NorthToWexfordBayne" fromLane="1" linkIndex="5" to="WexfordBayne_I79SBToI79NB" toLane="1" viaLength="27561" />
+		<connection from="WexfordBayne_I79NBToI79SB" fromLane="2" linkIndex="6" to="I79SB_WexfordBayneToSouth" toLane="0" viaLength="27017" />
+		<connection from="WexfordBayne_I79NBToI79SB" fromLane="3" linkIndex="7" to="I79SB_WexfordBayneToSouth" toLane="1" viaLength="27017" />
+		<connection from="WexfordBayne_I79NBToI79SB" fromLane="0" linkIndex="8" to="WexfordBayne_I79SBToNicholson" toLane="0" viaLength="29886" />
+		<connection from="WexfordBayne_I79NBToI79SB" fromLane="1" linkIndex="9" to="WexfordBayne_I79SBToNicholson" toLane="1" viaLength="29886" />
+	</connections>
+	<tlLogics defaultID="AM">
+		<tlLogic PhaseTimeout="255000" calltag="" defaultExtension="1000" deltaAdvance="0" deltaPassage="0" effectiveGreen="0" offset="0" passage="1000" pedExtend="True" polling="100" programID="AM" sumo_total="12" watchdog="300000">
+			<phase duration="53000" index="0" intergreen="8000" maxDur="90000" minDur="15000" nextIndices="1" pedtag="[[6,6]]" pedtime="9000,9000" state="rrrrGrGGGG" sumoIndex="0" tag="1,6|1|6" />
+			<phase duration="2500" state="rrrrGrGGGG" />
+			<phase duration="2500" state="rrrrGryyGG" />
+			<phase duration="3000" state="rrrrGrrrGG" />
+			<phase duration="53000" index="1" intergreen="7000" maxDur="90000" minDur="15000" nextIndices="2" pedtag="[[2,2],[6,6]]" pedtime="9000,9000" state="GGGrGrrrGG" sumoIndex="4" tag="2,6|2|6" />
+			<phase duration="2500" state="GGGrGrrrGG" />
+			<phase duration="2500" state="yyyrGrrryy" />
+			<phase duration="2000" state="rrrrGrrrrr" />
+			<phase duration="28000" index="2" intergreen="7000" maxDur="50000" minDur="6000" nextIndices="3" pedtag="[[4,4]]" pedtime="11000,15000" state="rrrGGGrrrr" sumoIndex="8" tag="4" />
+			<phase duration="2500" state="rrrGGGrrrr" />
+			<phase duration="2500" state="rrryGyrrrr" />
+			<phase duration="2000" state="rrrrGrrrrr" />
+		</tlLogic>
+	</tlLogics>
+	<detectors>
+		<detector edge="I79SB_NorthToWexfordBayne" id="I79SB_NorthToWexfordBayne_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="I79SB_NorthToWexfordBayne" id="I79SB_NorthToWexfordBayne_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="I79SB_NorthToWexfordBayne" id="I79SB_NorthToWexfordBayne_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="I79SB_NorthToWexfordBayne" id="I79SB_NorthToWexfordBayne_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_2_0" lane="2" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_2_0" lane="2" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_3_0" lane="3" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_3_0" lane="3" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_2_0" lane="2" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_2_0" lane="2" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="I79SB_NorthToWexfordBayne" id="I79SB_NorthToWexfordBayne_0_1" lane="0" pos="75008" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="I79SB_NorthToWexfordBayne" id="I79SB_NorthToWexfordBayne_0_1" lane="0" pos="75008" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="I79SB_NorthToWexfordBayne" id="I79SB_NorthToWexfordBayne_1_1" lane="1" pos="75008" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="I79SB_NorthToWexfordBayne" id="I79SB_NorthToWexfordBayne_1_1" lane="1" pos="75008" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="I79SB_WexfordBayneToSouth" id="I79SB_WexfordBayneToSouth_0_2" lane="0" pos="74393" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="I79SB_WexfordBayneToSouth" id="I79SB_WexfordBayneToSouth_0_2" lane="0" pos="74393" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="I79SB_WexfordBayneToSouth" id="I79SB_WexfordBayneToSouth_1_2" lane="1" pos="74393" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="I79SB_WexfordBayneToSouth" id="I79SB_WexfordBayneToSouth_1_2" lane="1" pos="74393" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_0_2" lane="0" pos="227605" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_0_2" lane="0" pos="227605" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_1_2" lane="1" pos="227605" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79NBToI79SB" id="WexfordBayne_I79NBToI79SB_1_2" lane="1" pos="227605" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79SBToI79NB" id="WexfordBayne_I79SBToI79NB_0_2" lane="0" pos="226715" ratio="1.0" send="WexfordBayne_I79NB" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79SBToI79NB" id="WexfordBayne_I79SBToI79NB_0_2" lane="0" pos="226715" ratio="1.0" send="WexfordBayne_I79NB" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79SBToI79NB" id="WexfordBayne_I79SBToI79NB_1_2" lane="1" pos="226715" ratio="1.0" send="WexfordBayne_I79NB" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79SBToI79NB" id="WexfordBayne_I79SBToI79NB_1_2" lane="1" pos="226715" ratio="1.0" send="WexfordBayne_I79NB" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_0_2" lane="0" pos="240159" ratio="1.0" send="WexfordBayne_Nicholson" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_0_2" lane="0" pos="240159" ratio="1.0" send="WexfordBayne_Nicholson" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_1_2" lane="1" pos="240159" ratio="1.0" send="WexfordBayne_Nicholson" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_I79SBToNicholson" id="WexfordBayne_I79SBToNicholson_1_2" lane="1" pos="240159" ratio="1.0" send="WexfordBayne_Nicholson" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_0_2" lane="0" pos="235583" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_0_2" lane="0" pos="235583" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_1_2" lane="1" pos="235583" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_1_2" lane="1" pos="235583" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_2_2" lane="2" pos="235583" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_NicholsonToI79SB" id="WexfordBayne_NicholsonToI79SB_2_2" lane="2" pos="235583" ratio="1.0" send="" tag="None" type="vehicle" />
+	</detectors>
+	<services>
+		<service batch="50" expire="600000" host="10.0.0.184" id="transmitter" port="35043" retry="3" />
+		<service host="0.0.0.0" id="executor" port="35044" />
+		<service host="10.0.0.184" id="detector" port="35045" />
+		<service host="10.0.0.184" id="dispatcher" port="35042" />
+		<service host="0.0.0.0" id="receiver" port="35041" />
+	</services>
+</intersection>

@@ -14,19 +14,20 @@ try:
 except:
     #If no data found, start fresh
     data = dict()
-print(data)
+#print(data[0.01]["All"])
 
-for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]*5:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]*3:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]*3:
+
+for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
     reload(runnerQueueSplit12)
     print(p)
     if not p in data:
         data[p] = dict()
-    for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0"]:
+    for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "RNGStates"]:
         if not l in data[p]:
             data[p][l] = []
     for i in range(0, nIters):
         print(i)
-        newdata = runnerQueueSplit12.main(sys.argv[1], p, False)
+        [newdata, newrngstate] = runnerQueueSplit12.main(sys.argv[1], p, False)
         data[p]["All"].append(newdata[0])
         data[p]["Adopters"].append(newdata[1])
         data[p]["Non-Adopters"].append(newdata[2])
@@ -39,6 +40,7 @@ for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]*5:#[0.01, 0.05, 0.25, 0.
         data[p]["All0"].append(newdata[9])
         data[p]["Adopters0"].append(newdata[10])
         data[p]["Non-Adopters0"].append(newdata[11])
+        data[p]["RNGStates"].append(newrngstate)
         with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
             pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 

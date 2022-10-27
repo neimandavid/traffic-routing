@@ -43,6 +43,7 @@ from sumolib import checkBinary
 import traci  #To interface with SUMO simulations
 import sumolib #To query node/edge stuff about the network
 import pickle #To save/load traffic light states
+import xml.etree.ElementTree as ET
 
 isSmart = dict(); #Store whether each vehicle does our routing or not
 pSmart = 1.0; #Adoption probability
@@ -69,6 +70,21 @@ def run(netfile, rerouters, sumoconfig):
         routefilename += routefileparts[i]
     configfilename = routefileparts[0]+".sumocfg"
     writeSumoCfg(configfilename, netfile, routefilename) #NOTE: We don't actually have the new routefile yet, but whatever...
+
+    tree = ET.parse(testroutefile)
+
+    # get root element
+    root = tree.getroot()
+    print(root)
+
+    actualStartDict = dict()
+    routeDict = dict()
+    # iterate news items
+    #TODO: This might not work for flows anymore. Should parse the flow and compute individual car names and depart times
+    for item in root.findall('./vehicle'):
+        actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
+    for item in root.findall('./trip'):
+        actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
 
     #Start printing the route file
     with open(routefilename, "w") as routefile:
@@ -137,8 +153,8 @@ def run(netfile, rerouters, sumoconfig):
                         else:
                             transitiondata[route[edgeind-1]] = [route[edgeind]]
                 routestring = routestring[1:] #Drop leading space
-                print("""<route id="route_%s" edges="%s" />""" % (id, routestring), file=routefile)
-                print("""<vehicle type="noVar" depart="%i" id="%s" route="route_%s" />""" % (t-1, id, id), file=routefile)
+                routeDict[id] = routestring
+                
             for id in traci.simulation.getArrivedIDList():
                 endDict[id] = t
                 locDict.pop(id)
@@ -178,8 +194,8 @@ def run(netfile, rerouters, sumoconfig):
                         roadcarcounter[road] = 0
                     roadcarcounter[road] += 1
                     
-                if traci.vehicle.getRoadID(id) == "":
-                    print(laneDict[id])
+                # if traci.vehicle.getRoadID(id) == "":
+                #     print(laneDict[id])
                 if traci.vehicle.getRoadID(id) != "" and traci.vehicle.getLaneID(id)[0] != ":":
                     laneDict[id] = traci.vehicle.getLaneID(id) #Always keep this up to date
 
@@ -212,6 +228,12 @@ def run(netfile, rerouters, sumoconfig):
                 print("Best time: %f" % bestTime)
                 print("Worst time: %f" % worstTime)
                 print("Average number of lefts: %f" % avgLefts)
+
+        #Actually write the route file (couldn't do this before because cars might not have been inserted and those wouldn't have routes)
+        #And route files need to be in departure time order, so just do everything at the end
+        for id in actualStartDict:
+            print("""<route id="route_%s" edges="%s" />""" % (id, routeDict[id]), file=routefile)
+            print("""<vehicle type="noVar" depart="%i" id="%s" route="route_%s" />""" % (actualStartDict[id], id, id), file=routefile)
         
         #Simulation done, close out route file
         print("""</routes>""", file=routefile)

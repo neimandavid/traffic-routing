@@ -1,0 +1,77 @@
+<intersection alias="10.0.0.184" host="10.0.0.184" id="WexfordBayne_Mingo">
+	<neighbors>
+		<neighbor host="10.0.0.184" id="WexfordBayne_BrandtSchool" port="35021" />
+	</neighbors>
+	<edges>
+		<edge exitLaneNumber="2" id="Mingo_MarshallToWexfordBayne" laneNumber="2" length="34426" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="1" id="Mingo_WexfordBayneToMarshall" laneNumber="1" length="34931" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="2" id="WexfordBayne_BrandtSchoolToMingo" laneNumber="2" length="302221" maxSpeed="17.0" neighbor="WexfordBayne_BrandtSchool" tolerance="0" weight="1" />
+		<edge exitLaneNumber="2" id="WexfordBayne_LiedeckerToMingo" laneNumber="1" length="116225" maxSpeed="17.0" tolerance="0" weight="1" />
+		<edge exitLaneNumber="3" id="WexfordBayne_MingoToBrandtSchool" laneNumber="2" length="302971" maxSpeed="17.0" neighbor="WexfordBayne_BrandtSchool" tolerance="0" weight="1" />
+		<edge exitLaneNumber="1" id="WexfordBayne_MingoToLiedecker" laneNumber="1" length="117084" maxSpeed="17.0" tolerance="0" weight="1" />
+	</edges>
+	<connections>
+		<connection from="WexfordBayne_BrandtSchoolToMingo" fromLane="0" linkIndex="0" to="WexfordBayne_MingoToLiedecker" toLane="0" viaLength="24333" />
+		<connection from="WexfordBayne_BrandtSchoolToMingo" fromLane="1" linkIndex="1" to="Mingo_WexfordBayneToMarshall" toLane="0" viaLength="22242" />
+		<connection from="Mingo_MarshallToWexfordBayne" fromLane="0" linkIndex="2" to="WexfordBayne_MingoToBrandtSchool" toLane="0" viaLength="12375" />
+		<connection from="Mingo_MarshallToWexfordBayne" fromLane="1" linkIndex="3" to="WexfordBayne_MingoToLiedecker" toLane="0" viaLength="17814" />
+		<connection from="WexfordBayne_LiedeckerToMingo" fromLane="0" linkIndex="4" to="WexfordBayne_MingoToBrandtSchool" toLane="0" viaLength="24337" />
+		<connection from="WexfordBayne_LiedeckerToMingo" fromLane="1" linkIndex="5" to="WexfordBayne_MingoToBrandtSchool" toLane="1" viaLength="24337" />
+		<connection from="WexfordBayne_LiedeckerToMingo" fromLane="0" linkIndex="6" to="Mingo_WexfordBayneToMarshall" toLane="0" viaLength="9641" />
+	</connections>
+	<tlLogics defaultID="AM">
+		<tlLogic PhaseTimeout="255000" calltag="" defaultExtension="1000" deltaAdvance="0" deltaPassage="0" effectiveGreen="0" offset="0" passage="1000" pedExtend="True" polling="100" programID="AM" sumo_total="12" watchdog="300000">
+			<phase duration="10000" index="0" intergreen="6000" maxDur="15000" minDur="5000" nextIndices="1" skippable="true" state="GGGrrrr" sumoIndex="0" tag="2,5" />
+			<phase duration="2000" state="GGGrrrr" />
+			<phase duration="2000" state="Gyyrrrr" />
+			<phase duration="2000" state="Grrrrrr" />
+			<phase duration="73000" index="1" intergreen="6000" maxDur="120000" minDur="25000" nextIndices="2" pedtag="[[6,6]]" pedtime="14000,17000" state="GrrrGGG" sumoIndex="4" tag="2,6" />
+			<phase duration="2000" state="GrrrGGG" />
+			<phase duration="2000" state="yrrryyy" />
+			<phase duration="2000" state="rrrrrrr" />
+			<phase duration="18000" index="2" intergreen="5000" maxDur="30000" minDur="5000" nextIndices="3" pedtag="[[4,4]]" pedtime="11000,11000" state="rrGGrrr" sumoIndex="8" tag="4" />
+			<phase duration="1500" state="rrGGrrr" />
+			<phase duration="1500" state="rrGyrrr" />
+			<phase duration="2000" state="rrGrrrr" />
+		</tlLogic>
+	</tlLogics>
+	<detectors>
+		<detector edge="Mingo_MarshallToWexfordBayne" id="Mingo_MarshallToWexfordBayne_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Mingo_MarshallToWexfordBayne" id="Mingo_MarshallToWexfordBayne_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Mingo_MarshallToWexfordBayne" id="Mingo_MarshallToWexfordBayne_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Mingo_MarshallToWexfordBayne" id="Mingo_MarshallToWexfordBayne_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_BrandtSchoolToMingo" id="WexfordBayne_BrandtSchoolToMingo_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_BrandtSchoolToMingo" id="WexfordBayne_BrandtSchoolToMingo_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_BrandtSchoolToMingo" id="WexfordBayne_BrandtSchoolToMingo_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_BrandtSchoolToMingo" id="WexfordBayne_BrandtSchoolToMingo_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_LiedeckerToMingo" id="WexfordBayne_LiedeckerToMingo_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_LiedeckerToMingo" id="WexfordBayne_LiedeckerToMingo_0_0" lane="0" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_LiedeckerToMingo" id="WexfordBayne_LiedeckerToMingo_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_LiedeckerToMingo" id="WexfordBayne_LiedeckerToMingo_1_0" lane="1" pos="0" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Mingo_MarshallToWexfordBayne" id="Mingo_MarshallToWexfordBayne_0_1" lane="0" pos="34425" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Mingo_MarshallToWexfordBayne" id="Mingo_MarshallToWexfordBayne_0_1" lane="0" pos="34425" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Mingo_MarshallToWexfordBayne" id="Mingo_MarshallToWexfordBayne_1_1" lane="1" pos="34425" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Mingo_MarshallToWexfordBayne" id="Mingo_MarshallToWexfordBayne_1_1" lane="1" pos="34425" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_LiedeckerToMingo" id="WexfordBayne_LiedeckerToMingo_0_1" lane="0" pos="116224" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_LiedeckerToMingo" id="WexfordBayne_LiedeckerToMingo_0_1" lane="0" pos="116224" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="Mingo_WexfordBayneToMarshall" id="Mingo_WexfordBayneToMarshall_0_2" lane="0" pos="34930" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="Mingo_WexfordBayneToMarshall" id="Mingo_WexfordBayneToMarshall_0_2" lane="0" pos="34930" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_BrandtSchoolToMingo" id="WexfordBayne_BrandtSchoolToMingo_0_2" lane="0" pos="302221" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_BrandtSchoolToMingo" id="WexfordBayne_BrandtSchoolToMingo_0_2" lane="0" pos="302221" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_BrandtSchoolToMingo" id="WexfordBayne_BrandtSchoolToMingo_1_2" lane="1" pos="302221" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_BrandtSchoolToMingo" id="WexfordBayne_BrandtSchoolToMingo_1_2" lane="1" pos="302221" ratio="1.0" send="" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_MingoToBrandtSchool" id="WexfordBayne_MingoToBrandtSchool_0_2" lane="0" pos="302970" ratio="1.0" send="WexfordBayne_BrandtSchool" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_MingoToBrandtSchool" id="WexfordBayne_MingoToBrandtSchool_0_2" lane="0" pos="302970" ratio="1.0" send="WexfordBayne_BrandtSchool" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_MingoToBrandtSchool" id="WexfordBayne_MingoToBrandtSchool_1_2" lane="1" pos="302970" ratio="1.0" send="WexfordBayne_BrandtSchool" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_MingoToBrandtSchool" id="WexfordBayne_MingoToBrandtSchool_1_2" lane="1" pos="302970" ratio="1.0" send="WexfordBayne_BrandtSchool" tag="None" type="vehicle" />
+		<detector edge="WexfordBayne_MingoToLiedecker" id="WexfordBayne_MingoToLiedecker_0_2" lane="0" pos="117083" ratio="1.0" send="" tag="None" type="occupancy" />
+		<detector edge="WexfordBayne_MingoToLiedecker" id="WexfordBayne_MingoToLiedecker_0_2" lane="0" pos="117083" ratio="1.0" send="" tag="None" type="vehicle" />
+	</detectors>
+	<services>
+		<service batch="50" expire="600000" host="10.0.0.184" id="transmitter" port="35053" retry="3" />
+		<service host="0.0.0.0" id="executor" port="35054" />
+		<service host="10.0.0.184" id="detector" port="35055" />
+		<service host="10.0.0.184" id="dispatcher" port="35052" />
+		<service host="0.0.0.0" id="receiver" port="35051" />
+	</services>
+</intersection>

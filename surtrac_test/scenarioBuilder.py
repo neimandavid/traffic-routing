@@ -32,7 +32,7 @@ from importlib import reload
 preoptcarcounter = dict()
 postoptcarcounter = dict()
 
-trafficmultfactor = 1.0
+trafficmultfactor = 1
 
 #Assume we have a network, edge-to-edge turn data, and #vehicles/hr on input roads (pass these in)
 #For each input road, generate n (=vehicles/hr) vehicles, pick starting times uniformly at random from [0, 3599].
@@ -165,7 +165,7 @@ def parseData(datafilepath, netfilename, routefilename, configfilename):
         preoptcounter2err[edge] = preoptcarcounter2[edge] - nin[edge]
 
     print("Preopt: Mean error " + str(np.mean(list(preoptcountererr.values()))) + ", std dev " + str(np.std(list(preoptcountererr.values()))))
-    print("Preopt2: Mean error " + str(np.mean(list(preoptcounter2err.values()))) + ", std dev " + str(np.std(list(postoptcountererr.values()))))
+    print("Preopt2: Mean error " + str(np.mean(list(preoptcounter2err.values()))) + ", std dev " + str(np.std(list(preoptcounter2err.values()))))
 
 
 #Also does a blind copy routes rather than just O-D pairs so we match the input data better
@@ -213,5 +213,7 @@ if __name__ == "__main__":
         configfilename = sys.argv[4]
     else:
         configfilename = datafile.split(".")[0]+".sumocfg"
+    if len(sys.argv) > 5:
+        trafficmultfactor = float(sys.argv[5])
 
     parseData(datafile, netfilename, routefilename, configfilename)
