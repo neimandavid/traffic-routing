@@ -103,5 +103,3 @@ for d in sorted(data.keys()):
             print(str(statistics.mean(data[d][label])) + " +/- " + str(statistics.stdev(data[d][label])))
         else:
             print(str(statistics.mean(data[d][label])))
-
-print(data[0.5]["All"])

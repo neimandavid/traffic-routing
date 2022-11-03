@@ -68,7 +68,7 @@ detectordist = 50
 
 #Toggles for multithreading
 multithreadRouting = False
-multithreadSurtrac = True
+multithreadSurtrac = False
 
 max_edge_speed = 0.0 #Overwritten when we read the route file
 
@@ -120,7 +120,31 @@ def mergePredictions(clusters, predClusters):
     for lane in clusters:
         if lane in predClusters:
             mergedClusters[lane] += predClusters[lane] #Concatenate known clusters with predicted clusters
+            consolidateClusters(mergedClusters[lane])
     return mergedClusters
+
+def consolidateClusters(clusters):
+    i = 0
+    while i < len(clusters):
+        j = i+1
+        while j < len(clusters):
+            #Check if clusters i and j should merge
+            if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+                #Merge j into i
+                clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                clusters[i]["weight"] += clusters[j]["weight"]
+                clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
+                clusters.pop(j)
+            else:
+                if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
+                    #Merge i into j
+                    clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                    clusters[j]["weight"] += clusters[i]["weight"]
+                    clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
+                    clusters[i] = clusters[j]
+                    clusters.pop(j)
+            j+=1
+        i+=1
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inQueueSim, predictionCutoff, toSwitch, catpreds, remainingDuration, bestschedules):
@@ -638,7 +662,7 @@ def backwardDijkstra(network, goal):
             heappush(pq, (gval+c+h, succ))
     return gvals
                     
-#@profile
+##@profile
 def run(network, rerouters, pSmart, verbose = True):
     global sumoPredClusters
     global currentRoutes
@@ -711,7 +735,7 @@ def run(network, rerouters, pSmart, verbose = True):
             #print("Actual minus expected:")
             #print( (timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2])
 
-        surtracFreq = 1 #Period between updates in main SUMO sim
+        surtracFreq = 1e6 #Period between updates in main SUMO sim
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
             temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters)
             #Don't store toUpdate = temp[0], since doSurtrac has done that update already
@@ -930,7 +954,7 @@ def run(network, rerouters, pSmart, verbose = True):
     
 
 #Tell all the detectors to reroute the cars they've seen
-#@profile
+##@profile
 def reroute(rerouters, network, simtime, remainingDuration):
     global toReroute
     global threads
@@ -983,7 +1007,7 @@ def reroute(rerouters, network, simtime, remainingDuration):
             pass
             
 
-#@profile
+##@profile
 def QueueReroute(detector, network, reroutedata, simtime, remainingDuration):
     global toReroute
     global threads
@@ -1115,7 +1139,7 @@ def loadClusters(net):
     return (clusters, lightphases)
 
 #NOTE: Multithreaded stuff doesn't get profiled...
-#@profile
+##@profile
 def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, startlane, loaddata, routes):
     startedge = startlane.split("_")[0]
 
@@ -1181,7 +1205,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
     queueSimPredClusters = pickle.loads(pickle.dumps(sumoPredClusters)) #Initial predicted clusters are whatever SUMO's Surtrac thinks it is
     queueSimLastSwitchTimes = pickle.loads(pickle.dumps(mainlastswitchtimes)) #Initial last switch times are whatever they were in the main simulation
     remainingDuration = pickle.loads(pickle.dumps(mainRemainingDuration)) #Copy any existing schedules from main sim
-    surtracFreq = 1 #Time between Surtrac updates, in seconds, during routing. (Technically the period between updates)
+    surtracFreq = 1e6 #Time between Surtrac updates, in seconds, during routing. (Technically the period between updates)
 
     #Cutoff in case of infinite loop?
     routestartwctime = time.time()
