@@ -86,6 +86,12 @@ def run(netfile, rerouters, sumoconfig):
     for item in root.findall('./trip'):
         actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
 
+    for item in root.findall('./flow'):
+        dt = (float(item.attrib["end"]) - float(item.attrib["begin"])) / (float(item.attrib["number"]) - 1) #-1 because fencepost problem
+        for ind in range(int(item.attrib["number"])):
+            carname = item.attrib["id"] + "." + str(ind) #No +1 because 0-indexing everywhere
+            actualStartDict[carname] = float(item.attrib["begin"]) + dt*(ind) #No +1 because 0-indexing
+
     #Start printing the route file
     with open(routefilename, "w") as routefile:
         print("""<?xml version="1.0" encoding="UTF-8"?>""", file=routefile)

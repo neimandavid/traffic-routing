@@ -458,7 +458,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
         #Count left turns
         for id in locDict:
-            if traci.vehicle.getRoadID(id) != locDict[id] and traci.vehicle.getRoadID(id)[0] != ":":
+            if traci.vehicle.getRoadID(id) != locDict[id] and len(traci.vehicle.getRoadID(id)) > 0 and  traci.vehicle.getRoadID(id)[0] != ":":
                 c0 = network.getEdge(locDict[id]).getFromNode().getCoord()
                 c1 = network.getEdge(locDict[id]).getToNode().getCoord()
                 theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
@@ -771,7 +771,10 @@ def runClusters(net, routesimtime, vehicleOfInterest, startedge, loaddata, route
         if not notEmpty:
             print(VOIs)
             print(clusters)
-            raise Exception("Can't find vehicle of interest!")
+            #raise Exception("Can't find vehicle of interest!")
+            print("VOI disappeared, probably had to split to all lanes at start of routing. Giving up for now.")
+            startedgeind = routes[vehicleOfInterest].index(startedge)
+            return (routes[vehicleOfInterest][startedgeind:], -1)
         #End sanity check
 
         routesimtime += timestep
@@ -1015,7 +1018,7 @@ def runClusters(net, routesimtime, vehicleOfInterest, startedge, loaddata, route
                             try: #Can fail if linktuple isn't defined, which happens at non-traffic-lights
                                 blockingLinks[node].append(linktuple)
                             except:
-                                print("Zipper test")
+                                #print("Zipper test")
                                 pass #It's a zipper?
                             splitinfo[(cartuple[0], edge)].remove(nextlane)
                             #Before, we'd break out of the lane loop because we'd only add to each edge once
@@ -1321,7 +1324,7 @@ def main(sumoconfig, pSmart, verbose = True):
 
     [avgTime, avgTimeSmart, avgTimeNot] = run(network, rerouters, pSmart, verbose)
     traci.close()
-    return [avgTime, avgTimeSmart, avgTimeNot]*4
+    return [[avgTime, avgTimeSmart, avgTimeNot]*4, 0]
 
 
 # this is the main entry point of this script

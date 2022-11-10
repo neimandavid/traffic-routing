@@ -63,12 +63,18 @@ pSmart = 1.0 #Adoption probability
 
 clusterthresh = 3 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars
-timestep = mingap #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
+timestep = 1#mingap #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
 detectordist = 50
+
+#Test durations to see if there's drift
+simdurations = dict()
+simdurationsUsed = False
+realdurations = dict()
+#TODO: There's no way that my changing remainingDurations in routing sims copies back to the main sim, is there??
 
 #Toggles for multithreading
 multithreadRouting = False
-multithreadSurtrac = False
+multithreadSurtrac = True
 
 max_edge_speed = 0.0 #Overwritten when we read the route file
 
@@ -706,12 +712,20 @@ def run(network, rerouters, pSmart, verbose = True):
                 #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
                 if light in remainingDuration and len(remainingDuration[light]) > 0:
                     #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
+                    #NOTE: The light switches when remaining duration goes negative (in this case -1)
                     remainingDuration[light].pop(0)
                     if len(remainingDuration[light]) == 0:
                         remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
                     else:
                         traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
-
+                else:
+                    print("Unrecognized light " + light + ", this shouldn't happen")
+        
+        realdurations[simtime] = pickle.loads(pickle.dumps(remainingDuration))
+        # if simtime in simdurations:
+        #     print("DURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
+        #     print(simdurations[simtime][lights[0]])
+        #     print(realdurations[simtime][lights[0]])
 
         #Decide whether new vehicles use our routing
         for vehicle in traci.simulation.getDepartedIDList():
@@ -1211,6 +1225,16 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
     routestartwctime = time.time()
     timeout = 60
 
+    #Store durations to compare to real durations
+    storeSimDurations = False
+    newsim = True
+    global simdurationsUsed
+    global simdurations
+    if simdurationsUsed == False:
+        simdurations = dict()
+        storeSimDurations = True
+        simdurationsUsed = True
+
     #Loop through time and simulate things
     while True:
 
@@ -1238,11 +1262,19 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
         routesimtime += timestep
 
         #Update lights
+        #NEXT TODO: Running without Surtrac and we get higher adoption prob is worse. This is bad
+        #Likely explanation is remainingDuration drifts compared to reality
+        #Things to try:
+            #Set routing timestep to 1s like in main sim
+            #Keep track of how negative the previous remainingDuration got and add that to the new duration (still off by a bit from main sim, but less)
         if routesimtime%surtracFreq >= (routesimtime+timestep)%surtracFreq:
             (_, queueSimPredClusters, newRemainingDuration) = doSurtrac(net, routesimtime, clusters, lightphases, queueSimLastSwitchTimes, queueSimPredClusters)
             remainingDuration.update(newRemainingDuration)
+            for light in newRemainingDuration:
+                assert(newRemainingDuration[light][0] > 0)
             for light in remainingDuration:
                 if len(remainingDuration[light]) == 0:
+                    #This should never happen
                     print(remainingDuration)
                     print(newRemainingDuration)
                     print(light)
@@ -1255,12 +1287,18 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                 remainingDuration[light] = [lightphasedata[light][lightphases[light]].duration]
             #All lights should have a non-zero length schedule in remainingDuration
             remainingDuration[light][0] -= timestep
-            if remainingDuration[light][0] <= 0: #Note: Duration might not be divisible by timestep, so we might be getting off by a little over multiple phases
+            if remainingDuration[light][0] < 0: #Note: Duration might not be divisible by timestep, so we might be getting off by a little over multiple phases??
                 remainingDuration[light].pop(0)
                 lightphases[light] = (lightphases[light]+1)%len(lightphasedata[light])
                 queueSimLastSwitchTimes[light] = routesimtime
                 if len(remainingDuration[light]) == 0:
-                    remainingDuration[light] = [lightphasedata[light][lightphases[light]].duration] #Did we not just switch the phase?? #[lightphasedata[light][(lightphases[light]+1)%len(lightphasedata[light])].duration] #+1 because we haven't changed phase yet
+                    remainingDuration[light] = [lightphasedata[light][lightphases[light]].duration - timestep] 
+        
+        if not routesimtime in simdurations:
+            simdurations[routesimtime] = pickle.loads(pickle.dumps(remainingDuration))
+            if newsim == True:
+                simdurations[routesimtime][lights[0]] = str(simdurations[routesimtime][lights[0]]) + " NEW SIM"
+            newsim = False
 
         blockingLinks = dict()
         reflist = pickle.loads(pickle.dumps(edgelist)) #deepcopy(edgelist) #Want to reorder edge list to handle priority stuff, but don't want to mess up the for loop indexing
