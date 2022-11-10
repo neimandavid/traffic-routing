@@ -92,6 +92,12 @@ def run(netfile, rerouters, sumoconfig):
             carname = item.attrib["id"] + "." + str(ind) #No +1 because 0-indexing everywhere
             actualStartDict[carname] = float(item.attrib["begin"]) + dt*(ind) #No +1 because 0-indexing
 
+    #Sort actualStartDict by depart time, because the output file needs to be in order
+    #Code adapted from: https://www.freecodecamp.org/news/sort-dictionary-by-value-in-python/
+    tempnotadict = sorted(actualStartDict.items(), key=lambda x:x[1])
+    actualStartDict = dict(tempnotadict)
+
+
     #Start printing the route file
     with open(routefilename, "w") as routefile:
         print("""<?xml version="1.0" encoding="UTF-8"?>""", file=routefile)
