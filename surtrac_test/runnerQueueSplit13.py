@@ -465,9 +465,9 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
 
     #predCutoff
     if inQueueSim:
-        predictionCutoff = 0 #Routing
+        predictionCutoff = 15 #Routing
     else:
-        predictionCutoff = 0 #Main simulation
+        predictionCutoff = 15 #Main simulation
     
 
     if not predClusters == None:
@@ -749,7 +749,7 @@ def run(network, rerouters, pSmart, verbose = True):
             #print("Actual minus expected:")
             #print( (timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2])
 
-        surtracFreq = 1 #Period between updates in main SUMO sim
+        surtracFreq = 1e6 #Period between updates in main SUMO sim
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
             temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters)
             #Don't store toUpdate = temp[0], since doSurtrac has done that update already
@@ -886,6 +886,7 @@ def run(network, rerouters, pSmart, verbose = True):
                     bestTime = ttemp
 
                 if ttemp < 0:
+                    print("Negative ttemp (=delay)?")
                     print(id)
 
                 if isSmart[id]:
@@ -1219,7 +1220,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
     queueSimPredClusters = pickle.loads(pickle.dumps(sumoPredClusters)) #Initial predicted clusters are whatever SUMO's Surtrac thinks it is
     queueSimLastSwitchTimes = pickle.loads(pickle.dumps(mainlastswitchtimes)) #Initial last switch times are whatever they were in the main simulation
     remainingDuration = pickle.loads(pickle.dumps(mainRemainingDuration)) #Copy any existing schedules from main sim
-    surtracFreq = 1 #Time between Surtrac updates, in seconds, during routing. (Technically the period between updates)
+    surtracFreq = 1e6 #Time between Surtrac updates, in seconds, during routing. (Technically the period between updates)
 
     #Cutoff in case of infinite loop?
     routestartwctime = time.time()

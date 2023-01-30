@@ -12,8 +12,31 @@ try:
     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
         data = pickle.load(handle)
 except:
+    print("Data not found")
     data = dict()
 print(data)
+
+
+# #Split to groups of 5 runs in case of concatenation with old data:
+# #Blindly assume same amount of data in all runs (or less in last p)
+# nruns = len(data[list(data)[-1]]["All"])
+# nfiles = nruns//5
+# print(nfiles)
+# for i in range(0, nfiles):
+#     tempdict = dict()
+#     for p in data:
+
+#         tempdict[p] = dict()
+#         for q in data[p]:
+#             tempdict[p][q] = []
+        
+#             for j in range(0, 5):
+#                 tempdict[p][q].append(data[p][q][5*i+j])
+            
+            
+#     with open("delaydata/delaydata_" + sys.argv[1] + str(i) + ".pickle", 'wb') as handle:
+#         pickle.dump(tempdict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# asdf
 
 labels = []
 for x in ["", "2", "3", "0"]:

@@ -769,8 +769,8 @@ def runClusters(net, routesimtime, vehicleOfInterest, startedge, loaddata, route
                         notEmpty = True
                         break
         if not notEmpty:
-            print(VOIs)
-            print(clusters)
+            #print(VOIs)
+            #print(clusters)
             #raise Exception("Can't find vehicle of interest!")
             print("VOI disappeared, probably had to split to all lanes at start of routing. Giving up for now.")
             startedgeind = routes[vehicleOfInterest].index(startedge)

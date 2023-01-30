@@ -1,7 +1,6 @@
 import os
 import sys
-import runnerQueueSplit11ThreadedNoSurtrac as runnerQueueSplit12
-#import runnerQueueSplit13 as runnerQueueSplit12
+import runnerQueueSplit14 as runnerQueueSplit12
 import pickle
 import statistics
 import matplotlib.pyplot as plt
@@ -18,7 +17,7 @@ except:
 #print(data[0.01]["All"])
 
 
-for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:#[0.75, 0.95, 0.99]+[0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*4:
+for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
     reload(runnerQueueSplit12)
     print(p)
     if not p in data:

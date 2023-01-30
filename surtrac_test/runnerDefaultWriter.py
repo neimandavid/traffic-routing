@@ -62,14 +62,23 @@ def run(netfile, rerouters, sumoconfig):
 
     (testnetfile, testroutefile) = readSumoCfg(sumoconfig)
     routefileparts = testroutefile.split(".")
+    nonroutefileparts = testroutefile.split(".") #I'm scared of copy-by-location here...
     routefileparts[0] = sumoconfig.split(".")[0]+"_auto" #routefileparts[0]+"_auto"
+    nonroutefileparts[0] = sumoconfig.split(".")[0]+"_noroutes_auto"
     routefilename = ""
+    nonroutefilename = ""
     for i in range(len(routefileparts)):
         if i > 0:
             routefilename += "."
+            nonroutefilename += "."
+        nonroutefilename += nonroutefileparts[i]
         routefilename += routefileparts[i]
+    
     configfilename = routefileparts[0]+".sumocfg"
     writeSumoCfg(configfilename, netfile, routefilename) #NOTE: We don't actually have the new routefile yet, but whatever...
+
+    nonrouteconfigfilename = nonroutefileparts[0]+".sumocfg"
+    writeSumoCfg(nonrouteconfigfilename, netfile, nonroutefilename) #NOTE: We don't actually have the new routefile yet, but whatever...
 
     tree = ET.parse(testroutefile)
 
@@ -78,25 +87,42 @@ def run(netfile, rerouters, sumoconfig):
     print(root)
 
     actualStartDict = dict()
+    fromDict = dict()
+    toDict = dict()
     routeDict = dict()
     # iterate news items
-    #TODO: This might not work for flows anymore. Should parse the flow and compute individual car names and depart times
     for item in root.findall('./vehicle'):
         actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
+        #TODO: Set up fromDict and toDict to work with vehicle objects for non-route file
     for item in root.findall('./trip'):
         actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
+        fromDict[item.attrib["id"]] = item.attrib["from"]
+        toDict[item.attrib["id"]] = item.attrib["to"]
 
     for item in root.findall('./flow'):
         dt = (float(item.attrib["end"]) - float(item.attrib["begin"])) / (float(item.attrib["number"]) - 1) #-1 because fencepost problem
         for ind in range(int(item.attrib["number"])):
             carname = item.attrib["id"] + "." + str(ind) #No +1 because 0-indexing everywhere
             actualStartDict[carname] = float(item.attrib["begin"]) + dt*(ind) #No +1 because 0-indexing
+            fromDict[carname] = item.attrib["from"]
+            toDict[carname] = item.attrib["to"]
 
     #Sort actualStartDict by depart time, because the output file needs to be in order
     #Code adapted from: https://www.freecodecamp.org/news/sort-dictionary-by-value-in-python/
     tempnotadict = sorted(actualStartDict.items(), key=lambda x:x[1])
     actualStartDict = dict(tempnotadict)
 
+    #Print the non-route file now because we can
+    with open(nonroutefilename, "w") as routefile:
+        print("""<?xml version="1.0" encoding="UTF-8"?>""", file=routefile)
+        print("""<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+""", file=routefile)
+        print("""<vType id="noVar" speedFactor="1.0" speedDev="0.0"/>""", file=routefile)
+        for id in actualStartDict:
+                print("""<trip type="noVar" depart="%i" id="%s" from="%s" to="%s"/>""" % (actualStartDict[id], id, fromDict[id], toDict[id]), file=routefile)
+            
+        #Close out non-route file
+        print("""</routes>""", file=routefile)
 
     #Start printing the route file
     with open(routefilename, "w") as routefile:
@@ -267,6 +293,8 @@ def run(netfile, rerouters, sumoconfig):
             laneturndata[road][nextroad] /= len(lanetransitiondata[road])
     #print(laneturndata)
     with open("Lturndata_"+routefileparts[0]+".pickle", 'wb') as handle:
+        pickle.dump(laneturndata, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open("Lturndata_"+nonroutefileparts[0]+".pickle", 'wb') as handle:
         pickle.dump(laneturndata, handle, protocol=pickle.HIGHEST_PROTOCOL)
     print("Saved lane turn data")
 
