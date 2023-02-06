@@ -94,6 +94,7 @@ for v in ["", "2", "3", "0"]:
             thickness = (maxwidth - maxwidth*repx)/np.cos(np.arctan(repm))
 
         ax.fill_between(repx, repy - thickness, repy + thickness, label=w)
+        #ax.axis([0, 1, 60, 180]) #To standardize axes
 
     #Text box code from: https://matplotlib.org/3.3.4/gallery/recipes/placing_text_boxes.html
     s = "Unknown stuff, help!"

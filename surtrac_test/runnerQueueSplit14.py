@@ -121,6 +121,9 @@ threads = dict()
 nRoutingCalls = 0
 routingTime = 0
 
+#Quick test for UESO, TODO delete
+nRight = []
+
 def mergePredictions(clusters, predClusters):
     mergedClusters = pickle.loads(pickle.dumps(clusters)) #Because pass-by-value stuff
     for lane in clusters:
@@ -224,7 +227,9 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                     ist = clusters[lane][clusterind]["arrival"] #Intended start time = cluster arrival time
                     dur = clusters[lane][clusterind]["departure"] - ist
                     #mindur=dur is fine (delay=177), mindur=math is bad (delay=234). Why?
-                    mindur = dur #TODO: Actually compute it #max((clusters[lane][clusterind]["weight"] - 1)*mingap, 0) #-1 because fencepost problem
+                    mindur = dur #TODO: Actually compute it
+                    mindur = max((clusters[lane][clusterind]["weight"] - 1)*mingap, 0) #-1 because fencepost problem
+                    mindur = max((clusters[lane][clusterind]["weight"] )*mingap, 0) #No -1 because fencepost problem; next cluster still needs 2.5s of gap afterwards
                     #Slight improvement when I use correct mindur for computing delay. Big unimprovement when I use it for directionalMakespans. Going to leave newdur=dur for now
                     delay = schedule[5]
 
@@ -987,6 +992,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 print("Average number of lefts: %f" % avgLeftsNot)
                 if nCars - nSmart > 0:
                     print("Average number of teleports: %f" % (nnotsmartteleports/(nCars-nSmart)))
+                #print(len(nRight)/1200)
     return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0]
 
     
@@ -1001,6 +1007,14 @@ def reroute(rerouters, network, simtime, remainingDuration):
     reroutedata = dict()
     threads = dict()
     
+    #Test code from UESO, TODO delete
+    # global nRight
+    # detector = "IL_R1_0"
+    # ids = traci.inductionloop.getLastStepVehicleIDs(detector) #All vehicles to be rerouted
+    # if detector == "IL_R1_0":
+    #     for id in ids:
+    #         if not id in nRight:
+    #             nRight.append(id)
 
     for r in rerouters:
         QueueReroute(r, network, reroutedata, simtime, remainingDuration)
@@ -1052,7 +1066,6 @@ def QueueReroute(detector, network, reroutedata, simtime, remainingDuration):
     global delay3adjdict
 
     ids = traci.inductionloop.getLastStepVehicleIDs(detector) #All vehicles to be rerouted
-
     if len(ids) == 0:
         #No cars to route, we're done here
         return
@@ -1301,7 +1314,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
 
     #Cutoff in case of infinite loop?
     routestartwctime = time.time()
-    timeout = 600
+    timeout = 30
 
     #Store durations to compare to real durations
     storeSimDurations = False
