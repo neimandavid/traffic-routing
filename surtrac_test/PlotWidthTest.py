@@ -1,6 +1,6 @@
 import os
 import sys
-import runnerQueueSplit11Threaded
+#import runnerQueueSplit11Threaded
 import pickle
 import statistics
 import matplotlib.pyplot as plt
@@ -11,6 +11,17 @@ nIters = 1
 try:
     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
         data = pickle.load(handle)
+
+    for i in range(2, len(sys.argv)):
+        print("delaydata/delaydata_" + sys.argv[i] + ".pickle")
+        with open("delaydata/delaydata_" + sys.argv[i] + ".pickle", 'rb') as handle:
+            newdata = pickle.load(handle)
+        for p in newdata:
+            print(p)
+            if p in data:
+                data[p].append(newdata[p])
+            else:
+                data[p] = newdata[p]
 except:
     print("Data not found")
     data = dict()
@@ -70,6 +81,7 @@ for v in ["", "2", "3", "0"]:
 
         #Error bars
         ax.errorbar(x, y, linestyle='None', markersize = 10.0, capsize = 3.0, yerr=np.array(sddata[w+v]))
+        #ax.axis([0, 1, 25, 75]) #To standardize axes
         
         maxwidth = (ax.get_ylim()[1] - ax.get_ylim()[0])/500.0 #0.1 #0.99#1.0#
 
@@ -94,7 +106,6 @@ for v in ["", "2", "3", "0"]:
             thickness = (maxwidth - maxwidth*repx)/np.cos(np.arctan(repm))
 
         ax.fill_between(repx, repy - thickness, repy + thickness, label=w)
-        #ax.axis([0, 1, 60, 180]) #To standardize axes
 
     #Text box code from: https://matplotlib.org/3.3.4/gallery/recipes/placing_text_boxes.html
     s = "Unknown stuff, help!"

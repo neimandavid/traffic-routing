@@ -28,6 +28,7 @@
 #New in QueueSplit11: Compute delay, not just average travel time, for cars. Also fixed a bug with Surtrac code DP (was removing sequences it shouldn't have)
 #QueueSplit12: Multithread the Surtrac code (it's really slow otherwise). Also, use the full Surtrac schedule rather than assuming we'll update every timestep
 #QueueSplit13: Surtrac now (correctly) no longer overwrites all the finish times of other lanes with the start time of the currently scheduled cluster (leads to problems when a long cluster, then compatible short cluster, get scheduled, as the next cluster can then start earlier than it should). VOI now gets split into all lanes on starting edge
+#14: Anytime routing, better stats on timeouts and teleports, added mingap to all cluster durations
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -63,7 +64,7 @@ pSmart = 1.0 #Adoption probability
 
 clusterthresh = 3 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars
-timestep = 1#mingap #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
+timestep = 0.5#mingap#1#mingap #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
 detectordist = 50
 ntimeouts = 0
 
@@ -225,9 +226,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
                     clusterind = newScheduleStatus[lane]-1 #We're scheduling the Xth cluster; it has index X-1
                     ist = clusters[lane][clusterind]["arrival"] #Intended start time = cluster arrival time
-                    dur = clusters[lane][clusterind]["departure"] - ist
-                    #mindur=dur is fine (delay=177), mindur=math is bad (delay=234). Why?
-                    mindur = dur #TODO: Actually compute it
+                    dur = clusters[lane][clusterind]["departure"] - ist + mingap #+mingap because next cluster can't start until mingap after current cluster finishes
+                    #mindur = dur #TODO: Actually compute it
                     mindur = max((clusters[lane][clusterind]["weight"] - 1)*mingap, 0) #-1 because fencepost problem
                     mindur = max((clusters[lane][clusterind]["weight"] )*mingap, 0) #No -1 because fencepost problem; next cluster still needs 2.5s of gap afterwards
                     #Slight improvement when I use correct mindur for computing delay. Big unimprovement when I use it for directionalMakespans. Going to leave newdur=dur for now
@@ -1314,7 +1314,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
 
     #Cutoff in case of infinite loop?
     routestartwctime = time.time()
-    timeout = 30
+    timeout = 60
 
     #Store durations to compare to real durations
     storeSimDurations = False
