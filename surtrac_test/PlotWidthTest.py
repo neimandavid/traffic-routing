@@ -12,6 +12,25 @@ try:
     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
         data = pickle.load(handle)
 
+        #Grab first 5 runs from data
+        # for p in data:
+        #     for q in data[p]:
+        #         data[p][q] = data[p][q][0:5]
+        # with open("delaydata/delaydata_" + sys.argv[1] + "new.pickle", 'wb') as handle:
+        #     pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        #Grab last run from appended Batwing data (TODO: Don't append and remove this)
+        # i = 0
+        # for p in data:
+        #     if p < 0.75 or p == 0.95:
+        #         continue
+        #     newdata[p] = dict()
+        #     for q in data[p]:
+        #         newdata[p][q] = [data[p][q][-1]]
+        # data = newdata
+        # with open("delaydata/delaydata_" + sys.argv[1] + "new.pickle", 'wb') as handle:
+        #     pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
     for i in range(2, len(sys.argv)):
         print("delaydata/delaydata_" + sys.argv[i] + ".pickle")
         with open("delaydata/delaydata_" + sys.argv[i] + ".pickle", 'rb') as handle:
@@ -81,7 +100,7 @@ for v in ["", "2", "3", "0"]:
 
         #Error bars
         ax.errorbar(x, y, linestyle='None', markersize = 10.0, capsize = 3.0, yerr=np.array(sddata[w+v]))
-        #ax.axis([0, 1, 25, 75]) #To standardize axes
+        #ax.axis([0, 1, 20, 75]) #To standardize axes
         
         maxwidth = (ax.get_ylim()[1] - ax.get_ylim()[0])/500.0 #0.1 #0.99#1.0#
 

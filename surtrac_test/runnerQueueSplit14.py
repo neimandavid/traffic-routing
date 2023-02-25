@@ -28,7 +28,7 @@
 #New in QueueSplit11: Compute delay, not just average travel time, for cars. Also fixed a bug with Surtrac code DP (was removing sequences it shouldn't have)
 #QueueSplit12: Multithread the Surtrac code (it's really slow otherwise). Also, use the full Surtrac schedule rather than assuming we'll update every timestep
 #QueueSplit13: Surtrac now (correctly) no longer overwrites all the finish times of other lanes with the start time of the currently scheduled cluster (leads to problems when a long cluster, then compatible short cluster, get scheduled, as the next cluster can then start earlier than it should). VOI now gets split into all lanes on starting edge
-#14: Anytime routing, better stats on timeouts and teleports, added mingap to all cluster durations
+#14: Anytime routing, better stats on timeouts and teleports, added mingap to all cluster durations, using a timestep that divides mingap and surtracFreq, opposing traffic blocks for mingap not just one timestep
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -511,6 +511,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
 
                     #If Surtrac tells a light to change, the phase duration should be within the allowed bounds
                     #Surtrac in routing (which uses larger timesteps) might exceed maxDur, but by less than the timestep
+                    #TODO: Actually, might exceed but by no more than routing's surtracFreq - pipe surtracFreq into this function eventually?
                     if not (simtime - lastswitchtimes[light] >= surtracdata[light][curphase]["minDur"] and simtime - lastswitchtimes[light] <= surtracdata[light][curphase]["maxDur"]+timestep):
                         print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]))
 
@@ -1330,6 +1331,8 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
     startedgeind = routes[vehicleOfInterest].index(startedge)
     bestroute = routes[vehicleOfInterest][startedgeind:]
     toupgrade = routes[vehicleOfInterest][startedgeind+1:]
+
+    blockingLinks = dict()
     while True:
 
         #Timeout if things have gone wrong somehow
@@ -1357,7 +1360,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
         routesimtime += timestep
 
         #Update lights
-        if routesimtime%surtracFreq >= (routesimtime+timestep)%surtracFreq:
+        if surtracFreq <= timestep or routesimtime%surtracFreq >= (routesimtime+timestep)%surtracFreq:
             (_, queueSimPredClusters, newRemainingDuration) = doSurtrac(net, routesimtime, clusters, lightphases, queueSimLastSwitchTimes, queueSimPredClusters)
             remainingDuration.update(newRemainingDuration)
             for light in newRemainingDuration:
@@ -1377,20 +1380,25 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                 remainingDuration[light] = [lightphasedata[light][lightphases[light]].duration]
             #All lights should have a non-zero length schedule in remainingDuration
             remainingDuration[light][0] -= timestep
-            if remainingDuration[light][0] < 0: #Note: Duration might not be divisible by timestep, so we might be getting off by a little over multiple phases??
+            #Next TODO: Should this actually be <= 0 not < 0? Ex: Durations of 1, 1, 1, ...; first one lasts 1 timestep as desired, later ones last 2. Think I messed up the fencepost problem here.
+            #Think I fixed this, TODO test this with fixed timing plans, make sure I didn't break this
+            if remainingDuration[light][0] <= 0: #Note: Duration might not be divisible by timestep, so we might be getting off by a little over multiple phases??
+                tosubtract = remainingDuration[light][0]
                 remainingDuration[light].pop(0)
                 lightphases[light] = (lightphases[light]+1)%len(lightphasedata[light])
-                queueSimLastSwitchTimes[light] = routesimtime
+                queueSimLastSwitchTimes[light] = routesimtime #Next TODO: Does this cause divisibility issues?
                 if len(remainingDuration[light]) == 0:
-                    remainingDuration[light] = [lightphasedata[light][lightphases[light]].duration - timestep] 
+                    remainingDuration[light] = [lightphasedata[light][lightphases[light]].duration + tosubtract] #tosubtract is negative
+                #Main sim doesn't subtract for overruns if there's a Surtrac schedule, so we won't do that here either
         
+        #Test code to make sure light schedules don't drift for large surtracFreq
         if not routesimtime in simdurations:
             simdurations[routesimtime] = pickle.loads(pickle.dumps(remainingDuration))
             if newsim == True:
                 simdurations[routesimtime][lights[0]] = str(simdurations[routesimtime][lights[0]]) + " NEW SIM"
             newsim = False
 
-        blockingLinks = dict()
+        #blockingLinks = dict() #Moved to OUTSIDE the while loop so blockages persist between timesteps!!! TODO delete
         reflist = pickle.loads(pickle.dumps(edgelist)) #deepcopy(edgelist) #Want to reorder edge list to handle priority stuff, but don't want to mess up the for loop indexing
         for edge in reflist:
 
@@ -1443,7 +1451,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                         #Add car to next edge. NOTE: Enforce merging collision etc. constraints here
                         node = net.getEdge(edge).getToNode().getID()
                         if not node in blockingLinks:
-                            blockingLinks[node] = []
+                            blockingLinks[node] = dict()
                         #print(node.getID()) #Matches the IDs on the traffic light list
                         #print(node.getType()) #zipper #traffic_light_right_on_red #dead_end
                         #print(lights)
@@ -1513,16 +1521,18 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                                             isBlocked = False
 
                                             #Check if anything we've already sent through will block this
+                                            #NEXT TODO: Opposing traffic blocks links for mingap amount of time, not just one timestep
+                                            #I think I have this working now
                                             for linktuple2 in prioritygreenlightlinks[node][lightphases[node]]+lowprioritygreenlightlinks[node][lightphases[node]]:
                                                 conflicting = lightlinkconflicts[node][linktuple][linktuple2] #Precomputed to save time 
 
-                                                if conflicting and (linktuple2 in blockingLinks[node]):
+                                                if conflicting and (linktuple2 in blockingLinks[node] and blockingLinks[node][linktuple2] > routesimtime - mingap):
                                                     isBlocked = True
                                                     break
                                             if isBlocked:
                                                 continue
 
-                                            #Check for currently-unsent priority links
+                                            #Check for currently-unsent priority links (only needs to block for this timestep, after which we're in the above case)
                                             if not isBlocked:
                                                 for linktuple2 in prioritygreenlightlinks[node][lightphases[node]]:
                                                     conflicting = lightlinkconflicts[node][linktuple][linktuple2] #Precomputed to save time
@@ -1637,7 +1647,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                                     assert(abs(weightsum - predcluster["weight"]) < 1e-10)
 
                             try: #Can fail if linktuple isn't defined, which happens at non-traffic-lights
-                                blockingLinks[node].append(linktuple)
+                                blockingLinks[node][linktuple] = routesimtime
                             except:
                                 #print("Zipper test")
                                 pass #It's a zipper?
