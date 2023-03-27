@@ -86,16 +86,16 @@ def run(netfile, rerouters, sumoconfig):
     root = tree.getroot()
     print(root)
 
-    actualStartDict = dict()
+    intendedStartDict = dict()
     fromDict = dict()
     toDict = dict()
     routeDict = dict()
     # iterate news items
     for item in root.findall('./vehicle'):
-        actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
+        intendedStartDict[item.attrib["id"]] = float(item.attrib["depart"])
         #TODO: Set up fromDict and toDict to work with vehicle objects for non-route file
     for item in root.findall('./trip'):
-        actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
+        intendedStartDict[item.attrib["id"]] = float(item.attrib["depart"])
         fromDict[item.attrib["id"]] = item.attrib["from"]
         toDict[item.attrib["id"]] = item.attrib["to"]
 
@@ -103,14 +103,14 @@ def run(netfile, rerouters, sumoconfig):
         dt = (float(item.attrib["end"]) - float(item.attrib["begin"])) / (float(item.attrib["number"]) - 1) #-1 because fencepost problem
         for ind in range(int(item.attrib["number"])):
             carname = item.attrib["id"] + "." + str(ind) #No +1 because 0-indexing everywhere
-            actualStartDict[carname] = float(item.attrib["begin"]) + dt*(ind) #No +1 because 0-indexing
+            intendedStartDict[carname] = float(item.attrib["begin"]) + dt*(ind) #No +1 because 0-indexing
             fromDict[carname] = item.attrib["from"]
             toDict[carname] = item.attrib["to"]
 
-    #Sort actualStartDict by depart time, because the output file needs to be in order
+    #Sort intendedStartDict by depart time, because the output file needs to be in order
     #Code adapted from: https://www.freecodecamp.org/news/sort-dictionary-by-value-in-python/
-    tempnotadict = sorted(actualStartDict.items(), key=lambda x:x[1])
-    actualStartDict = dict(tempnotadict)
+    tempnotadict = sorted(intendedStartDict.items(), key=lambda x:x[1])
+    intendedStartDict = dict(tempnotadict)
 
     #Print the non-route file now because we can
     with open(nonroutefilename, "w") as routefile:
@@ -118,8 +118,8 @@ def run(netfile, rerouters, sumoconfig):
         print("""<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
 """, file=routefile)
         print("""<vType id="noVar" speedFactor="1.0" speedDev="0.0"/>""", file=routefile)
-        for id in actualStartDict:
-                print("""<trip type="noVar" depart="%i" id="%s" from="%s" to="%s"/>""" % (actualStartDict[id], id, fromDict[id], toDict[id]), file=routefile)
+        for id in intendedStartDict:
+                print("""<trip type="noVar" depart="%i" id="%s" from="%s" to="%s"/>""" % (intendedStartDict[id], id, fromDict[id], toDict[id]), file=routefile)
             
         #Close out non-route file
         print("""</routes>""", file=routefile)
@@ -269,9 +269,9 @@ def run(netfile, rerouters, sumoconfig):
 
         #Actually write the route file (couldn't do this before because cars might not have been inserted and those wouldn't have routes)
         #And route files need to be in departure time order, so just do everything at the end
-        for id in actualStartDict:
+        for id in intendedStartDict:
             print("""<route id="route_%s" edges="%s" />""" % (id, routeDict[id]), file=routefile)
-            print("""<vehicle type="noVar" depart="%i" id="%s" route="route_%s" />""" % (actualStartDict[id], id, id), file=routefile)
+            print("""<vehicle type="noVar" depart="%i" id="%s" route="route_%s" />""" % (intendedStartDict[id], id, id), file=routefile)
         
         #Simulation done, close out route file
         print("""</routes>""", file=routefile)

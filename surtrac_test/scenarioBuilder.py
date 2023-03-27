@@ -1,3 +1,11 @@
+#Takes in:
+# Route file (*.net.xml) 
+# Data file (custom text file with demand data)
+# Name of routes file to be generated
+# Name of sumocfg file to be generated
+# Factor to multiply traffic by (1 for no change, 1.1 for 10% more, etc.)
+
+
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
 # Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
@@ -27,6 +35,8 @@ import numpy as np
 import pickle
 import runnerDefaultWriter
 from importlib import reload
+
+import runnerDefaultWriter
 
 
 preoptcarcounter = dict()
@@ -217,3 +227,4 @@ if __name__ == "__main__":
         trafficmultfactor = float(sys.argv[5])
 
     parseData(datafile, netfilename, routefilename, configfilename)
+    #runnerDefaultWriter.main(netfilename, configfilename) #Errors because second instance of SUMO. TODO: Fix this eventually

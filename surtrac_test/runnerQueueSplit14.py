@@ -228,7 +228,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                     ist = clusters[lane][clusterind]["arrival"] #Intended start time = cluster arrival time
                     dur = clusters[lane][clusterind]["departure"] - ist + mingap #+mingap because next cluster can't start until mingap after current cluster finishes
                     #mindur = dur #TODO: Actually compute it
-                    mindur = max((clusters[lane][clusterind]["weight"] - 1)*mingap, 0) #-1 because fencepost problem
+                    #mindur = max((clusters[lane][clusterind]["weight"] - 1)*mingap, 0) #-1 because fencepost problem
                     mindur = max((clusters[lane][clusterind]["weight"] )*mingap, 0) #No -1 because fencepost problem; next cluster still needs 2.5s of gap afterwards
                     #Slight improvement when I use correct mindur for computing delay. Big unimprovement when I use it for directionalMakespans. Going to leave newdur=dur for now
                     delay = schedule[5]
@@ -479,6 +479,11 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
         clusters = mergePredictions(realclusters, predClusters)
     else:
         clusters = pickle.loads(pickle.dumps(realclusters))
+
+    #Drop clusters that'll arrive too far in the future (TODO refine cutoff here)
+    # for lane in clusters:
+    #     while len(clusters[lane]) > 0 and clusters[lane][-1]["arrival"] > simtime + 20:
+    #         clusters[lane] = clusters[lane][0:-1] #Drop last cluster, it's too far in the future
 
     for light in lights:
         if multithreadSurtrac:
@@ -736,7 +741,11 @@ def run(network, rerouters, pSmart, verbose = True):
         #Decide whether new vehicles use our routing
         for vehicle in traci.simulation.getDepartedIDList():
             isSmart[vehicle] = random.random() < pSmart
-            timedata[vehicle] = [simtime, -1, -1]
+            if isSmart[vehicle]:
+                traci.vehicle.setColor(vehicle, [0, 255, 0, 255])
+            else:
+                traci.vehicle.setColor(vehicle, [255, 0, 0, 255])
+            timedata[vehicle] = [simtime, -1, -1, 'unknown', 'unknown']
             currentRoutes[vehicle] = traci.vehicle.getRoute(vehicle)
             routeStats[vehicle] = dict()
             routeStats[vehicle]["nCalls"] = 0
@@ -752,12 +761,17 @@ def run(network, rerouters, pSmart, verbose = True):
             laneDict[vehicle] = traci.vehicle.getLaneID(vehicle)
             currentRoutes[vehicle] = traci.vehicle.getRoute(vehicle)
 
+        #Check predicted vs. actual travel times
         for vehicle in traci.simulation.getArrivedIDList():
-            timedata[vehicle][1] = simtime
-            #print("Actual minus expected:")
-            #print( (timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2])
+            if isSmart[vehicle]:
+                timedata[vehicle][1] = simtime
+                # print("Actual minus expected: %f" % ((timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2]))
+                # print("Actual : %f" % (timedata[vehicle][1]-timedata[vehicle][0]))
+                # print("Expected : %f" % (timedata[vehicle][2]))
+                # print("Percent error : %f" % ( ((timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2]) / (timedata[vehicle][1]-timedata[vehicle][0]) * 100))
+                # print("Route from " + timedata[vehicle][3] + " to " + timedata[vehicle][4])
 
-        surtracFreq = 1 #Period between updates in main SUMO sim
+        surtracFreq = 5 #Period between updates in main SUMO sim
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
             temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters)
             #Don't store toUpdate = temp[0], since doSurtrac has done that update already
@@ -1044,19 +1058,23 @@ def reroute(rerouters, network, simtime, remainingDuration):
         #print(edge)
         #print(tcluster)
         if timedata[vehicle][2] == -1:
-            timedata[vehicle][2] = tcluster
-            
+            timedata[vehicle][0] = simtime #Time prediction was made
+            #timedata[vehicle][1] is going to be actual time at goal
+            timedata[vehicle][2] = tcluster #Predicted time until goal
+            timedata[vehicle][3] = currentRoutes[vehicle][0]
+            timedata[vehicle][4] = currentRoutes[vehicle][-1]
         try:
             traci.vehicle.setRoute(vehicle, newroute)
             if not(newroute[-1] == currentRoutes[vehicle][-1]):
                 print("AAAAAAAAAAAAAAAAAAAH! Route end changed!")
                 print(newroute[-1])
                 print(currentRoutes[vehicle][-1])
+                raise Exception("Route end changed")
             assert(newroute[-1] == currentRoutes[vehicle][-1]) #This doesn't end code because try-catch. Is there a good way to fix this?
             currentRoutes[vehicle] = newroute
         except Exception as e:
             print("Routing fail fail")
-            print(e)
+            raise e
             pass
             
 
@@ -1105,10 +1123,7 @@ def QueueReroute(detector, network, reroutedata, simtime, remainingDuration):
             routes = deepcopy(currentRoutes)
 
             for vehicletemp in vehicles:
-                if isSmart[vehicletemp]:
-                    pass
-                    #routes[vehicle] = traci.vehicle.getRoute(vehicle)
-                else:
+                if not isSmart[vehicletemp]:
                     #Sample random routes for non-adopters
                     routes[vehicletemp] = sampleRouteFromTurnData(vehicletemp, traci.vehicle.getLaneID(vehicletemp), turndata)
 
@@ -1240,6 +1255,8 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
 
     clusters = loaddata[0]
     lightphases = loaddata[1]
+    
+    finishedLanes = dict()
 
     #Sanity check for debugging infinite loops where the vehicle of interest disappears
     notEmpty = False
@@ -1285,15 +1302,16 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
         VOIadded = False
         vehicle = vehicleOfInterest+"_"+str(lanenum) #Name of copy of VOI to add
         VOIs.append(vehicle)
-        for cluster in clusters[lane]:
+        for cluster in clusters[lane]: #Loop over all existing clusters in the lane, looking for a reasonable one to append to
             assert(cluster["startpos"] >= cluster["endpos"]) #Startpos is position of first car to leave, which is closest to end of edge, but 0 is start of edge, so startpos should be larger
             if cluster["startpos"] >= startdist and cluster["endpos"] <= startdist:
-                #Found an appropriate cluster; prepend to it
+                #Found an appropriate cluster; append to it
                 assert(cluster["time"] == routesimtime)
                 ffdeparttime = routesimtime + (lengths[lane]-clusters[lane][-1]["endpos"])/speeds[startedge]
                 clusters[lane][-1]["cars"].append((vehicle, ffdeparttime, 1, "VOI append clone"))
                 clusters[lane][-1]["weight"] += 1
                 VOIadded = True
+                finishedLanes[lane] = True
                 break
         if not VOIadded:
             #Else make a new cluster
@@ -1306,16 +1324,17 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
             newcluster["cars"] = [(vehicle, newcluster["departure"], 1, "VOI new clone")]
             newcluster["weight"] = len(newcluster["cars"])
             clusters[lane].append(newcluster)
+            finishedLanes[lane] = True
 
 
     queueSimPredClusters = pickle.loads(pickle.dumps(sumoPredClusters)) #Initial predicted clusters are whatever SUMO's Surtrac thinks it is
     queueSimLastSwitchTimes = pickle.loads(pickle.dumps(mainlastswitchtimes)) #Initial last switch times are whatever they were in the main simulation
     remainingDuration = pickle.loads(pickle.dumps(mainRemainingDuration)) #Copy any existing schedules from main sim
-    surtracFreq = 1 #Time between Surtrac updates, in seconds, during routing. (Technically the period between updates)
+    surtracFreq = 5 #Time between Surtrac updates, in seconds, during routing. (Technically the period between updates)
 
     #Cutoff in case of infinite loop?
     routestartwctime = time.time()
-    timeout = 60
+    timeout = 10
 
     #Store durations to compare to real durations
     storeSimDurations = False
@@ -1392,11 +1411,11 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                 #Main sim doesn't subtract for overruns if there's a Surtrac schedule, so we won't do that here either
         
         #Test code to make sure light schedules don't drift for large surtracFreq
-        if not routesimtime in simdurations:
-            simdurations[routesimtime] = pickle.loads(pickle.dumps(remainingDuration))
-            if newsim == True:
-                simdurations[routesimtime][lights[0]] = str(simdurations[routesimtime][lights[0]]) + " NEW SIM"
-            newsim = False
+        # if not routesimtime in simdurations:
+        #     simdurations[routesimtime] = pickle.loads(pickle.dumps(remainingDuration))
+        #     if newsim == True:
+        #         simdurations[routesimtime][lights[0]] = str(simdurations[routesimtime][lights[0]]) + " NEW SIM"
+        #     newsim = False
 
         #blockingLinks = dict() #Moved to OUTSIDE the while loop so blockages persist between timesteps!!! TODO delete
         reflist = pickle.loads(pickle.dumps(edgelist)) #deepcopy(edgelist) #Want to reorder edge list to handle priority stuff, but don't want to mess up the for loop indexing
@@ -1521,12 +1540,11 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                                             isBlocked = False
 
                                             #Check if anything we've already sent through will block this
-                                            #NEXT TODO: Opposing traffic blocks links for mingap amount of time, not just one timestep
-                                            #I think I have this working now
+                                            #Opposing traffic blocks links for some amount of time, not just one timestep
                                             for linktuple2 in prioritygreenlightlinks[node][lightphases[node]]+lowprioritygreenlightlinks[node][lightphases[node]]:
                                                 conflicting = lightlinkconflicts[node][linktuple][linktuple2] #Precomputed to save time 
 
-                                                if conflicting and (linktuple2 in blockingLinks[node] and blockingLinks[node][linktuple2] > routesimtime - mingap):
+                                                if conflicting and (linktuple2 in blockingLinks[node] and blockingLinks[node][linktuple2] > routesimtime - 2*mingap): #That last n*mingap is the amount of blocking time
                                                     isBlocked = True
                                                     break
                                             if isBlocked:
@@ -1583,37 +1601,40 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                                 
                                 #Make sure there's no car on the new road that's too close
                                 if not abs(clusters[nextlane][-1]["time"] - routesimtime) < mingap:
-                                    #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
-                                    #Departure time (=time to fully clear cluster) increases, arrival doesn't
-                                    #TODO eventually: Be more precise with time and position over partial timesteps, allowing me to use larger timesteps?
-                                    clusters[nextlane][-1]["endpos"] = 0
-                                    clusters[nextlane][-1]["time"] = routesimtime
-                                    clusters[nextlane][-1]["departure"] = routesimtime + fftimes[nextedge]
-                                    if cartuple[0] in VOIs:
-                                        clusters[nextlane][-1]["cars"].append((cartuple[0]+"|"+nextlane, clusters[nextlane][-1]["departure"], 1, "Zipper append"))
-                                        VOIs.append(cartuple[0]+"|"+nextlane)
-                                    else:
-                                        clusters[nextlane][-1]["cars"].append((cartuple[0], clusters[nextlane][-1]["departure"], 1, "Zipper append"))
-                                    clusters[nextlane][-1]["weight"] += 1
+                                    if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
+                                        #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
+                                        #Departure time (=time to fully clear cluster) increases, arrival doesn't
+                                        #TODO eventually: Be more precise with time and position over partial timesteps, allowing me to use larger timesteps?
+                                        clusters[nextlane][-1]["endpos"] = 0
+                                        clusters[nextlane][-1]["time"] = routesimtime
+                                        clusters[nextlane][-1]["departure"] = routesimtime + fftimes[nextedge]
+                                        if cartuple[0] in VOIs:
+                                            clusters[nextlane][-1]["cars"].append((cartuple[0]+"|"+nextlane, clusters[nextlane][-1]["departure"], 1, "Zipper append"))
+                                            VOIs.append(cartuple[0]+"|"+nextlane)
+                                            finishedLanes[nextlane] = True
+                                        else:
+                                            clusters[nextlane][-1]["cars"].append((cartuple[0], clusters[nextlane][-1]["departure"], 1, "Zipper append"))
+                                        clusters[nextlane][-1]["weight"] += 1
                                 else:
                                     #No space, try next lane
                                     continue
                             else:
-                                #There is no cluster nearby
-                                #So make a new cluster
-                                newcluster = dict()
-                                newcluster["endpos"] = 0
-                                newcluster["time"] = routesimtime
-                                newcluster["arrival"] = routesimtime + fftimes[nextedge]
-                                newcluster["departure"] = newcluster["arrival"]
-                                if cartuple[0] in VOIs:
-                                    newcluster["cars"] = [(cartuple[0]+"|"+nextlane, newcluster["departure"], 1, "Zipper new cluster")]
-                                    VOIs.append(cartuple[0]+"|"+nextlane)
-                                else:
-                                    newcluster["cars"] = [(cartuple[0], newcluster["departure"], 1, "Zipper new cluster")]
-                                newcluster["weight"] = 1
-                                clusters[nextlane].append(newcluster)
-
+                                if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
+                                    #There is no cluster nearby
+                                    #So make a new cluster
+                                    newcluster = dict()
+                                    newcluster["endpos"] = 0
+                                    newcluster["time"] = routesimtime
+                                    newcluster["arrival"] = routesimtime + fftimes[nextedge]
+                                    newcluster["departure"] = newcluster["arrival"]
+                                    if cartuple[0] in VOIs:
+                                        newcluster["cars"] = [(cartuple[0]+"|"+nextlane, newcluster["departure"], 1, "Zipper new cluster")]
+                                        VOIs.append(cartuple[0]+"|"+nextlane)
+                                        finishedLanes[nextlane] = True
+                                    else:
+                                        newcluster["cars"] = [(cartuple[0], newcluster["departure"], 1, "Zipper new cluster")]
+                                    newcluster["weight"] = 1
+                                    clusters[nextlane].append(newcluster)
                             #We've added a car to nextedge_nextlanenum
                             
                             #Remove vehicle from predictions, since the next intersection should actually see it now
@@ -1909,15 +1930,16 @@ def main(sumoconfig, pSmart, verbose = True):
             linklistlist = lightlinks[light]
             for linklistind in range(len(linklistlist)):
                 linkstate = lightstate[linklistind]
-                if not linklistlist[linklistind][0][0] in lanephases:
-                    lanephases[linklistlist[linklistind][0][0]] = []
+                for linktuple in linklistlist[linklistind]:
+                    if not linktuple[0] in lanephases:
+                        lanephases[linktuple[0]] = []
 
-                if linkstate == "G" and not linklistlist[linklistind][0][0] in surtracdata[light][i]["lanes"]: #NOTE: I'm being sloppy and assuming one-element lists of tuples, but I've yet to see a multi-element list here
-                    surtracdata[light][i]["lanes"].append(linklistlist[linklistind][0][0]) #[0][x]; x=0 is from, x=1 is to, x=2 is via
-                    
-                    lanephases[linklistlist[linklistind][0][0]].append(i)
+                    if linkstate == "G" and not linktuple[0] in surtracdata[light][i]["lanes"]:
+                        surtracdata[light][i]["lanes"].append(linktuple[0]) #[0][x]; x=0 is from, x=1 is to, x=2 is via
+                        
+                        lanephases[linktuple[0]].append(i)
 
-                linklist = linklistlist[linklistind]
+                    linklist = linklistlist[linklistind]
                 for link in linklist:
                     if linkstate == "G":
                         prioritygreenlightlinks[light][i].append(link)
@@ -1941,10 +1963,11 @@ def main(sumoconfig, pSmart, verbose = True):
             #Remove lanes if there's any direction that gets a non-green light ("g" is fine, single-lane left turns are just sad)
             for linklistind in range(len(linklistlist)):
                 linkstate = lightstate[linklistind]
+                for linktuple in linklistlist[linklistind]:
 
-                if not (linkstate == "G" or linkstate == "g") and linklistlist[linklistind][0][0] in surtracdata[light][i]["lanes"]: #NOTE: I'm being sloppy and assuming one-element lists of tuples, but I've yet to see a multi-element list here
-                    surtracdata[light][i]["lanes"].remove(linklistlist[linklistind][0][0])
-                    lanephases[linklistlist[linklistind][0][0]].remove(i)
+                    if not (linkstate == "G" or linkstate == "g") and linktuple[0] in surtracdata[light][i]["lanes"]: #NOTE: I'm being sloppy and assuming one-element lists of tuples, but I've yet to see a multi-element list here
+                        surtracdata[light][i]["lanes"].remove(linktuple[0])
+                        lanephases[linktuple[0]].remove(i)
                 
         for i in range(n):
             #Compute min transition time between the start of any two phases

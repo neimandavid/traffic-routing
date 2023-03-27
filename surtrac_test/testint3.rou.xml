@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2021-09-30 20:22:03 by Eclipse SUMO netedit Version 1.9.2
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <sumo-net-file value="shortlong.net.xml"/>
+    </input>
+
+    <output>
+        <output-file value="shortlong.net.xml"/>
+    </output>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="false"/>
+    </processing>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="5"/>
+        <junctions.limit-turn-speed value="5.5"/>
+        <rectangular-lane-cut value="false"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="false"/>
+    </pedestrian>
+
+    <netedit>
+        <route-files value="/usr/local/Cellar/sumo/shortlong2/shortlong.rou.xml"/>
+    </netedit>
+
+    <report>
+        <aggregate-warnings value="5"/>
+    </report>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
+
+    <flow id="RLflow" type="noVar" from="inR" to="outL" begin="0" end="4000" number="1000"/>
+    <flow id="LUflow" type="noVar" from="inL" to="outR2" begin="0" end="4000" number="50"/>
+    <flow id="UD1flow" type="noVar" from="inU1" to="outD1" begin="0" end="4000" number="400"/>
+    <flow id="UD2flow" type="noVar" from="inU2a" to="outD2" begin="0" end="4000" number="400"/>
+</routes>

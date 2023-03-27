@@ -21,12 +21,13 @@ try:
 
         #Grab last run from appended Batwing data (TODO: Don't append and remove this)
         # i = 0
+        # newdata = dict()
         # for p in data:
-        #     if p < 0.75 or p == 0.95:
+        #     if p != 0.5:
         #         continue
         #     newdata[p] = dict()
         #     for q in data[p]:
-        #         newdata[p][q] = [data[p][q][-1]]
+        #         newdata[p][q] = [data[p][q][-2], data[p][q][-1]]
         # data = newdata
         # with open("delaydata/delaydata_" + sys.argv[1] + "new.pickle", 'wb') as handle:
         #     pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -38,12 +39,15 @@ try:
         for p in newdata:
             print(p)
             if p in data:
-                data[p].append(newdata[p])
+                #data[p].append(newdata[p])
+                for q in data[p]:
+                    data[p][q] = data[p][q] + newdata[p][q]
             else:
                 data[p] = newdata[p]
-except:
+except Exception as e:
     print("Data not found")
     data = dict()
+    raise(e)
 print(data)
 
 
