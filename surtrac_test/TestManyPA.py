@@ -17,7 +17,7 @@ except:
 #print(data[0.01]["All"])
 
 
-for p in [0.75, 0.5, 0.25, 0.01, 0.99]*3:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
+for p in [0.99]:#[0.5, 0.75, 0.25, 0.01, 0.99]*3:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
     reload(runnerQueueSplit12)
     print(p)
     if not p in data:
@@ -27,7 +27,7 @@ for p in [0.75, 0.5, 0.25, 0.01, 0.99]*3:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.
             data[p][l] = []
     for i in range(0, nIters):
         print(i)
-        [newdata, newrngstate] = runnerQueueSplit12.main(sys.argv[1], p, False)
+        [newdata, newrngstate] = runnerQueueSplit12.main(sys.argv[1], p, True)
         data[p]["All"].append(newdata[0])
         data[p]["Adopters"].append(newdata[1])
         data[p]["Non-Adopters"].append(newdata[2])

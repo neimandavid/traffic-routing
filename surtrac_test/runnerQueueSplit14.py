@@ -674,6 +674,13 @@ def backwardDijkstra(network, goal):
                 #Already saw this state, don't requeue
                 continue
 
+            #NOTE: If we found a better way to reach succ, the old way is still in the queue
+            #This is fine, though, since the previous check ensures we don't requeue bad stuff afterwards
+            #TODO eventually: Uncomment this to avoid that? Shouldn't matter much though, this function is fast and doesn't run many times
+            # if succ in gvals and gvals[succ] > gval+c:
+            #     pq.remove((gvals[succ], succ))
+            #     heapify(pq)
+
             #Otherwise it's new or we're now doing better, so requeue it
             gvals[succ] = gval+c
             heappush(pq, (gval+c+h, succ))
@@ -1334,7 +1341,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
 
     #Cutoff in case of infinite loop?
     routestartwctime = time.time()
-    timeout = 10
+    timeout = 60
 
     #Store durations to compare to real durations
     storeSimDurations = False
