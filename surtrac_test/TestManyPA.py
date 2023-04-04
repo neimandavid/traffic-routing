@@ -8,26 +8,28 @@ from importlib import reload
 
 nIters = 1
 
-try:
-    with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
-        data = pickle.load(handle)
-except:
-    #If no data found, start fresh
-    data = dict()
-#print(data[0.01]["All"])
 
-
-for p in [0.99]:#[0.5, 0.75, 0.25, 0.01, 0.99]*3:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
+for p in [0.01]:#[0.5, 0.75, 0.25, 0.01, 0.99]*3:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
     reload(runnerQueueSplit12)
     print(p)
-    if not p in data:
-        data[p] = dict()
-    for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "RNGStates"]:
-        if not l in data[p]:
-            data[p][l] = []
+
     for i in range(0, nIters):
         print(i)
         [newdata, newrngstate] = runnerQueueSplit12.main(sys.argv[1], p, True)
+
+        try:
+            with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
+                data = pickle.load(handle)
+        except:
+            #If no data found, start fresh
+            data = dict()
+        #print(data[0.01]["All"])
+        if not p in data:
+            data[p] = dict()
+        for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "RNGStates"]:
+            if not l in data[p]:
+                data[p][l] = []
+
         data[p]["All"].append(newdata[0])
         data[p]["Adopters"].append(newdata[1])
         data[p]["Non-Adopters"].append(newdata[2])
