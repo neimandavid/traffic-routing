@@ -37,7 +37,7 @@ try:
         with open("delaydata/delaydata_" + sys.argv[i] + ".pickle", 'rb') as handle:
             newdata = pickle.load(handle)
         for p in newdata:
-            print(p)
+            #print(p)
             if p in data:
                 #data[p].append(newdata[p])
                 for q in data[p]:
@@ -48,7 +48,7 @@ except Exception as e:
     print("Data not found")
     data = dict()
     raise(e)
-print(data)
+#print(data)
 
 
 # #Split to groups of 5 runs in case of concatenation with old data:
@@ -104,7 +104,7 @@ for v in ["", "2", "3", "0"]:
 
         #Error bars
         ax.errorbar(x, y, linestyle='None', markersize = 10.0, capsize = 3.0, yerr=np.array(sddata[w+v]))
-        #ax.axis([0, 1, 20, 75]) #To standardize axes
+        #ax.axis([0, 1, 140, 270]) #To standardize axes
         
         maxwidth = (ax.get_ylim()[1] - ax.get_ylim()[0])/500.0 #0.1 #0.99#1.0#
 

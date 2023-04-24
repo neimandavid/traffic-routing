@@ -62,7 +62,7 @@ import pickle #To save/load traffic light states
 
 pSmart = 1.0 #Adoption probability
 
-clusterthresh = 3 #Time between cars before we split to separate clusters
+clusterthresh = 5 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars
 timestep = 0.5#mingap#1#mingap #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
 detectordist = 50
@@ -480,7 +480,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
     else:
         clusters = pickle.loads(pickle.dumps(realclusters))
 
-    #Drop clusters that'll arrive too far in the future (TODO refine cutoff here)
+    #Drop clusters that'll arrive too far in the future (TODO refine cutoff here. Or remove completely.)
     # for lane in clusters:
     #     while len(clusters[lane]) > 0 and clusters[lane][-1]["arrival"] > simtime + 20:
     #         clusters[lane] = clusters[lane][0:-1] #Drop last cluster, it's too far in the future
@@ -756,7 +756,11 @@ def run(network, rerouters, pSmart, verbose = True):
             currentRoutes[vehicle] = traci.vehicle.getRoute(vehicle)
             routeStats[vehicle] = dict()
             routeStats[vehicle]["nCalls"] = 0
+            routeStats[vehicle]["nCallsFirst"] = 0
+            routeStats[vehicle]["nCallsAfterFirst"] = 0
             routeStats[vehicle]["nSwaps"] = 0
+            routeStats[vehicle]["nSwapsFirst"] = 0
+            routeStats[vehicle]["nSwapsAfterFirst"] = 0
             routeStats[vehicle]["swapped"] = False
             routeStats[vehicle]["nTimeouts"] = 0
             routeStats[vehicle]["nTeleports"] = 0
@@ -879,7 +883,11 @@ def run(network, rerouters, pSmart, verbose = True):
             worstTimeNot = 0
 
             totalcalls = 0
+            totalcallsafterfirst = 0
+            totalcallsfirst = 0
             totalswaps = 0
+            totalswapsafterfirst = 0
+            totalswapsfirst = 0
             nswapped = 0
 
             avgTime2 = 0
@@ -900,6 +908,12 @@ def run(network, rerouters, pSmart, verbose = True):
             nsmartteleports = 0
             nnotsmartteleports = 0
             nteleports = 0
+
+            avgerror = 0
+            avgabserror = 0
+            avgpcterror = 0
+            avgabspcterror = 0
+
             for id in endDict:
                 if actualStartDict[id] >= 600 and actualStartDict[id] < 3000:
                     nCars += 1
@@ -974,10 +988,21 @@ def run(network, rerouters, pSmart, verbose = True):
                     avgTimeNot0 += ttemp0/(nCars-nSmart)
 
                 totalcalls += routeStats[id]["nCalls"]
+                totalcallsafterfirst += routeStats[id]["nCallsAfterFirst"]
+                totalcallsfirst += routeStats[id]["nCallsFirst"]
                 totalswaps += routeStats[id]["nSwaps"]
+                totalswapsafterfirst += routeStats[id]["nSwapsAfterFirst"]
+                totalswapsfirst += routeStats[id]["nSwapsFirst"]
+                # if isSmart[id] and routeStats[id]["nSwapsFirst"] == 0:
+                #     print(currentRoutes[id])
                 if routeStats[id]["swapped"] == True:
                     nswapped += 1
 
+                if isSmart[id]:
+                    avgerror += ((timedata[id][1]-timedata[id][0]) - timedata[id][2])/nSmart
+                    avgabserror += abs((timedata[id][1]-timedata[id][0]) - timedata[id][2])/nSmart
+                    avgpcterror += ((timedata[id][1]-timedata[id][0]) - timedata[id][2])/(timedata[id][1]-timedata[id][0])/nSmart*100
+                    avgabspcterror += abs((timedata[id][1]-timedata[id][0]) - timedata[id][2])/(timedata[id][1]-timedata[id][0])/nSmart*100
         
             if verbose or not traci.simulation.getMinExpectedNumber() > 0:
                 print(pSmart)
@@ -993,6 +1018,7 @@ def run(network, rerouters, pSmart, verbose = True):
                     if totalcalls > 0:
                         print("Proportion of timeouts in routing: %f" % (ntimeouts/totalcalls))
                     print("Average number of route changes: %f" % (totalswaps/nCars))
+                    print("Average number of route changes after first routing decision: %f" % (totalswapsafterfirst/nCars))
                     print("Proportion of cars that changed route at least once: %f" % (nswapped/nCars))
                     print("Average number of teleports: %f" % (nteleports/nCars))
                 print("Among adopters:")
@@ -1001,10 +1027,23 @@ def run(network, rerouters, pSmart, verbose = True):
                 print("Worst delay: %f" % worstTimeSmart)
                 print("Average number of lefts: %f" % avgLeftsSmart)
                 if nSmart > 0:
+                    print("Average error (actual minus expected) in predicted travel time: %f" % (avgerror))
+                    print("Average absolute error in predicted travel time: %f" % (avgabserror))
+                    print("Average percent error in predicted travel time: %f" % (avgpcterror))
+                    print("Average absolute percent error in predicted travel time: %f" % (avgabspcterror))
+
                     print("Average number of calls to routing: %f" % (totalcalls/nSmart))
+                    print("Average number of route changes: %f" % (totalswaps/nSmart))
+                    print("Average number of route changes after first routing decision: %f" % (totalswapsafterfirst/nSmart))
                     if totalcalls > 0:
                         print("Proportion of timeouts in routing: %f" % (ntimeouts/totalcalls))
-                    print("Average number of route changes: %f" % (totalswaps/nSmart))
+                        print("Proportion of routing decisions leading to a route change: %f" % (totalswaps/totalcalls))
+                        if totalcallsfirst > 0:
+                            print("Proportion of first routing decisions leading to a route change: %f" % (totalswapsfirst/totalcallsfirst))
+                        else:
+                            print("WARNING: Some routing calls, but no first routing calls; something's wrong with the stats!")
+                        if totalcallsafterfirst > 0:
+                            print("Proportion of routing decisions after first leading to a route change: %f" % (totalswapsafterfirst/totalcallsafterfirst))
                     print("Proportion of cars that changed route at least once: %f" % (nswapped/nSmart))
                     print("Average number of teleports: %f" % (nsmartteleports/nSmart))
                 print("Among non-adopters:")
@@ -1049,12 +1088,23 @@ def reroute(rerouters, network, simtime, remainingDuration):
         newroute = data[0]
 
         routeStats[vehicle]["nCalls"] += 1
+        if timedata[vehicle][2] == -1:
+            routeStats[vehicle]["nCallsFirst"] += 1
+        else:
+            routeStats[vehicle]["nCallsAfterFirst"] += 1 #Not necessarily nCalls-1; want to account for vehicles that never got routed
 
+        #NOTE: There's another instance of this code inside QueueReroute because I wanted later vehicles to be aware of earlier vehicles' route changes
+        #This set of code won't increment route swaps unless the other code is commented or we're multithreading routing
         if not tuple(newroute) == currentRoutes[vehicle] and not newroute == currentRoutes[vehicle][-len(newroute):]:
             #print(newroute)
             #print(currentRoutes[vehicle])
             routeStats[vehicle]["nSwaps"] += 1
             routeStats[vehicle]["swapped"] = True
+            if timedata[vehicle][2] == -1:
+                routeStats[vehicle]["nSwapsFirst"] += 1
+            else:
+                routeStats[vehicle]["nSwapsAfterFirst"] += 1
+
         else:
             #print("NO CHANGE")
             #print(currentRoutes[vehicle])
@@ -1141,6 +1191,9 @@ def QueueReroute(detector, network, reroutedata, simtime, remainingDuration):
                 doClusterSimThreaded(lane, network, vehicle, simtime, remainingDuration, reroutedata[vehicle], deepcopy(loaddata), routes) #If we want non-threaded
         
                 #NEW: Copy-pasting route update data here to see if this improves stuff at 99% adoption
+                #If multiple vehicles are routed in the same timestep, this lets later vehicles know earlier ones' routes
+                #Don't think this helps much - pretty sure previous high-adoption issues were due to not knowing about soon-to-enter new traffic
+                
 
                 #Check for route change before we update currentRoutes (other analysis can still happen in outer function)
                 newroute = reroutedata[vehicle][0]
@@ -1149,6 +1202,10 @@ def QueueReroute(detector, network, reroutedata, simtime, remainingDuration):
                     #print(currentRoutes[vehicle])
                     routeStats[vehicle]["nSwaps"] += 1
                     routeStats[vehicle]["swapped"] = True
+                    if timedata[vehicle][2] == -1:
+                        routeStats[vehicle]["nSwapsFirst"] += 1
+                    else:
+                        routeStats[vehicle]["nSwapsAfterFirst"] += 1
                 else:
                     #print("NO CHANGE")
                     #print(currentRoutes[vehicle])
@@ -1384,6 +1441,9 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
         #End sanity check
 
         routesimtime += timestep
+
+        #NEXT TODO: Combine clusters in initial queue to try to speed up Surtrac
+        clusters = recluster(clusters, routesimtime)
 
         #Update lights
         if surtracFreq <= timestep or routesimtime%surtracFreq >= (routesimtime+timestep)%surtracFreq:
@@ -1717,6 +1777,29 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                     else:
                         #Something's left in the first cluster, so everyone's blocked
                         break
+
+def recluster(clusters, routesimtime):
+    #Merge clusters that'll form initial queues to speed up Surtrac
+    #TODO partial merging
+    for lane in clusters:
+        while len(clusters[lane]) > 1:
+            #Check if we arrive before previous stuff cleared and fill all the time until the originally scheduled departure
+            if clusters[lane][1]["arrival"] < routesimtime + clusters[lane][0]["weight"]*mingap and clusters[lane][1]["departure"] < routesimtime + (clusters[lane][0]["weight"]+clusters[lane][1]["weight"])*mingap:
+                #Merge cluster 0 into cluster 1
+
+                #Pretty sure I don't care to recompute durations or anything - mindur math can take care of that
+                clusters[lane][1]["arrival"] = clusters[lane][0]["arrival"]
+                #Departure stays unchanged
+                clusters[lane][1]["cars"] = clusters[lane][0]["cars"] + clusters[lane][1]["cars"] #Concatenate
+                clusters[lane][1]["weight"] = clusters[lane][0]["weight"] + clusters[lane][1]["weight"] #Literally just addition
+                #time and endpos shouldn't change either; time last car came into cluster 1 didn't change, and endpos does nothing outside of loadClusters
+                
+                #Delete old cluster 0
+                clusters[lane] = clusters[lane][1:]
+            else:
+                #No more cluster merging on this lane
+                break
+    return clusters
 
 def LAISB(a, b):
     #Line a intersects segment b
