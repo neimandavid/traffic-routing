@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+<input>
+<net-file value="blocks2.net.xml"/>
+<route-files value="blocks60_nocirc_noroutes_auto.rou.xml"/>
+</input>
+</configuration>

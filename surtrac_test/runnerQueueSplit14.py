@@ -28,7 +28,7 @@
 #New in QueueSplit11: Compute delay, not just average travel time, for cars. Also fixed a bug with Surtrac code DP (was removing sequences it shouldn't have)
 #QueueSplit12: Multithread the Surtrac code (it's really slow otherwise). Also, use the full Surtrac schedule rather than assuming we'll update every timestep
 #QueueSplit13: Surtrac now (correctly) no longer overwrites all the finish times of other lanes with the start time of the currently scheduled cluster (leads to problems when a long cluster, then compatible short cluster, get scheduled, as the next cluster can then start earlier than it should). VOI now gets split into all lanes on starting edge
-#14: Anytime routing, better stats on timeouts and teleports, added mingap to all cluster durations, using a timestep that divides mingap and surtracFreq, opposing traffic blocks for mingap not just one timestep
+#14: Anytime routing, better stats on timeouts and teleports, added mingap to all cluster durations, using a timestep that divides mingap and surtracFreq, opposing traffic blocks for mingap not just one timestep, combining clusters at lights into a single queue
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -1442,7 +1442,8 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
 
         routesimtime += timestep
 
-        #NEXT TODO: Combine clusters in initial queue to try to speed up Surtrac
+        #Combine clusters in initial queue to try to speed up Surtrac
+        #NOTE: This was added since the FLAIRS paper
         clusters = recluster(clusters, routesimtime)
 
         #Update lights
@@ -1466,13 +1467,11 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                 remainingDuration[light] = [lightphasedata[light][lightphases[light]].duration]
             #All lights should have a non-zero length schedule in remainingDuration
             remainingDuration[light][0] -= timestep
-            #Next TODO: Should this actually be <= 0 not < 0? Ex: Durations of 1, 1, 1, ...; first one lasts 1 timestep as desired, later ones last 2. Think I messed up the fencepost problem here.
-            #Think I fixed this, TODO test this with fixed timing plans, make sure I didn't break this
             if remainingDuration[light][0] <= 0: #Note: Duration might not be divisible by timestep, so we might be getting off by a little over multiple phases??
                 tosubtract = remainingDuration[light][0]
                 remainingDuration[light].pop(0)
                 lightphases[light] = (lightphases[light]+1)%len(lightphasedata[light])
-                queueSimLastSwitchTimes[light] = routesimtime #Next TODO: Does this cause divisibility issues?
+                queueSimLastSwitchTimes[light] = routesimtime #TODO: Does this cause divisibility issues?
                 if len(remainingDuration[light]) == 0:
                     remainingDuration[light] = [lightphasedata[light][lightphases[light]].duration + tosubtract] #tosubtract is negative
                 #Main sim doesn't subtract for overruns if there's a Surtrac schedule, so we won't do that here either

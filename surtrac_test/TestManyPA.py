@@ -1,6 +1,6 @@
 import os
 import sys
-import runnerQueueSplit14 as runnerQueueSplit12
+import runnerQueueSplit18 as runnerQueueSplit12 #Change this line if using a newer code version
 import pickle
 import statistics
 import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
 
     for i in range(0, nIters):
         print(i)
-        [newdata, newrngstate] = runnerQueueSplit12.main(sys.argv[1], p, True)
+        [newdata, newrngstate] = runnerQueueSplit12.main(sys.argv[1], p, False)
 
         try:
             with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:

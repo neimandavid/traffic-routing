@@ -1,0 +1,28 @@
+SUMO install instructions: https://sumo.dlr.de/docs/Downloads.php
+Been a while since I've set up SUMO, but I don't remember having too many issues there
+
+You'll need Python 3, I don't think specific version matters.
+
+You'll need the traci package, but that should just be installable with pip:
+pip3 install traci
+Or if worried about pip3 or python3 and filepath or version issues:
+python3 -m pip install traci
+There are some other fairly standard packages I imported that also need to be pip installed, but that should be straightforward.
+
+Repo with my code is here: https://github.com/neimandavid/traffic-routing
+Sorry, it's a bit of a mess.
+
+To test:
+cd into the surtrac_test folder
+Run synthetic network at 1% adoption without saving data as a quick test:
+python3 runnerQueueSplit14.py shortlongshort3_auto.sumocfg 0.01
+This should open up a SUMO window, run the simulation, and print a bunch of stuff to the terminal, ending in something like this:
+Screenshot 2023-04-03 at 1.06.21 PM.png
+Run Pittsburgh network at 99% adoption, saving data to delaydata folder:
+python3 TestManyPA.py PittsburghPMDataSmallerLongIn+10_fixedroutes_auto.sumocfg
+When the run finishes (probably in 5-6 days), it'll create a file in the delaydata folder called delaydata_PittsburghPMDataSmallerLongIn+10_fixedroutes_auto.sumocfg.pickle
+If wanting to run something other than a single 99% adoption run, change line 20 of TestManyPA.py.
+
+Detailed code running instructions:
+There's a lot of old stuff that I haven't bothered to clean up, but the relevant folder is surtrac_test. In there, TestManyPA.py is the code to generate results; it takes a single command line argument, which is the name of the .sumocfg file to run (PittsburghPMDataSmallerLongIn+10_fixedroutes_auto.sumocfg for Pittsburgh, shortlongshort3_auto.sumocfg for synthetic). Line 20 of TestManyPA.py has a list of adoption probabilities you want to run; it's currently set to just run 99% adoption, but you can change that if you want to run something else. (I should probably eventually make that a command line argument.) TestManyPA.py dumps the results of all finished runs to a pickle file in the delaydata folder called "delaydata_<YOUR_SUMOCFG_FILENAME>.pickle", which is what I'll need to generate the plots. If you're just looking for a quick test case, you can also call runnerQueueSplit14.py directly; it takes two command line arguments, namely the .sumocfg file (same as in TestManyPA.py) and the adoption probability (defaults to 1.0, meaning 100% adoption).
+Warnings and errors: Batwing gives warnings about the deprecated getRedYellowGreenDefinition function or whatever it's called, so I think my local version of TraCI is old, but I've just been ignoring that warning and haven't noticed problems. My code also prints something if cars teleport or if routing times out; that's also fine to ignore. That final error about peer shutdown is also fine - not sure if there's a cleaner way to close the SUMO simulator.
