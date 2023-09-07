@@ -55,12 +55,12 @@ timestep = mingap #Amount of time between updates. In practice, mingap rounds up
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
 
 #Hyperparameters for multithreading
-multithreadRouting = True #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
-multithreadSurtrac = True #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
+multithreadRouting = False #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
+multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
-mainSurtracFreq = 5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
-routingSurtracFreq = 5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+mainSurtracFreq = 2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+routingSurtracFreq = 2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 0 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
@@ -68,14 +68,11 @@ predCutoffRouting = 0 #Surtrac receives communications about clusters arriving t
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
 #To test
-testNN = False
+testNN = True #Uses NN over Dumbtrac for light control if both are true
+testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
-appendTrainingData = False
+appendTrainingData = True
 
-#To train
-# testNN = False
-# resetTrainingData = True
-# appendTrainingData = True
 
 #Don't change parameters below here
 #For testing durations to see if there's drift between fixed timing plans executed in main simulation and routing simulations.
@@ -124,6 +121,10 @@ rerouterLanes = dict()
 rerouterEdges = dict()
 vehiclesOnNetwork = []
 dontReroute = []
+
+#Predict traffic entering network
+arrivals = dict()
+maxarrivalwindow = 300
 
 totalSurtracTime = 0
 totalSurtracClusters = 0
@@ -227,6 +228,7 @@ def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
     maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
 
     if surtracdata[light][phase]["maxDur"]- maxfreq <= surtracdata[light][phase]["minDur"]:
+        print("Warning, duration range is small")
         #Edge case where duration range is smaller than period between updates, in which case overruns are unavoidable
         if simtime - lastSwitch < surtracdata[light][phase]["minDur"]:
             phaselenprop = -1
@@ -235,16 +237,50 @@ def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
     else:
         phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/(surtracdata[light][phase]["maxDur"]- maxfreq - surtracdata[light][phase]["minDur"])
 
+    # if light == "J10":
+    #     print(phaselenprop)
+    #     print(lightphasedata[light][phase].state)
+
     #Satisfy phase length requirements
     if phaselenprop < 0:
         return 0 #If haven't reached min length, continue
     if phaselenprop >= 1:
         return 1 #If >= max length, switch
 
-    for lane in surtracdata[light][phase]["lanes"]:
-        if len(clusters[lane]) > 0 and clusters[lane][0]["arrival"] <= simtime+mingap:
-            return 0 #If anyone's waiting, continue
-    return 1 #If no one's waiting, switch
+    #New test: If >= 1/2 max length, switch
+    if phaselenprop >= 0.5:
+        return 1
+
+    if "Y" in lightphasedata[light][phase].state or "y" in lightphasedata[light][phase].state:
+        return 1
+        
+    return 0
+
+# def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
+#     phase = lightphases[light]
+#     lastSwitch = lastswitchtimes[light]
+    
+#     maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
+
+#     if surtracdata[light][phase]["maxDur"]- maxfreq <= surtracdata[light][phase]["minDur"]:
+#         #Edge case where duration range is smaller than period between updates, in which case overruns are unavoidable
+#         if simtime - lastSwitch < surtracdata[light][phase]["minDur"]:
+#             phaselenprop = -1
+#         else:
+#             phaselenprop = 2
+#     else:
+#         phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/(surtracdata[light][phase]["maxDur"]- maxfreq - surtracdata[light][phase]["minDur"])
+
+#     #Satisfy phase length requirements
+#     if phaselenprop < 0:
+#         return 0 #If haven't reached min length, continue
+#     if phaselenprop >= 1:
+#         return 1 #If >= max length, switch
+
+#     for lane in surtracdata[light][phase]["lanes"]:
+#         if len(clusters[lane]) > 0 and clusters[lane][0]["arrival"] <= simtime+mingap:
+#             return 0 #If anyone's waiting, continue
+#     return 1 #If no one's waiting, switch
 
 def convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes):
     maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
@@ -294,34 +330,39 @@ def convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes):
             ntotaltemp += clusters[lane][clusterind]["weight"]
         ntotal[roadind*maxnlanes+laneind] = ntotaltemp
 
-    return torch.Tensor([np.concatenate((nqueued, ntotal, [phase], [phaselenprop]))]) #TODO make sure this actually works
+    #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
+    return torch.Tensor(np.array([np.concatenate((nqueued, ntotal, [phase], [phaselenprop]))]))
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
     
+    
 
-    if testNN:
-        nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
-        outputNN = agents[light](nnin) # Output from NN
-        # Find the best action to take from actions based on the output of the NN
-        actionNumber = outputNN.argmax().item() # Get best action number
-        actionNN = actions[actionNumber] # Get best action
+    if testNN or testDumbtrac:
+        if testNN:
+            nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
+            outputNN = agents[light](nnin) # Output from NN
+            # Find the best action to take from actions based on the output of the NN
+            actionNumber = outputNN.argmax().item() # Get best action number
+            actionNN = actions[actionNumber] # Get best action
 
-        actionDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-        actionNN = actionDumbtrac
+        if testDumbtrac and not testNN:
+            actionDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            actionNN = actionDumbtrac
 
         if actionNN == 0:
             if inRoutingSim:
                 dur = max(routingSurtracFreq, timestep)
             else:
                 dur = max(mainSurtracFreq, 1)
-            dur = 100
+            dur = 1e6 #Something really big so we know the light won't change
         else:
             dur = 0
         testnnschedule = [None, None, None, None, None, None, None, [dur]] #Only thing the output needs is a schedule; returns either [0] for switch immediately or [1] for continue for at least another timestep
         #return #Don't return early, might still need to append training data
 
-    if not testNN or appendTrainingData:
+    if (not testNN and not testDumbtrac) or (appendTrainingData and not testDumbtrac):
+        #print('surtrac')
         #We're actually running Surtrac
         if debugMode:
             global totalSurtracRuns
@@ -718,18 +759,19 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         if bestschedule[7][0] <= simtime - lastswitchtimes[light]:
             actionSurtrac = 1
         #NN should take in nnin, and try to return action, and do backprop accordingly
-        
-        actionDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-
         target = torch.tensor([actionSurtrac]) # Target from expert
-        #target = torch.tensor([actionDumbtrac]) # Target from expert
-        if appendTrainingData:
-            trainingdata[light].append((nnin, target))
 
         if debugMode:
             totalSurtracTime += time.time() - surtracStartTime
-
-    if testNN:
+    
+    if appendTrainingData:
+        if testDumbtrac:
+            actionDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            target = torch.tensor([actionDumbtrac]) # Target from expert
+        nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
+        trainingdata[light].append((nnin, target))
+    
+    if testNN or testDumbtrac:
         bestschedules[light] = testnnschedule
 
 
@@ -778,7 +820,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
         if not bestschedule[0] == []:
             spentDuration = simtime - lastswitchtimes[light]
             remainingDuration[light] = bestschedule[7]
-            if len(remainingDuration[light]) > 0 and not testNN: #Because the NN doesn't account for spent duration when returning [1]
+            if len(remainingDuration[light]) > 0 and not testNN and not testDumbtrac: #Because the NN doesn't account for spent duration when returning [1]
                 remainingDuration[light][0] -= spentDuration
 
             if len(remainingDuration[light]) > 0:
@@ -977,7 +1019,6 @@ def run(network, rerouters, pSmart, verbose = True):
     global clustersCache
     #netfile is the filepath to the network file, so we can call sumolib to get successors
     #rerouters is the list of induction loops on edges with multiple successor edges
-    #We want to reroute all the cars that passed some induction loop in rerouters using A*
     
     startDict = dict()
     endDict = dict()
@@ -1061,6 +1102,11 @@ def run(network, rerouters, pSmart, verbose = True):
             locDict[vehicle] = traci.vehicle.getRoadID(vehicle)
             laneDict[vehicle] = traci.vehicle.getLaneID(vehicle)
             leftDict[vehicle] = 0
+
+            lane = laneDict[vehicle]
+            if not lane in arrivals:
+                arrivals[lane] = []
+            arrivals[lane].append(simtime) #Don't care who arrived, just when they arrived
 
         #Check predicted vs. actual travel times
         for vehicle in traci.simulation.getArrivedIDList():
@@ -1713,6 +1759,11 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
 
     blockingLinks = dict()
 
+    #Ignore old arrival data
+    for lane in arrivals:
+        while arrivals[lane][0] < starttime + maxarrivalwindow:
+            arrivals[lane] = arrivals[lane][1:]
+
     while True:
 
         #Timeout if things have gone wrong somehow
@@ -1745,7 +1796,44 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                 #End sanity check
 
         routesimtime += timestep
-        #Reminder: We rounded the start time down to a multiple of the timestep so sims starting at different times ask for light info at fixed times.
+        #Reminder: We rounded the first routesimtime down to a multiple of the timestep so sims starting at different times ask for light info at fixed times.
+
+        #Add new cars
+        if routesimtime >= starttime: #Deal with initial routesimtime being rounded down - don't create new cars before starttime
+            for nextlane in arrivals:
+                nextedge = nextlane.split("_")[0]
+                if len(arrivals[nextlane]) == 0:
+                    #No recent arrivals, nothing to add
+                    continue
+                timeperarrival = max(starttime, maxarrivalwindow)/len(arrivals[nextlane])
+                if timeperarrival <= timestep or routesimtime%timeperarrival >= (routesimtime+timestep)%timeperarrival:
+                    #Add a car
+                    #Check append to previous cluster vs. add new cluster
+                    if len(clusters[nextlane]) > 0 and abs(clusters[nextlane][-1]["time"] - routesimtime) < clusterthresh and abs(clusters[nextlane][-1]["endpos"])/speeds[nextedge] < clusterthresh:
+                        
+                        #Similar code later checks to make sure there's space, but this is a newly-created vehicle so we'll just force-add it anyway
+                        if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
+                            #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
+                            #Departure time (=time to fully clear cluster) increases, arrival doesn't
+                            #TODO eventually: Be more precise with time and position over partial timesteps, allowing me to use larger timesteps?
+                            clusters[nextlane][-1]["endpos"] = 0
+                            clusters[nextlane][-1]["time"] = routesimtime
+                            clusters[nextlane][-1]["departure"] = routesimtime + fftimes[nextedge]
+                            clusters[nextlane][-1]["cars"].append(("ImANewCar", clusters[nextlane][-1]["departure"], 1, "New car routing append"))
+                            clusters[nextlane][-1]["weight"] += 1
+                    else:
+                        if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
+                            #There is no cluster nearby
+                            #So make a new cluster
+                            newcluster = dict()
+                            newcluster["endpos"] = 0
+                            newcluster["time"] = routesimtime
+                            newcluster["arrival"] = routesimtime + fftimes[nextedge]
+                            newcluster["departure"] = newcluster["arrival"]
+                            newcluster["cars"] = [("ImANewCar", newcluster["departure"], 1, "New car routing new cluster")]
+                            newcluster["weight"] = 1
+                            clusters[nextlane].append(newcluster)
+                    #Newly-created car has been added
 
         #Combine clusters waiting at lights
         clusters = recluster(clusters, routesimtime)
@@ -2466,14 +2554,16 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False):
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
             agents[light].load(MODEL_FILES[light])
     if not resetTrainingData and appendTrainingData:
+        print("Loading training data")
         with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
             trainingdata = pickle.load(handle)
 
     outdata = run(network, rerouters, pSmart, verbose)
     
-    print("Saving training data")
-    with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'wb') as handle:
-        pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    if appendTrainingData:
+        print("Saving training data")
+        with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'wb') as handle:
+            pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
     traci.close()
 
     print("Routing calls: " + str(nRoutingCalls))
