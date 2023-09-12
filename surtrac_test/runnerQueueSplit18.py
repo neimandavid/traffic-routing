@@ -51,7 +51,7 @@ useLastRNGState = False #To rerun the last simulation without changing the seed 
 
 clusterthresh = 5 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars
-timestep = mingap #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
+timestep = 0.5#mingap #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
 
 #Hyperparameters for multithreading
@@ -59,8 +59,8 @@ multithreadRouting = False #Do each routing simulation in a separate thread. Ena
 multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
-mainSurtracFreq = 2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
-routingSurtracFreq = 2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 0 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
@@ -68,10 +68,10 @@ predCutoffRouting = 0 #Surtrac receives communications about clusters arriving t
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
 #To test
-testNN = True #Uses NN over Dumbtrac for light control if both are true
-testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
+testNN = False #Uses NN over Dumbtrac for light control if both are true
+testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
-appendTrainingData = True
+appendTrainingData = False
 
 
 #Don't change parameters below here
@@ -124,7 +124,8 @@ dontReroute = []
 
 #Predict traffic entering network
 arrivals = dict()
-maxarrivalwindow = 300
+maxarrivalwindow = 300#-300000000
+newcarcounter = 0
 
 totalSurtracTime = 0
 totalSurtracClusters = 0
@@ -1642,6 +1643,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
     global surtracDict
     global nToReroute
     global killSurtracThread
+    global newcarcounter
 
     #Fix routesimtime before we initialize the list of things to check, else we might be running Surtrac at slightly different times when we try to reuse schedules
     starttime = routesimtime
@@ -1761,7 +1763,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
 
     #Ignore old arrival data
     for lane in arrivals:
-        while arrivals[lane][0] < starttime + maxarrivalwindow:
+        while len(arrivals[lane]) > 0 and arrivals[lane][0] < starttime - maxarrivalwindow:
             arrivals[lane] = arrivals[lane][1:]
 
     while True:
@@ -1812,27 +1814,35 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                     if len(clusters[nextlane]) > 0 and abs(clusters[nextlane][-1]["time"] - routesimtime) < clusterthresh and abs(clusters[nextlane][-1]["endpos"])/speeds[nextedge] < clusterthresh:
                         
                         #Similar code later checks to make sure there's space, but this is a newly-created vehicle so we'll just force-add it anyway
-                        if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
-                            #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
-                            #Departure time (=time to fully clear cluster) increases, arrival doesn't
-                            #TODO eventually: Be more precise with time and position over partial timesteps, allowing me to use larger timesteps?
-                            clusters[nextlane][-1]["endpos"] = 0
-                            clusters[nextlane][-1]["time"] = routesimtime
-                            clusters[nextlane][-1]["departure"] = routesimtime + fftimes[nextedge]
-                            clusters[nextlane][-1]["cars"].append(("ImANewCar", clusters[nextlane][-1]["departure"], 1, "New car routing append"))
-                            clusters[nextlane][-1]["weight"] += 1
+                        #NEXT TODO: Fairly sure the following if is bad, but confirm this
+                        #if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
+                        #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
+                        #Departure time (=time to fully clear cluster) increases, arrival doesn't
+                        #TODO eventually: Be more precise with time and position over partial timesteps, allowing me to use larger timesteps?
+                        clusters[nextlane][-1]["endpos"] = 0
+                        clusters[nextlane][-1]["time"] = routesimtime
+                        clusters[nextlane][-1]["departure"] = routesimtime + fftimes[nextedge]
+                        newcarname = "ImANewCar"+str(newcarcounter)
+                        clusters[nextlane][-1]["cars"].append((newcarname, clusters[nextlane][-1]["departure"], 1, "New car routing append"))
+                        routes[newcarname] = sampleRouteFromTurnData(newcarname, nextlane, turndata)
+                        newcarcounter += 1
+                        clusters[nextlane][-1]["weight"] += 1
                     else:
-                        if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
-                            #There is no cluster nearby
-                            #So make a new cluster
-                            newcluster = dict()
-                            newcluster["endpos"] = 0
-                            newcluster["time"] = routesimtime
-                            newcluster["arrival"] = routesimtime + fftimes[nextedge]
-                            newcluster["departure"] = newcluster["arrival"]
-                            newcluster["cars"] = [("ImANewCar", newcluster["departure"], 1, "New car routing new cluster")]
-                            newcluster["weight"] = 1
-                            clusters[nextlane].append(newcluster)
+                        #NEXT TODO: Fairly sure the following if is bad, but confirm this
+                        #if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
+                        #There is no cluster nearby
+                        #So make a new cluster
+                        newcluster = dict()
+                        newcluster["endpos"] = 0
+                        newcluster["time"] = routesimtime
+                        newcluster["arrival"] = routesimtime + fftimes[nextedge]
+                        newcluster["departure"] = newcluster["arrival"]
+                        newcarname = "ImANewCar"+str(newcarcounter)
+                        newcluster["cars"] = [(newcarname, newcluster["departure"], 1, "New car routing new cluster")]
+                        routes[newcarname] = sampleRouteFromTurnData(newcarname, nextlane, turndata)
+                        newcarcounter += 1
+                        newcluster["weight"] = 1
+                        clusters[nextlane].append(newcluster)
                     #Newly-created car has been added
 
         #Combine clusters waiting at lights
@@ -2072,6 +2082,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                             
                             #Make sure there's no car on the new road that's too close
                             if not abs(clusters[nextlane][-1]["time"] - routesimtime) < mingap:
+                                #NEXT TODO: What is the following if statement doing???
                                 if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
                                     #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
                                     #Departure time (=time to fully clear cluster) increases, arrival doesn't
@@ -2090,6 +2101,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                                 #No space, try next lane
                                 continue
                         else:
+                            #NEXT TODO: What is the following if statement doing???
                             if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
                                 #There is no cluster nearby
                                 #So make a new cluster
