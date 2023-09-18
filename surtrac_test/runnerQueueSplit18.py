@@ -51,16 +51,16 @@ useLastRNGState = False #To rerun the last simulation without changing the seed 
 
 clusterthresh = 5 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars
-timestep = 0.5#mingap #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
+timestep = mingap #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
 
 #Hyperparameters for multithreading
-multithreadRouting = False #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
-multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
+multithreadRouting = True #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
+multithreadSurtrac = True #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
-mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
-routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+mainSurtracFreq = 5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+routingSurtracFreq = 5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 0 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
@@ -1412,6 +1412,18 @@ def run(network, rerouters, pSmart, verbose = True):
                     print("Average number of teleports: %f" % (nnotsmartteleports/(nCars-nSmart)))
                     print("Average distance travelled: %f" % (totaldistanceNot/(nCars-nSmart)))
                 #print(len(nRight)/1200)
+
+                for lane in arrivals:
+                    testlane = lane
+                    break
+
+                for lane in arrivals:
+                    while len(arrivals[lane]) > 0 and arrivals[lane][0] < simtime - maxarrivalwindow:
+                        arrivals[lane] = arrivals[lane][1:]
+
+                timeperarrival = min(simtime, maxarrivalwindow)/len(arrivals[testlane])
+                print(testlane)
+                print(timeperarrival)
     return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0]
 
     
@@ -1765,7 +1777,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
     for lane in arrivals:
         while len(arrivals[lane]) > 0 and arrivals[lane][0] < starttime - maxarrivalwindow:
             arrivals[lane] = arrivals[lane][1:]
-
+            
     while True:
 
         #Timeout if things have gone wrong somehow
@@ -1807,7 +1819,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                 if len(arrivals[nextlane]) == 0:
                     #No recent arrivals, nothing to add
                     continue
-                timeperarrival = max(starttime, maxarrivalwindow)/len(arrivals[nextlane])
+                timeperarrival = min(starttime, maxarrivalwindow)/len(arrivals[nextlane])
                 if timeperarrival <= timestep or routesimtime%timeperarrival >= (routesimtime+timestep)%timeperarrival:
                     #Add a car
                     #Check append to previous cluster vs. add new cluster

@@ -3,5 +3,8 @@ shortlong2_16782/LOGFILE
 shortlong2_16782/outputAuto.xml
 shortlong2_16782/savestates/*
 surtrac_test/Plots/*
+surtrac_test/delaydata/*
 surtrac_test/trainingdata/*
 surtrac_test/imitate.log
+surtrac_test/lastRNGstate.pickle
+surtrac_test/outputAuto.xml
