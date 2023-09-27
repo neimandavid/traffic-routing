@@ -92,8 +92,14 @@ def run(netfile, rerouters, sumoconfig):
     routeDict = dict()
     # iterate news items
     for item in root.findall('./vehicle'):
-        intendedStartDict[item.attrib["id"]] = float(item.attrib["depart"])
+        carname = item.attrib["id"]
+        intendedStartDict[carname] = float(item.attrib["depart"])
+        # print(item.attrib["id"])
+        #BELOW IS BAD
+        # fromDict[carname] = item.attrib["from"]
+        # toDict[carname] = item.attrib["to"]
         #TODO: Set up fromDict and toDict to work with vehicle objects for non-route file
+
     for item in root.findall('./trip'):
         intendedStartDict[item.attrib["id"]] = float(item.attrib["depart"])
         fromDict[item.attrib["id"]] = item.attrib["from"]

@@ -68,8 +68,8 @@ predCutoffRouting = 0 #Surtrac receives communications about clusters arriving t
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
 #To test
-testNN = False #Uses NN over Dumbtrac for light control if both are true
-testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
+testNN = True #Uses NN over Dumbtrac for light control if both are true
+testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
 appendTrainingData = False
 
@@ -124,7 +124,7 @@ dontReroute = []
 
 #Predict traffic entering network
 arrivals = dict()
-maxarrivalwindow = 300#-300000000
+maxarrivalwindow = -300 #Use negative number to not predict new incoming cars during routing
 newcarcounter = 0
 
 totalSurtracTime = 0
@@ -1824,10 +1824,6 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                     #Add a car
                     #Check append to previous cluster vs. add new cluster
                     if len(clusters[nextlane]) > 0 and abs(clusters[nextlane][-1]["time"] - routesimtime) < clusterthresh and abs(clusters[nextlane][-1]["endpos"])/speeds[nextedge] < clusterthresh:
-                        
-                        #Similar code later checks to make sure there's space, but this is a newly-created vehicle so we'll just force-add it anyway
-                        #NEXT TODO: Fairly sure the following if is bad, but confirm this
-                        #if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
                         #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
                         #Departure time (=time to fully clear cluster) increases, arrival doesn't
                         #TODO eventually: Be more precise with time and position over partial timesteps, allowing me to use larger timesteps?
@@ -1840,8 +1836,6 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                         newcarcounter += 1
                         clusters[nextlane][-1]["weight"] += 1
                     else:
-                        #NEXT TODO: Fairly sure the following if is bad, but confirm this
-                        #if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
                         #There is no cluster nearby
                         #So make a new cluster
                         newcluster = dict()
@@ -2094,7 +2088,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                             
                             #Make sure there's no car on the new road that's too close
                             if not abs(clusters[nextlane][-1]["time"] - routesimtime) < mingap:
-                                #NEXT TODO: What is the following if statement doing???
+                                #Do not add a VOI to a lane we've already added a VOI to (another copy won't help and will only confuse Surtrac)
                                 if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
                                     #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
                                     #Departure time (=time to fully clear cluster) increases, arrival doesn't
@@ -2113,7 +2107,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                                 #No space, try next lane
                                 continue
                         else:
-                            #NEXT TODO: What is the following if statement doing???
+                            #Do not add a VOI to a lane we've already added a VOI to (another copy won't help and will only confuse Surtrac)
                             if not cartuple[0] in VOIs or not nextlane in finishedLanes: #If so, don't need the extra copy of the VOI, but pretend we added it
                                 #There is no cluster nearby
                                 #So make a new cluster
@@ -2578,9 +2572,14 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False):
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
             agents[light].load(MODEL_FILES[light])
     if not resetTrainingData and appendTrainingData:
-        print("Loading training data")
-        with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
-            trainingdata = pickle.load(handle)
+        print("LOADING TRAINING DATA, this could take a while")
+        try:
+            with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
+                trainingdata = pickle.load(handle)
+        except FileNotFoundError:
+            print("Training data not found, starting fresh")
+            for light in lights:
+                trainingdata[light] = []
 
     outdata = run(network, rerouters, pSmart, verbose)
     
