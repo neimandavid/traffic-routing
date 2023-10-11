@@ -51,7 +51,7 @@ useLastRNGState = False #To rerun the last simulation without changing the seed 
 
 clusterthresh = 5 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars
-timestep = mingap #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
+timestep = 0.5 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
 
 #Hyperparameters for multithreading
@@ -59,8 +59,8 @@ multithreadRouting = False #Do each routing simulation in a separate thread. Ena
 multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
-mainSurtracFreq = 2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
-routingSurtracFreq = 2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 0 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
@@ -68,7 +68,7 @@ predCutoffRouting = 0 #Surtrac receives communications about clusters arriving t
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
 #To test
-testNN = True #Uses NN over Dumbtrac for light control if both are true
+testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
 appendTrainingData = True
@@ -222,44 +222,45 @@ def consolidateClusters(clusters):
             j+=1
         i+=1
 
-# def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
-
-#     phase = lightphases[light]
-#     lastSwitch = lastswitchtimes[light]
-
-#     #For FTP
-#     if "Y" in lightphasedata[light][phase].state or "y" in lightphasedata[light][phase].state:
-#         return surtracdata[light][phase]["minDur"] - (simtime-lastSwitch)
-#     else:
-#         return 30 - (simtime-lastSwitch)
-
-    
-
 def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
+
     phase = lightphases[light]
     lastSwitch = lastswitchtimes[light]
-    
-    maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
 
-    if surtracdata[light][phase]["maxDur"]- maxfreq <= surtracdata[light][phase]["minDur"]:
-        #Edge case where duration range is smaller than period between updates, in which case overruns are unavoidable
-        if simtime - lastSwitch < surtracdata[light][phase]["minDur"]:
-            phaselenprop = -1
-        else:
-            phaselenprop = 2
+    #For FTP
+    if "Y" in lightphasedata[light][phase].state or "y" in lightphasedata[light][phase].state:
+        return surtracdata[light][phase]["minDur"] - (simtime-lastSwitch)
     else:
-        phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/(surtracdata[light][phase]["maxDur"]- maxfreq - surtracdata[light][phase]["minDur"])
+        return 30 - (simtime-lastSwitch)
 
-    #Satisfy phase length requirements
-    if phaselenprop < 0:
-        return 100 #If haven't reached min length, continue
-    if phaselenprop >= 1:
-        return 0 #If >= max length, switch
+    
 
-    for lane in surtracdata[light][phase]["lanes"]:
-        if len(clusters[lane]) > 0 and clusters[lane][0]["arrival"] <= simtime+mingap:
-            return 10 #If anyone's waiting, continue
-    return 0 #If no one's waiting, switch
+# def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
+#     phase = lightphases[light]
+#     lastSwitch = lastswitchtimes[light]
+    
+#     maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
+
+#     if surtracdata[light][phase]["maxDur"]- maxfreq <= surtracdata[light][phase]["minDur"]:
+#         #Edge case where duration range is smaller than period between updates, in which case overruns are unavoidable
+#         if simtime - lastSwitch < surtracdata[light][phase]["minDur"]:
+#             phaselenprop = -1
+#         else:
+#             phaselenprop = 2
+#     else:
+#         phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/(surtracdata[light][phase]["maxDur"]- maxfreq - surtracdata[light][phase]["minDur"])
+
+#     #Satisfy phase length requirements
+#     if phaselenprop < 0:
+#         return 100 #If haven't reached min length, continue
+#     if phaselenprop >= 1:
+#         return 0 #If >= max length, switch
+
+#     out = 0
+#     for lane in surtracdata[light][phase]["lanes"]:
+#         if len(clusters[lane]) > 0 and clusters[lane][0]["arrival"] <= simtime+mingap:
+#             out = max(out, 2.5*(clusters[lane][0]["weight"]+1)) #If anyone's waiting, continue
+#     return out #If no one's waiting, switch
 
 def convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes):
     maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
@@ -271,8 +272,9 @@ def convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes):
 
     maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
 
-    if surtracdata[light][phase]["maxDur"]- maxfreq <= surtracdata[light][phase]["minDur"]:
+    if False: #surtracdata[light][phase]["maxDur"]- maxfreq <= surtracdata[light][phase]["minDur"]:
         #Edge case where duration range is smaller than period between updates, in which case overruns are unavoidable
+        print("Warning: minDur and maxDur for light " + light + " are too close together, we might have rounding errors. Also training data is going to be hacky here.")
         if simtime - lastSwitch < surtracdata[light][phase]["minDur"]:
             phaselenprop = -1
         else:
@@ -364,7 +366,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
             if clusterind > maxnclusters:
                 print("Warning: Too many clusters on " + str(lane) + ", ignoring the last ones")
                 break
-            clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster-1] = [clusters[lane][clusterind]["arrival"], clusters[lane][clusterind]["departure"], clusters[lane][clusterind]["weight"]]
+            clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [clusters[lane][clusterind]["arrival"]-simtime, clusters[lane][clusterind]["departure"]-simtime, clusters[lane][clusterind]["weight"]]
 
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
     return torch.Tensor(np.array([np.concatenate((clusterdata, [phase], [phaselenprop]))]))
@@ -372,11 +374,12 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
     
-    
-
     if testNN or testDumbtrac:
         if testNN:
-            nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
+            if testDumbtrac:
+                nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
+            else:
+                nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
             outputNN = agents[light](nnin) # Output from NN
 
             if outputNN <= 0:
@@ -397,10 +400,11 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         else:
             dur = 0
         testnnschedule = [None, None, None, None, None, None, None, [dur]] #Only thing the output needs is a schedule; returns either [0] for switch immediately or [1] for continue for at least another timestep
+        assert(len(testnnschedule[7]) > 0)
         #return #Don't return early, might still need to append training data
 
     if (not testNN and not testDumbtrac) or (appendTrainingData and not testDumbtrac):
-        #print('surtrac')
+        print("Running surtrac, double-check that this is intended.")
         #We're actually running Surtrac
         if debugMode:
             global totalSurtracRuns
@@ -785,6 +789,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             #bestschedule[8] = newPredClusters #I'd store this, but tuples are immutable and we don't actually use it anywhere...
         
             catpreds.update(newPredClusters)
+            if len(bestschedule[7]) > 0:
+                bestschedule[7][0] -= (simtime - lastswitchtimes[light])
             bestschedules[light] = bestschedule
         else:
             print(light)
@@ -797,7 +803,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         # if bestschedule[7][0] <= simtime - lastswitchtimes[light]:
         #     actionSurtrac = 1
         #NN should take in nnin, and try to return action, and do backprop accordingly
-        target = torch.tensor([bestschedule[7][0] - (simtime - lastswitchtimes[light])]) # Target from expert
+        #target = torch.tensor([bestschedule[7][0] - (simtime - lastswitchtimes[light])]) # Target from expert
 
         if debugMode:
             totalSurtracTime += time.time() - surtracStartTime
@@ -805,14 +811,26 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     if appendTrainingData:
         if testDumbtrac:
             outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-            target = torch.tensor([[outputDumbtrac]]) # Target from expert
+            target = torch.tensor([[outputDumbtrac-0.25]])#.unsqueeze(1) # Target from expert
             nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
+            target = torch.tensor([[bestschedule[7][0]-0.25]])#.unsqueeze(1) # - (simtime - lastswitchtimes[light])]) # Target from expert
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-        trainingdata[light].append((nnin, target))
+
+        if testNN:
+            trainingdata[light].append((nnin, target, torch.tensor([[outputNN]])))
+        else:
+            trainingdata[light].append((nnin, target))
+        #NEXT TODO this seems to go through all lights three times before printing the doSurtrac output for all lights three times. Why?
+        #No chance trainNN is creating multiple interacting instances of this, is there?
+        #print("Light phase training data")
+        #print(light)
+        #print(nnin[:, -2:])
     
     if testNN or testDumbtrac:
         bestschedules[light] = testnnschedule
+        #if len(bestschedules[light][7]) == 0:
+        #    print('prepretest apparently empty duration list') #NEXT TODO this isn't triggering but the ones in doSurtrac are - what's happening??? Something to do with shallow copies, it looks like...
 
 
 #@profile
@@ -855,14 +873,21 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
     for light in lights:
         if multithreadSurtrac:
             surtracThreads[light].join()
-    
-        bestschedule = bestschedules[light]
-        if not bestschedule[0] == []:
-            spentDuration = simtime - lastswitchtimes[light]
-            remainingDuration[light] = bestschedule[7]
-            if len(remainingDuration[light]) > 0 and not testNN and not testDumbtrac: #Because the NN doesn't account for spent duration when returning [1]
-                remainingDuration[light][0] -= spentDuration
 
+        #bestschedules gets re-created each call to doSurtrac, so it's not some weird carryover thing
+        #print(light)
+        #print(bestschedules[light])
+        bestschedule = bestschedules[light]
+        if not bestschedule[0] == []: #Check for the case of Surtrac seeing no vehicles (which would default to default fixed timing plans)
+            spentDuration = simtime - lastswitchtimes[light]
+            remainingDuration[light] = pickle.loads(pickle.dumps(bestschedule[7])) #TODO test whether this fixes the empty Surtrac schedules I'm getting. Seriously, that worked? WHY?! Also some (all?) lights are now 0 length, oops
+
+            #NOTE: This was old and hopefully no longer necessary TODO delete
+            # if len(remainingDuration[light]) > 0 and not testNN and not testDumbtrac: #Because the NN doesn't account for spent duration when returning [1]
+            #     remainingDuration[light][0] -= spentDuration #TODO I think this is right but learned Surtrac is being weird and I don't know why
+            
+            if len(remainingDuration[light]) == 0:
+                print('pretest - empty remainingDuration')
             if len(remainingDuration[light]) > 0:
                 if remainingDuration[light][0] >= 0 and not inRoutingSim:
                     #Update duration
@@ -878,8 +903,14 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
                     #If Surtrac tells a light to change, the phase duration should be within the allowed bounds
                     #Surtrac in routing (which uses larger timesteps) might exceed maxDur, but by less than the timestep
                     #TODO: Actually, might exceed but by no more than routing's surtracFreq - pipe surtracFreq into this function eventually?
-                    if not (simtime - lastswitchtimes[light] >= surtracdata[light][curphase]["minDur"] and simtime - lastswitchtimes[light] <= surtracdata[light][curphase]["maxDur"]+timestep):
-                        print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]))
+                    # if not (simtime - lastswitchtimes[light] >= surtracdata[light][curphase]["minDur"] and simtime - lastswitchtimes[light] <= surtracdata[light][curphase]["maxDur"]+timestep):
+                    #     print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]))
+
+                    #NEXT TODO how is this returning 0 anyway? Shouldn't it be returning 1 or something??
+                    if simtime - lastswitchtimes[light] < surtracdata[light][curphase]["minDur"]:
+                        print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]) + " but min duration " + str(surtracdata[light][curphase]["minDur"]))
+                    if simtime - lastswitchtimes[light] > surtracdata[light][curphase]["maxDur"]+timestep:
+                        print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]) + " but max duration " + str(surtracdata[light][curphase]["maxDur"]))
 
                     lightphases[light] = (curphase+1)%nPhases #This would change the light if we're in routing sim
                     lastswitchtimes[light] = simtime
@@ -895,7 +926,14 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
                             #And set the new duration if possible
                             traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #Update duration if we know it
                             #pass
+                        else:
+                            print("Warning: remainingDuration is somehow empty, despite us just populating it one if statement ago")
+                    else:
+                        print("doSurtrac thinks it's in a routing simulation - check that this is intended")
             else:
+                #NEXT TODO this is going off with learned actuated control (and maybe others) the first time after doSurtrac returns 0 and the light switches. Unclear why.
+                #print("test")
+                #print(bestschedule)
                 print("AAAAAAHHHHH! Surtrac's giving back an empty schedule!")
 
 
@@ -1079,7 +1117,7 @@ def run(network, rerouters, pSmart, verbose = True):
         traci.simulationStep() #Tell the simulator to simulate the next time step
         clustersCache = None #Clear stored clusters list
 
-        #Check for lights that switched phase; update custom data structures and current phase duration
+        #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
         for light in lights:
             temp = traci.trafficlight.getPhase(light)
             if not(light in remainingDuration and len(remainingDuration[light]) > 0):
@@ -1398,7 +1436,7 @@ def run(network, rerouters, pSmart, verbose = True):
                     avgpcterror += ((timedata[id][1]-timedata[id][0]) - timedata[id][2])/(timedata[id][1]-timedata[id][0])/nSmart*100
                     avgabspcterror += abs((timedata[id][1]-timedata[id][0]) - timedata[id][2])/(timedata[id][1]-timedata[id][0])/nSmart*100
         
-            if verbose or not traci.simulation.getMinExpectedNumber() > 0:
+            if verbose or not traci.simulation.getMinExpectedNumber() > 0 or (appendTrainingData and simtime == 5000):
                 print(pSmart)
                 print("\nCurrent simulation time: %f" % simtime)
                 print("Total run time: %f" % (time.time() - tstart))
@@ -1696,6 +1734,8 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
     global nToReroute
     global killSurtracThread
     global newcarcounter
+
+    print("Starting a routing simulation - double-check that this is intended")
 
     #Fix routesimtime before we initialize the list of things to check, else we might be running Surtrac at slightly different times when we try to reuse schedules
     starttime = routesimtime
@@ -2514,9 +2554,13 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False):
             surtracdata[light][i]["maxDur"] = 120#lightphasedata[light][i].maxDur
 
             if "G" in lightphasedata[light][i].state or "g" in lightphasedata[light][i].state:
-                surtracdata[light][i]["minDur"] = 5#1#3.5#5#lightphasedata[light][i].minDur
+                surtracdata[light][i]["minDur"] = 5 #1#3.5#5#lightphasedata[light][i].minDur
             # if "Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state:
             #     surtracdata[light][i]["minDur"] = 2#5#lightphasedata[light][i].minDur #There is no all-red phase, keep this long
+            
+            #Force yellow to be the min length - not doing this since it messes with the training data (triggers the min-max <= maxfreq condition where we'll break stuff with discretization)
+            # if "Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state:
+            #     surtracdata[light][i]["maxDur"] = surtracdata[light][i]["minDur"] #Force this to be the correct length. Don't think this matters though...
 
             surtracdata[light][i]["lanes"] = []
             lightstate = lightphasedata[light][i].state
@@ -2603,19 +2647,27 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False):
         actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
 
     #Do NN setup
+    testNN = testNNdefault
     for light in lights:
-        if resetTrainingData: #and not testNN: #TODO pretty sure this is bad...
+        if resetTrainingData:
             trainingdata[light] = []
 
-        if testNN:
-            agents[light] = Net(26, 1, 512)
+        if testNNdefault:
+            if testDumbtrac:
+                agents[light] = Net(26, 1, 32)
+                #agents[light] = Net(2, 1, 32)
+            else:
+                agents[light] = Net(362, 1, 512)
             optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
+            print("Checking if there's a network. Currently testNN="+str(testNN))
             try:
                 agents[light].load(MODEL_FILES[light])
             except FileNotFoundError:
                 print("Model doesn't exist - turning off testNN")
                 testNN = False
+        else:
+            print("testNN was False. Carryover from before?")
     if not resetTrainingData and appendTrainingData:
         print("LOADING TRAINING DATA, this could take a while")
         try:

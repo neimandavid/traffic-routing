@@ -1,6 +1,6 @@
 import os
 import sys
-import runnerQueueSplit18 as runnerQueueSplit12 #Change this line if using a newer code version
+import runnerQueueSplit18NN as runnerQueueSplit12 #Change this line if using a newer code version
 import pickle
 import statistics
 import matplotlib.pyplot as plt

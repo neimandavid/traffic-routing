@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+import sumolib #To query node/edge stuff about the network
 import pickle #To save/load training data
 
 import torch
@@ -17,11 +18,16 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
 import runnerQueueSplit18NN
+from importlib import reload
+
+import xlwt
 
 #In case we want to pause a run and continue later, set these to false
-reset = True
+reset = False
 resetNN = reset
-resetTrainingData = reset
+resetTrainingData2 = reset
+
+testSurtrac = False
 
 nEpochs = 10
 nDaggers = 100
@@ -33,7 +39,7 @@ actions = [0, 1]
 learning_rate = 0.0005
 batch_size = 1
 
-nLossesBeforeReset = 100
+nLossesBeforeReset = 1000
 losses = dict()
 daggertimes = dict()
 
@@ -153,13 +159,37 @@ class TrafficLoader(Dataset):
             
 #             agents[light].save(MODEL_FILES[light])
 
-
+def readSumoCfg(sumocfg):
+    netfile = ""
+    roufile = ""
+    with open(sumocfg, "r") as cfgfile:
+        lines = cfgfile.readlines()
+        for line in lines:
+            if "net-file" in line:
+                data = line.split('"')
+                netfile = data[1]
+            if "route-files" in line: #This is scary - probably breaks if there's many of them
+                data = line.split('"')
+                roufile = data[1]
+    return (netfile, roufile)
 
 def mainold(sumoconfig):
+    if resetNN:
+        print("Archiving old models.")
+        lights = []
+        (netfile, routefile) = readSumoCfg(sumoconfig)
+        for node in sumolib.xml.parse(netfile, ['junction']):
+            if node.type == "traffic_light":
+                lights.append(node.id)
+        for light in lights:
+            try:
+                os.rename("models/imitate_" + light + ".model", "models/Archive/imitate_" + light + str(datetime.now()) + ".model")
+            except FileNotFoundError:
+                print("No model found for light " + light + ", this is fine")
 
-    if resetTrainingData:
+    if resetTrainingData2:
         try:
-            print("Archiving old training data. TODO archive models also.")
+            print("Archiving old training data.")
             os.rename("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", "trainingdata/Archive/trainingdata_" + sys.argv[1] + str(datetime.now()) + ".pickle")
         except FileNotFoundError:
             print("Nothing to archive, this is fine")
@@ -169,7 +199,9 @@ def mainold(sumoconfig):
     for daggernum in range(nDaggers):
 
         #Get new training data
-        #IMPORTANT: Make sure runnerQueueSplit18NN is set to testNN=True, testDumbtrac=True, resetTrainingData=False, appendTrainingData=True
+        #IMPORTANT: Make sure runnerQueueSplit18NN is set to testNN=True, testDumbtrac= not testSurtrac, resetTrainingData=False, appendTrainingData=True
+        print("Generating new training data")
+        reload(runnerQueueSplit18NN)
         runnerQueueSplit18NN.main(sys.argv[1], 0, False)
 
         #Load current dataset
@@ -177,11 +209,46 @@ def mainold(sumoconfig):
         with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
             trainingdata = pickle.load(handle) #List of 2-elt tuples (in, out) = ([in1, in2, ...], out) indexed by light
 
+        #Write data to an Excel file
+        #Adapted from https://stackoverflow.com/questions/13437727/how-to-write-to-an-excel-spreadsheet-using-python
+        print("Writing training data to spreadsheet")
+        book = xlwt.Workbook(encoding="utf-8")
+        sheets = dict()
+        for light in trainingdata:
+            sheets[light] = book.add_sheet(light)
+            sheets[light].write(0, 0, "Input")
+            row = 1
+            for batch in trainingdata[light]:
+                for linenum in range(batch[0].size(0)):
+                    if row >= 65536:
+                        #XLS format only supports 65536 rows, so stop there
+                        break
+                    col = 0
+                    for entry in batch[0][linenum]:
+                        sheets[light].write(row, col, float(entry))
+                        col += 1
+                    if row == 1:
+                        sheets[light].write(0, col, "Expert Output")
+                    sheets[light].write(row, col, float(batch[1][linenum]))
+                    try:
+                        col += 1
+                        if row == 1:
+                            sheets[light].write(0, col, "NN Output")
+                        sheets[light].write(row, col, float(batch[2][linenum]))
+                    except:
+                        #Worried old training data has no third entry
+                        pass
+                    row += 1
+        book.save("trainingdata/trainingdata_"+sys.argv[1]+".xls")
+
         #Set up initial neural nets on first iteration
         if daggernum == 0:
             #Do NN setup
             for light in trainingdata:
-                agents[light] = Net(26, 1, 512) #Net(26, 2, 512)
+                if testSurtrac:
+                    agents[light] = Net(362, 1, 512)
+                else:
+                    agents[light] = Net(26, 1, 32) #Net(26, 2, 512)
                 optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
                 MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
                 if not resetNN:
@@ -193,6 +260,7 @@ def mainold(sumoconfig):
                 daggertimes[light] = []
 
 
+
         #Train things
         for epochnum in range(nEpochs):
             print("Going through training data, epoch " + str(epochnum))
@@ -201,17 +269,17 @@ def mainold(sumoconfig):
                 print(light)
                 avgloss = 0
                 nlosses = 0
-                random.shuffle(trainingdata[light])
+                random.shuffle(trainingdata[light]) #Pretty sure this is working as intended (and not shuffling data and target independently)
                 
                 for data in trainingdata[light]:
                     
                     outputNN = agents[light](data[0]) # Output from NN
                     # Find the best action to take from actions based on the output of the NN
                     #actionNumber = outputNN.argmax(1).item() # Get best action number
-                    actionNumber = outputNN.argmax().item() # Get best action number
-                    actionNN = actions[actionNumber] # Get best action
+                    #actionNumber = outputNN.argmax().item() # Get best action number
+                    #actionNN = actions[actionNumber] # Get best action
 
-                    target = torch.tensor([float(data[1])]) # Target from expert
+                    target = torch.tensor([[float(data[1])]]) #torch.tensor([float(data[1])]) # Target from expert
                     loss = loss_fn(outputNN, target) # calculate loss between network action and expert action (Surtrac action)
 
                     avgloss += float(loss.item()) # record loss for printing
@@ -240,6 +308,24 @@ def mainold(sumoconfig):
 
         for light in trainingdata:
             daggertimes[light].append(len(losses[light]))
+
+        #Write data to an Excel file
+        #Adapted from https://stackoverflow.com/questions/13437727/how-to-write-to-an-excel-spreadsheet-using-python
+        # print("Writing shuffled training data to spreadsheet")
+        # book = xlwt.Workbook(encoding="utf-8")
+        # sheets = dict()
+        # for light in trainingdata:
+        #     sheets[light] = book.add_sheet(light)
+        #     row = 0
+        #     for batch in trainingdata[light]:
+        #         for linenum in range(batch[0].size(0)):
+        #             col = 0
+        #             for entry in batch[0][linenum]:
+        #                 sheets[light].write(row, col, float(entry))
+        #                 col += 1
+        #             sheets[light].write(row, col, float(batch[1][linenum]))
+        #             row += 1
+        # book.save("trainingdata/trainingdatashuffled_"+sys.argv[1]+".xls")
         
 
 # this is the main entry point of this script
