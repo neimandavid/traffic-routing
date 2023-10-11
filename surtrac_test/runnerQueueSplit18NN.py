@@ -811,10 +811,10 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     if appendTrainingData:
         if testDumbtrac:
             outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-            target = torch.tensor([[outputDumbtrac-0.25]])#.unsqueeze(1) # Target from expert
+            target = torch.tensor([[outputDumbtrac]])#.unsqueeze(1) # Target from expert
             nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
-            target = torch.tensor([[bestschedule[7][0]-0.25]])#.unsqueeze(1) # - (simtime - lastswitchtimes[light])]) # Target from expert
+            target = torch.tensor([[bestschedule[7][0]]])#.unsqueeze(1) # - (simtime - lastswitchtimes[light])]) # Target from expert
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if testNN:
