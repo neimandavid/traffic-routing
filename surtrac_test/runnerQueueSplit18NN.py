@@ -55,12 +55,12 @@ timestep = 0.5 #Amount of time between updates. In practice, mingap rounds up to
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
 
 #Hyperparameters for multithreading
-multithreadRouting = False #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
-multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
+multithreadRouting = True #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
+multithreadSurtrac = True #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
-routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+routingSurtracFreq = 2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 0 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
@@ -71,8 +71,8 @@ predDiscount = 1 #Multiply predicted vehicle weights by this because we're not a
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
-appendTrainingData = True
-
+appendTrainingData = False
+learnYellow = False
 
 #Don't change parameters below here
 #For testing durations to see if there's drift between fixed timing plans executed in main simulation and routing simulations.
@@ -159,6 +159,10 @@ class Net(torch.nn.Module):
             #So 26 inputs. Phase, duration, L1astopped, L1atotal, ..., L4dstopped, L4dtotal
 
             nn.Linear(in_size, hidden_size), #Blindly copying an architecture
+            nn.LeakyReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.LeakyReLU(),
+            nn.Linear(hidden_size, hidden_size),
             nn.LeakyReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.LeakyReLU(),
@@ -373,7 +377,16 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
-    
+    #Force yellow phases to be min duration regardless of what anything else says, and don't store it as training data
+    i = lightphases[light]
+    if not learnYellow and ("Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state):
+        if simtime - lastswitchtimes[light] >= surtracdata[light][i]["minDur"]:
+            dur = 0
+        else:
+            dur = 1e6
+        bestschedules[light] = [None, None, None, None, None, None, None, [dur]]
+        return
+
     if testNN or testDumbtrac:
         if testNN:
             if testDumbtrac:
@@ -811,10 +824,10 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     if appendTrainingData:
         if testDumbtrac:
             outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-            target = torch.tensor([[outputDumbtrac]])#.unsqueeze(1) # Target from expert
+            target = torch.tensor([[outputDumbtrac-0.25]])#.unsqueeze(1) # Target from expert
             nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
-            target = torch.tensor([[bestschedule[7][0]]])#.unsqueeze(1) # - (simtime - lastswitchtimes[light])]) # Target from expert
+            target = torch.tensor([[bestschedule[7][0]-0.25]])#.unsqueeze(1) # - (simtime - lastswitchtimes[light])]) # Target from expert
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if testNN:
@@ -926,10 +939,6 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
                             #And set the new duration if possible
                             traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #Update duration if we know it
                             #pass
-                        else:
-                            print("Warning: remainingDuration is somehow empty, despite us just populating it one if statement ago")
-                    else:
-                        print("doSurtrac thinks it's in a routing simulation - check that this is intended")
             else:
                 #NEXT TODO this is going off with learned actuated control (and maybe others) the first time after doSurtrac returns 0 and the light switches. Unclear why.
                 #print("test")
@@ -1735,8 +1744,6 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
     global killSurtracThread
     global newcarcounter
 
-    print("Starting a routing simulation - double-check that this is intended")
-
     #Fix routesimtime before we initialize the list of things to check, else we might be running Surtrac at slightly different times when we try to reuse schedules
     starttime = routesimtime
     if reuseSurtrac and recomputeRoutingSurtracFreq > 1:
@@ -2420,7 +2427,7 @@ def readSumoCfg(sumocfg):
                 roufile = data[1]
     return (netfile, roufile)
 
-def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False):
+def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrainingDataIn = False):
     global lowprioritygreenlightlinks
     global prioritygreenlightlinks
     global edges
@@ -2428,6 +2435,7 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False):
     global actualStartDict
     global trainingdata
     global testNN
+    global appendTrainingData
     options = get_options()
 
     if useLastRNGState:
@@ -2437,6 +2445,8 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False):
         rngstate = random.getstate()
         with open("lastRNGstate.pickle", 'wb') as handle:
             pickle.dump(rngstate, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    appendTrainingData = appendTrainingDataIn
 
     # this script has been called from the command line. It will start sumo as a
     # server, then connect and run
@@ -2657,7 +2667,7 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False):
                 agents[light] = Net(26, 1, 32)
                 #agents[light] = Net(2, 1, 32)
             else:
-                agents[light] = Net(362, 1, 512)
+                agents[light] = Net(362, 1, 1024)
             optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
             print("Checking if there's a network. Currently testNN="+str(testNN))
@@ -2666,8 +2676,6 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False):
             except FileNotFoundError:
                 print("Model doesn't exist - turning off testNN")
                 testNN = False
-        else:
-            print("testNN was False. Carryover from before?")
     if not resetTrainingData and appendTrainingData:
         print("LOADING TRAINING DATA, this could take a while")
         try:
@@ -2704,4 +2712,6 @@ if __name__ == "__main__":
         pSmart = float(sys.argv[2])
     if len(sys.argv) >= 4:
         useLastRNGState = sys.argv[3]
-    main(sys.argv[1], pSmart, True, useLastRNGState)
+    if len(sys.argv) >= 5:
+        appendTrainingData = sys.argv[4]
+    main(sys.argv[1], pSmart, True, useLastRNGState, appendTrainingData)

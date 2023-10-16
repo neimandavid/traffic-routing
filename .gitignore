@@ -9,3 +9,4 @@ surtrac_test/lastRNGstate.pickle
 surtrac_test/outputAuto.xml
 surtrac_test/models/*
 surtrac_test/trainingdata/*
+surtrac_test/imitate.log

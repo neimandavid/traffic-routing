@@ -42,7 +42,7 @@ batch_size = 1
 
 nLossesBeforeReset = 1000
 losses = dict()
-epochlosses = dict()
+epochlosses = dict()    
 daggertimes = dict()
 
 loss_fn = torch.nn.MSELoss() #torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 100]))
@@ -65,6 +65,10 @@ class Net(torch.nn.Module):
             #So 26 inputs. Phase, duration, L1astopped, L1atotal, ..., L4dstopped, L4dtotal
 
             nn.Linear(in_size, hidden_size), #Blindly copying an architecture
+            nn.LeakyReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.LeakyReLU(),
+            nn.Linear(hidden_size, hidden_size),
             nn.LeakyReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.LeakyReLU(),
@@ -154,7 +158,7 @@ def mainold(sumoconfig):
         #IMPORTANT: Make sure runnerQueueSplit18NN is set to testNN=True, testDumbtrac= not testSurtrac, resetTrainingData=False, appendTrainingData=True
         print("Generating new training data")
         reload(runnerQueueSplit18NN)
-        runnerQueueSplit18NN.main(sys.argv[1], 0, False)
+        runnerQueueSplit18NN.main(sys.argv[1], 0, False, False, True)
 
         #Load current dataset
         print("Loading training data")
@@ -169,9 +173,9 @@ def mainold(sumoconfig):
             #Do NN setup
             for light in trainingdata:
                 if testSurtrac:
-                    agents[light] = Net(362, 1, 512)
+                    agents[light] = Net(362, 1, 1024)
                 else:
-                    agents[light] = Net(26, 1, 32) #Net(26, 2, 512)
+                    agents[light] = Net(26, 1, 32)
                 optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
                 MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
                 if not resetNN:
@@ -248,10 +252,9 @@ def trainLight(light, trainingdata):
 #Dumps training data to an Excel file for human readability
 def dumpTrainingData(trainingdata):
     print("Writing training data to spreadsheet")
-    book = xlwt.Workbook(encoding="utf-8")
-    book = openpyxl.Workbook()
-    sheets = dict()
     try:
+        book = openpyxl.Workbook()
+        sheets = dict()
         for light in trainingdata:
             sheets[light] = book.create_sheet(light, -1)
             sheets[light].cell(1, 1, "Input")

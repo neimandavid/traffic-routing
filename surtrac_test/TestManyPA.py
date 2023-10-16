@@ -15,7 +15,7 @@ for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
 
     for i in range(0, nIters):
         print(i)
-        [newdata, newrngstate] = runnerQueueSplit12.main(sys.argv[1], p, False)
+        [newdata, newrngstate] = runnerQueueSplit12.main(sys.argv[1], p, False, False, False)
 
         try:
             with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
