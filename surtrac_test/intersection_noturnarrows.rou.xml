@@ -45,8 +45,8 @@
     <!--vType id="noVar" accel="0.8" decel="4.5" sigma="0.5" length="5" maxSpeed="70" speedDev="0.0"/-->
     <vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
 
-    <flow id="SflowLR" type="noVar" from="Lin" to="Rout" begin="0" end="2100" number="200"/>
-    <flow id="SflowRL" type="noVar" from="Rin" to="Lout" begin="0" end="2100" number="200"/>
-    <flow id="SflowUD" type="noVar" from="Uin" to="Dout" begin="0" end="2100" number="400"/>
-    <flow id="SflowDU" type="noVar" from="Din" to="Uout" begin="0" end="2100" number="400"/>
+    <flow id="SflowLR" type="noVar" from="Lin" to="Rout" begin="0" end="2000" number="475"/>
+    <flow id="SflowRL" type="noVar" from="Rin" to="Lout" begin="0" end="2000" number="475"/>
+    <flow id="SflowUD" type="noVar" from="Uin" to="Dout" begin="0" end="2000" number="300"/>
+    <flow id="SflowDU" type="noVar" from="Din" to="Uout" begin="0" end="2000" number="300"/>
 </routes>

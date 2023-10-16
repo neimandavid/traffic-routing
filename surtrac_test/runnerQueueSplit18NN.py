@@ -417,7 +417,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         #return #Don't return early, might still need to append training data
 
     if (not testNN and not testDumbtrac) or (appendTrainingData and not testDumbtrac):
-        print("Running surtrac, double-check that this is intended.")
+        #print("Running surtrac, double-check that this is intended.")
         #We're actually running Surtrac
         if debugMode:
             global totalSurtracRuns

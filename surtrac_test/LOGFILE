@@ -1,0 +1,19 @@
+***Starting server on port 57079 ***
+Loading net-file from 'intersection_noturnarrows.net.xml' ... done (2ms).
+Loading additional-files from 'additional_autogen.xml' ... done (2ms).
+Loading done.
+Simulation started with time: 0.00.
+Simulation ended at time: 2196.00
+Reason: TraCI requested termination.
+Performance: 
+ Duration: 62.48s
+ TraCI-Duration: 53.96s
+ Real time factor: 35.145
+ UPS: 3214.646950
+Vehicles: 
+ Inserted: 1550
+ Running: 0
+ Waiting: 0
+
+DijkstraRouter answered 1550 queries and explored 2.92 edges on average.
+DijkstraRouter spent 0.00s answering queries (0.00ms on average).

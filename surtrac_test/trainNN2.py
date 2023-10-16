@@ -20,7 +20,6 @@ from torch.utils.data import Dataset, DataLoader
 import runnerQueueSplit18NN
 from importlib import reload
 
-import xlwt #Hopefully obsolete soon
 import openpyxl #For writing training data to .xlsx files
 
 #In case we want to pause a run and continue later, set these to false
