@@ -73,6 +73,8 @@ testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training dat
 resetTrainingData = False
 appendTrainingData = False
 learnYellow = False
+learnMinMaxDurations = False
+FTP = False
 
 #Don't change parameters below here
 #For testing durations to see if there's drift between fixed timing plans executed in main simulation and routing simulations.
@@ -227,6 +229,12 @@ def consolidateClusters(clusters):
         i+=1
 
 def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
+    if FTP:
+        return dumbtracFTP(simtime, light, clusters, lightphases, lastswitchtimes)
+    else:
+        return dumbtracActuated(simtime, light, clusters, lightphases, lastswitchtimes)
+
+def dumbtracFTP(simtime, light, clusters, lightphases, lastswitchtimes):
 
     phase = lightphases[light]
     lastSwitch = lastswitchtimes[light]
@@ -239,32 +247,32 @@ def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
 
     
 
-# def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
-#     phase = lightphases[light]
-#     lastSwitch = lastswitchtimes[light]
+def dumbtracActuated(simtime, light, clusters, lightphases, lastswitchtimes):
+    phase = lightphases[light]
+    lastSwitch = lastswitchtimes[light]
     
-#     maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
+    maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
 
-#     if surtracdata[light][phase]["maxDur"]- maxfreq <= surtracdata[light][phase]["minDur"]:
-#         #Edge case where duration range is smaller than period between updates, in which case overruns are unavoidable
-#         if simtime - lastSwitch < surtracdata[light][phase]["minDur"]:
-#             phaselenprop = -1
-#         else:
-#             phaselenprop = 2
-#     else:
-#         phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/(surtracdata[light][phase]["maxDur"]- maxfreq - surtracdata[light][phase]["minDur"])
+    if surtracdata[light][phase]["maxDur"]- maxfreq <= surtracdata[light][phase]["minDur"]:
+        #Edge case where duration range is smaller than period between updates, in which case overruns are unavoidable
+        if simtime - lastSwitch < surtracdata[light][phase]["minDur"]:
+            phaselenprop = -1
+        else:
+            phaselenprop = 2
+    else:
+        phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/(surtracdata[light][phase]["maxDur"]- maxfreq - surtracdata[light][phase]["minDur"])
 
-#     #Satisfy phase length requirements
-#     if phaselenprop < 0:
-#         return 100 #If haven't reached min length, continue
-#     if phaselenprop >= 1:
-#         return 0 #If >= max length, switch
+    #Satisfy phase length requirements
+    if phaselenprop < 0:
+        return 10 #If haven't reached min length, continue
+    if phaselenprop >= 1:
+        return -10 #If >= max length, switch
 
-#     out = 0
-#     for lane in surtracdata[light][phase]["lanes"]:
-#         if len(clusters[lane]) > 0 and clusters[lane][0]["arrival"] <= simtime+mingap:
-#             out = max(out, 2.5*(clusters[lane][0]["weight"]+1)) #If anyone's waiting, continue
-#     return out #If no one's waiting, switch
+    out = -10
+    for lane in surtracdata[light][phase]["lanes"]:
+        if len(clusters[lane]) > 0 and clusters[lane][0]["arrival"] <= simtime+mingap:
+            out = 10#max(out, 2.5*(clusters[lane][0]["weight"]+1)) #If anyone's waiting, continue
+    return out #If no one's waiting, switch
 
 def convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes):
     maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
@@ -377,15 +385,32 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
-    #Force yellow phases to be min duration regardless of what anything else says, and don't store it as training data
     i = lightphases[light]
     if not learnYellow and ("Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state):
+        #Force yellow phases to be min duration regardless of what anything else says, and don't store it as training data
         if simtime - lastswitchtimes[light] >= surtracdata[light][i]["minDur"]:
             dur = 0
         else:
             dur = 1e6
         bestschedules[light] = [None, None, None, None, None, None, None, [dur]]
         return
+
+    if not learnMinMaxDurations:
+        if inRoutingSim:
+            freq = max(routingSurtracFreq, timestep)
+            ttimestep = timestep
+        else:
+            freq = max(mainSurtracFreq, 1)
+            ttimestep = 1
+        #Force light to satisfy min/max duration requirements and don't store as training data
+        if simtime - lastswitchtimes[light] < surtracdata[light][i]["minDur"]:
+            dur = 1e6
+            bestschedules[light] = [None, None, None, None, None, None, None, [dur]]
+            return
+        if simtime - lastswitchtimes[light] + freq > surtracdata[light][i]["maxDur"]:
+            dur = (surtracdata[light][i]["maxDur"] - (simtime - lastswitchtimes[light]))//ttimestep*ttimestep
+            bestschedules[light] = [None, None, None, None, None, None, None, [dur]]
+            return
 
     if testNN or testDumbtrac:
         if testNN:
@@ -2591,7 +2616,7 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
                         
                         lanephases[linktuple[0]].append(i)
 
-                    linklist = linklistlist[linklistind]
+                linklist = linklistlist[linklistind] #TODO just unindented this, make sure nothing breaks
                 for link in linklist:
                     if linkstate == "G":
                         prioritygreenlightlinks[light][i].append(link)
@@ -2670,7 +2695,7 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
                 agents[light] = Net(362, 1, 1024)
             optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
-            print("Checking if there's a network. Currently testNN="+str(testNN))
+            print("Checking if there's a learned model. Currently testNN="+str(testNN))
             try:
                 agents[light].load(MODEL_FILES[light])
             except FileNotFoundError:
