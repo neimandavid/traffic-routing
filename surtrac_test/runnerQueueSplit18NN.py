@@ -385,14 +385,28 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
+    
+    if inRoutingSim:
+        freq = max(routingSurtracFreq, timestep)
+        ttimestep = timestep
+    else:
+        freq = max(mainSurtracFreq, 1)
+        ttimestep = 1
+        
     i = lightphases[light]
     if not learnYellow and ("Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state):
         #Force yellow phases to be min duration regardless of what anything else says, and don't store it as training data
         if simtime - lastswitchtimes[light] >= surtracdata[light][i]["minDur"]:
             dur = 0
         else:
-            dur = 1e6
-        bestschedules[light] = [None, None, None, None, None, None, None, [dur]]
+            dur = (surtracdata[light][i]["minDur"] - (simtime - lastswitchtimes[light]))//ttimestep*ttimestep
+        #Replace first element with remaining duration, rather than destroying the entire schedule, in case of Surtrac or similar
+        if light in bestschedules:
+            temp = pickle.loads(pickle.dumps(bestschedules[light][7]))
+        else:
+            temp = [0]
+        temp[0] = dur
+        bestschedules[light] = [None, None, None, None, None, None, None, temp]
         return
 
     if not learnMinMaxDurations:
@@ -405,11 +419,22 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         #Force light to satisfy min/max duration requirements and don't store as training data
         if simtime - lastswitchtimes[light] < surtracdata[light][i]["minDur"]:
             dur = 1e6
-            bestschedules[light] = [None, None, None, None, None, None, None, [dur]]
+            if light in bestschedules:
+                temp = pickle.loads(pickle.dumps(bestschedules[light][7]))
+            else:
+                temp = [0]
+            temp[0] = dur
+            bestschedules[light] = [None, None, None, None, None, None, None, temp]
             return
         if simtime - lastswitchtimes[light] + freq > surtracdata[light][i]["maxDur"]:
+            #TODO this is slightly sloppy if freq > ttimestep - if we're trying to change just before maxDur this'll assume we tried to change at it instead
             dur = (surtracdata[light][i]["maxDur"] - (simtime - lastswitchtimes[light]))//ttimestep*ttimestep
-            bestschedules[light] = [None, None, None, None, None, None, None, [dur]]
+            if light in bestschedules:
+                temp = pickle.loads(pickle.dumps(bestschedules[light][7]))
+            else:
+                temp = [0]
+            temp[0] = dur
+            bestschedules[light] = [None, None, None, None, None, None, None, temp]
             return
 
     if testNN or testDumbtrac:
@@ -529,6 +554,9 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                         print("ERROR: Can't clear this lane ever?")
                         
                     for i in lanephases[lane]:
+                        #TODO: Stop scheduling stuff on yellow, it's probably bad (also slow?). Make sure this works though.
+                        if not learnYellow and ("Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state):
+                            continue
                         directionalMakespans = copy(schedule[3])
 
                         nLanes = len(surtracdata[light][i]["lanes"])
