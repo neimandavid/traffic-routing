@@ -23,8 +23,8 @@ from importlib import reload
 import openpyxl #For writing training data to .xlsx files
 
 #In case we want to pause a run and continue later, set these to false
-reset = True
-resetNN = reset
+reset = False
+resetNN = False#reset
 resetTrainingData2 = reset
 
 testSurtrac = False
@@ -157,7 +157,7 @@ def mainold(sumoconfig):
         #IMPORTANT: Make sure runnerQueueSplit18NN is set to testNN=True, testDumbtrac= not testSurtrac, resetTrainingData=False, appendTrainingData=True
         print("Generating new training data")
         reload(runnerQueueSplit18NN)
-        runnerQueueSplit18NN.main(sys.argv[1], 0, False, False, True)
+        runnerQueueSplit18NN.main(sys.argv[1], random.random(), False, False, True)
 
         #Load current dataset
         print("Loading training data")
