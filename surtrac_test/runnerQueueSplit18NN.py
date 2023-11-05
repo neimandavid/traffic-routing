@@ -46,6 +46,8 @@ import traci  #To interface with SUMO simulations
 import sumolib #To query node/edge stuff about the network
 import pickle #To save/load traffic light states
 
+import Net
+
 pSmart = 1.0 #Adoption probability
 useLastRNGState = False #To rerun the last simulation without changing the seed on the random number generator
 
@@ -59,6 +61,7 @@ multithreadRouting = True #Do each routing simulation in a separate thread. Enab
 multithreadSurtrac = True #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
+simToSimStats = False
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
@@ -68,13 +71,13 @@ predCutoffRouting = 0 #Surtrac receives communications about clusters arriving t
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
 #To test
-testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
-testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
+testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
+testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
 appendTrainingData = False
-learnYellow = False
-learnMinMaxDurations = False
-FTP = False
+learnYellow = False #False to strictly enforce that yellow lights are always their minimum length (no scheduling clusters during yellow+turn arrow, and ML solution isn't used there)
+learnMinMaxDurations = False #False to strictly enforce min/max duration limits (in particular, don't call ML, just do the right thing)
+FTP = True
 
 #Don't change parameters below here
 #For testing durations to see if there's drift between fixed timing plans executed in main simulation and routing simulations.
@@ -141,6 +144,7 @@ killSurtracThread = True
 
 nRoutingCalls = 0
 routingTime = 0
+routeVerifyData = []
 
 #Neural net things
 import torch
@@ -152,34 +156,6 @@ def log(*args, **kwargs):
         with open(LOG_FILE, 'a+') as f:
             print(*args, file=f, **kwargs)
     print(*args, **kwargs)
-
-class Net(torch.nn.Module):
-    def __init__(self, in_size, out_size, hidden_size):
-        super().__init__()
-        self.linear_relu_stack = nn.Sequential(
-            #Input: Assume 4 roads, 3 lanes each, store #stopped and #total on each. Also store current phase and duration, and really hope the phases and roads are in the same order
-            #So 26 inputs. Phase, duration, L1astopped, L1atotal, ..., L4dstopped, L4dtotal
-
-            nn.Linear(in_size, hidden_size), #Blindly copying an architecture
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, out_size)
-        )
-        
-    def forward(self, x):
-        out = self.linear_relu_stack(x)
-        return out
-
-    def save(self, file_path):
-        torch.save(self.state_dict(), file_path)
-
-    def load(self, file_path):
-        self.load_state_dict(torch.load(file_path))
 
 agents = dict()
 optimizers = dict()
@@ -1528,6 +1504,29 @@ def run(network, rerouters, pSmart, verbose = True):
                     print("Average percent error in predicted travel time: %f" % (avgpcterror))
                     print("Average absolute percent error in predicted travel time: %f" % (avgabspcterror))
 
+                    if len(routeVerifyData) > 0:
+                        avgVerifyError = 0
+                        avgAbsVerifyError = 0
+                        avgPctVerifyError = 0
+                        avgPctAbsVerifyError = 0
+                        nVerifyPts = 0
+                        for verifytuple in routeVerifyData:
+                            if verifytuple[0] < 0 or verifytuple[1] < 0: #If routing times out, these return -1
+                                continue
+                            avgVerifyError += (verifytuple[0]-verifytuple[1])
+                            avgAbsVerifyError += abs((verifytuple[0]-verifytuple[1]))
+                            avgPctVerifyError += (verifytuple[0]-verifytuple[1])/verifytuple[0]*100
+                            avgPctAbsVerifyError += abs((verifytuple[0]-verifytuple[1]))/verifytuple[0]*100
+                            nVerifyPts += 1
+                        avgVerifyError /= nVerifyPts
+                        avgAbsVerifyError /= nVerifyPts
+                        avgPctVerifyError /= nVerifyPts
+                        avgPctAbsVerifyError /= nVerifyPts
+                        print("Average sim-to-sim error (actual minus expected) in predicted travel time: %f" % (avgVerifyError))
+                        print("Average absolute sim-to-sim error (actual minus expected) in predicted travel time: %f" % (avgAbsVerifyError))
+                        print("Average percent sim-to-sim error (actual minus expected) in predicted travel time: %f" % (avgPctVerifyError))
+                        print("Average absolute percent sim-to-sim error (actual minus expected) in predicted travel time: %f" % (avgPctAbsVerifyError))
+
                     print("Average number of calls to routing: %f" % (totalcalls/nSmart))
                     print("Average number of route changes: %f" % (totalswaps/nSmart))
                     print("Average number of route changes after first routing decision: %f" % (totalswapsafterfirst/nSmart))
@@ -1573,12 +1572,12 @@ def run(network, rerouters, pSmart, verbose = True):
 def reroute(rerouters, network, simtime, remainingDuration):
     global toReroute
     global threads
-    global nToReroute
+    #global nToReroute
     global killSurtracThread
 
     toReroute = []
     reroutedata = dict()
-    nToReroute = 0
+    #nToReroute = 0
 
     #Reuse Surtrac schedule between timesteps
     if recomputeRoutingSurtracFreq <= 1 or simtime%recomputeRoutingSurtracFreq >= (simtime+1)%recomputeRoutingSurtracFreq:
@@ -1629,7 +1628,7 @@ def QueueReroute(detector, network, reroutedata, simtime, remainingDuration):
     global toReroute
     global threads
     global delay3adjdict
-    global nToReroute
+    #global nToReroute
     global killSurtracThread
     global clustersCache
 
@@ -1672,7 +1671,7 @@ def QueueReroute(detector, network, reroutedata, simtime, remainingDuration):
                     routes[vehicletemp] = sampleRouteFromTurnData(vehicletemp, laneDict[vehicletemp], turndata)
 
             #Prepare to route
-            nToReroute += 1
+            #nToReroute += 1
             if reuseSurtrac:
                 if killSurtracThread:
                     killSurtracThread = False
@@ -1693,8 +1692,35 @@ def QueueReroute(detector, network, reroutedata, simtime, remainingDuration):
 def doClusterSimThreaded(prevlane, net, vehicle, simtime, remainingDuration, data, loaddata, routes):
     global nRoutingCalls
     global routingTime
+    global routeVerifyData
     starttime = time.time()
-    temp = runClusters(net, simtime, remainingDuration, vehicle, prevlane, loaddata, routes)
+    temp = runClusters(net, simtime, remainingDuration, vehicle, prevlane, pickle.loads(pickle.dumps(loaddata)), routes)
+    if simToSimStats and temp[1] > 0:
+        tempVerify = runClusters(net, simtime, remainingDuration, vehicle, prevlane, pickle.loads(pickle.dumps(loaddata)), routes, True)
+        if len(temp) == 2 and len(tempVerify) == 2:
+            routeVerifyData.append( (tempVerify[1], temp[1]) )
+
+        allroutes = getAllRoutes(net, laneDict[vehicle].split("_")[0], routes[vehicle][-1])
+        
+        bestroute = None
+        besttime = np.inf
+        for route in allroutes:
+            #print("Testing route " + str(route))
+            oldroute = routes[vehicle]
+            routes[vehicle] = route
+            tempTest = runClusters(net, simtime, remainingDuration, vehicle, prevlane, pickle.loads(pickle.dumps(loaddata)), routes, True)
+            if tempTest[1] < besttime and tempTest[1] > 0:
+                bestroute = route
+                besttime = tempTest[1]
+            routes[vehicle] = oldroute
+        print("Best route: " + str(bestroute) + ", time: " + str(besttime))
+        print("Routing sim's route: " + str(oldroute) + ", actual time: " + str(tempVerify[1]) + ", predicted time: " + str(temp[1]))
+        #Testing brute-force routing instead
+        data[0] = bestroute
+        data[1] = besttime
+        nRoutingCalls += 1
+        routingTime += time.time() - starttime
+        return
     nRoutingCalls += 1
     routingTime += time.time() - starttime
     for i in range(len(temp)):
@@ -1791,9 +1817,9 @@ def addNoise(clusters, VOI, detectprob, timeerr):
 
 #NOTE: Multithreaded stuff doesn't get profiled...
 #@profile
-def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, startlane, loaddata, routes):
+def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, startlane, loaddata, routes, verifyOnly=False, durationLimit=np.inf):
     global surtracDict
-    global nToReroute
+    #global nToReroute
     global killSurtracThread
     global newcarcounter
 
@@ -1802,7 +1828,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
     if reuseSurtrac and recomputeRoutingSurtracFreq > 1:
         routesimtime = math.floor(routesimtime/timestep)*timestep
 
-    computeSurtrac = len(vehicleOfInterest) == 0
+    computeSurtrac = len(vehicleOfInterest) == 0 #True if we're multithreading and this is the thread doing Surtrac, false if it's routing a specific vehicle
     if computeSurtrac:
         surtracDict = dict()
     
@@ -1925,7 +1951,10 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
             print("Routing timeout: Edge " + startedge + ", time: " + str(starttime))
             routeStats[vehicleOfInterest]["nTimeouts"] += 1
             
-            nToReroute -= 1
+            #nToReroute -= 1
+            return (bestroute, -1)
+
+        if (routesimtime-starttime) > durationLimit:
             return (bestroute, -1)
 
         #If nothing needs Surtrac schedules, stop computing them
@@ -2049,12 +2078,13 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
             #Nothing to update, apparently; go to next timestep
             continue
 
+
         for lane in reversed(lanesToCheck[routesimtime]): #Reversing to handle zipper merges
             edge = lane.split("_")[0]
         #TODO: Make sure zipper merges still work...
         # reflist = pickle.loads(pickle.dumps(edgelist)) #Want to reorder edge list to handle priority stuff, but don't want to mess up the for loop indexing
 
-            while len(clusters[lane]) > 0:
+            while len(clusters[lane]) > 0: #While loop so we can clear out any empty clusters that wound up in front for whatever reason - most of the loop will only run once
                 cluster = clusters[lane][0]
 
                 if cluster["arrival"] > routesimtime:
@@ -2079,7 +2109,8 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                         for routepart in splitroute:
                             fullroute.append(routepart.split("_")[0]) #Only grab the edge, not the lane
                         bestroute = fullroute + list(toupgrade)
-                    if cartuple[0] in VOIs and edge == goalEdge:
+                    
+                    if cartuple[0] in VOIs and edge == goalEdge: #TODO this is basically the above code, can these cases be combined?
                         #We're done simulating; extract the route
                         splitroute = cartuple[0].split("|")
                         splitroute.pop(0)
@@ -2087,9 +2118,9 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                         for routepart in splitroute:
                             fullroute.append(routepart.split("_")[0]) #Only grab the edge, not the lane
                         #print("End routing simulation. Time: " + str(starttime) + " , vehicle: " + vehicleOfInterest)
-                        nToReroute -= 1
+                        #nToReroute -= 1
                         return (fullroute, routesimtime-starttime)
-                    elif not cartuple[0] in VOIs and routes[cartuple[0]][-1] == edge:
+                    elif not cartuple[0] in VOIs and routes[cartuple[0].split("|")[0].split("_")[0]][-1] == edge:
                         cluster["cars"].pop(0) #Remove car from this edge
                         break
 
@@ -2109,7 +2140,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                     #Figure out where the car wants to go
                     if not (cartuple[0], edge) in splitinfo:
                         #Assume zipper
-                        if cartuple[0] in VOIs:
+                        if cartuple[0] in VOIs and not verifyOnly:
                             nextedges = []
                             #Want all edges that current lane connects to
                             for nextlinktuple in links[lane]:
@@ -2117,7 +2148,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                                 if not nextedge in nextedges:
                                     nextedges.append(nextedge)
                         else:
-                            route = routes[cartuple[0]]
+                            route = routes[cartuple[0].split("|")[0].split("_")[0]]
                             routeind = route.index(edge)
                             nextedges = [route[routeind+1]]
 
@@ -2130,7 +2161,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
                                 nextlane = nextedge + "_" + str(nextlanenum)
                                 
                                 #If non-splitty car and this nextlane doesn't go to nextnextedge, disallow it
-                                if not cartuple[0] in VOIs:
+                                if not cartuple[0] in VOIs or verifyOnly:
                                     if routeind + 2 < len(route): #Else there's no next next edge, don't be picky
                                         nextnextedge = route[routeind+2]
                                         usableLane = False
@@ -2465,6 +2496,22 @@ def sampleRouteFromTurnData(vehicle, startlane, turndata):
         route.append(lane.split("_")[0])
         #print(route)
     return route
+
+def getAllRoutes(network, start, goal):
+    toExpand = [([start], [network.getEdge(start).getToNode()])]
+    done = []
+    while len(toExpand) > 0:
+        expandee = toExpand.pop(0)
+        for newEdge in list(network.getEdge(expandee[0][-1]).getOutgoing()):
+            if newEdge.getID() == goal:
+                done.append(expandee[0]+[newEdge.getID()])
+            if newEdge.getToNode() in expandee[1]:
+                continue
+            if newEdge.getID() in expandee[0]:
+                print("Warning: Duplicate edge; this should've been caught by the duplicate destination check...")
+                continue
+            toExpand.append((expandee[0]+[newEdge.getID()], expandee[1]+[newEdge.getToNode()]))
+    return done
 
 def readSumoCfg(sumocfg):
     netfile = ""

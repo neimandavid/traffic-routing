@@ -19,6 +19,7 @@ from torch.utils.data import Dataset, DataLoader
 
 import runnerQueueSplit18NN
 from importlib import reload
+import Net
 
 import openpyxl #For writing training data to .xlsx files
 
@@ -56,61 +57,33 @@ def log(*args, **kwargs):
             print(*args, file=f, **kwargs)
     print(*args, **kwargs)
 
-class Net(torch.nn.Module):
-    def __init__(self, in_size, out_size, hidden_size):
-        super().__init__()
-        self.linear_relu_stack = nn.Sequential(
-            #Input: Assume 4 roads, 3 lanes each, store #stopped and #total on each. Also store current phase and duration, and really hope the phases and roads are in the same order
-            #So 26 inputs. Phase, duration, L1astopped, L1atotal, ..., L4dstopped, L4dtotal
+# class TrafficLoader(Dataset):
+#     def __init__(self, datafile, light):
+#         """
+#         Arguments:
+#             csv_file (string): Path to the csv file with annotations.
+#             root_dir (string): Directory with all the images.
+#             transform (callable, optional): Optional transform to be applied
+#                 on a sample.
+#         """
+#         self.datafile = datafile
+#         self.light = light
+#         with open(datafile, 'rb') as handle:
+#             temp = pickle.load(handle) #TODO: This is going to reload the pickle file for each light - this is slow
+#         self.dataset = temp[light]
 
-            nn.Linear(in_size, hidden_size), #Blindly copying an architecture
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, out_size)
-        )
-        
-    def forward(self, x):
-        out = self.linear_relu_stack(x)
-        return out
+#     def __len__(self):
+#         return len(self.dataset)
 
-    def save(self, file_path):
-        torch.save(self.state_dict(), file_path)
+#     def __getitem__(self, idx):
+#         if torch.is_tensor(idx):
+#             idx = idx.tolist()
 
-    def load(self, file_path):
-        self.load_state_dict(torch.load(file_path))
+#         datapt = self.dataset[idx]
+#         print(datapt)
+#         sample = {'input': datapt[0], 'output': datapt[1]}
 
-class TrafficLoader(Dataset):
-    def __init__(self, datafile, light):
-        """
-        Arguments:
-            csv_file (string): Path to the csv file with annotations.
-            root_dir (string): Directory with all the images.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
-        """
-        self.datafile = datafile
-        self.light = light
-        with open(datafile, 'rb') as handle:
-            temp = pickle.load(handle) #TODO: This is going to reload the pickle file for each light - this is slow
-        self.dataset = temp[light]
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        datapt = self.dataset[idx]
-        print(datapt)
-        sample = {'input': datapt[0], 'output': datapt[1]}
-
-        return sample
+#         return sample
 
 def readSumoCfg(sumocfg):
     netfile = ""
@@ -157,7 +130,7 @@ def mainold(sumoconfig):
         #IMPORTANT: Make sure runnerQueueSplit18NN is set to testNN=True, testDumbtrac= not testSurtrac, resetTrainingData=False, appendTrainingData=True
         print("Generating new training data")
         reload(runnerQueueSplit18NN)
-        runnerQueueSplit18NN.main(sys.argv[1], random.random(), False, False, True)
+        runnerQueueSplit18NN.main(sys.argv[1], 0, False, False, True)
 
         #Load current dataset
         print("Loading training data")
