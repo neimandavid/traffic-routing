@@ -46,7 +46,7 @@ import traci  #To interface with SUMO simulations
 import sumolib #To query node/edge stuff about the network
 import pickle #To save/load traffic light states
 
-import Net
+from Net import Net
 
 pSmart = 1.0 #Adoption probability
 useLastRNGState = False #To rerun the last simulation without changing the seed on the random number generator
@@ -71,7 +71,7 @@ predCutoffRouting = 0 #Surtrac receives communications about clusters arriving t
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
 #To test
-testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
+testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
 appendTrainingData = False
@@ -2758,6 +2758,7 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
 
     #Do NN setup
     testNN = testNNdefault
+    print("testNN="+str(testNN))
     for light in lights:
         if resetTrainingData:
             trainingdata[light] = []
