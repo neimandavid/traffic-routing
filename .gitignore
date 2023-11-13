@@ -10,3 +10,14 @@ surtrac_test/outputAuto.xml
 surtrac_test/models/*
 surtrac_test/trainingdata/*
 surtrac_test/imitate.log
+surtrac_test/savestates/*
+shortlong2_16782/additional_autogen.xml
+shortlong2_16782/LOGFILE
+shortlong2_16782/outputAuto.xml
+surtrac_test/.DS_Store
+surtrac_test/__pycache__/Net.cpython-39.pyc
+surtrac_test/additional_autogen.xml
+*.pyc
+surtrac_test/LOGFILE
+surtrac_test/lastRNGstate.pickle
+*.lprof
