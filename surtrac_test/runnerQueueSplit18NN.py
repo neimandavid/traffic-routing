@@ -72,7 +72,7 @@ predDiscount = 1 #Multiply predicted vehicle weights by this because we're not a
 
 #To test
 testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
-testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
+testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
 appendTrainingData = False
 learnYellow = False #False to strictly enforce that yellow lights are always their minimum length (no scheduling clusters during yellow+turn arrow, and ML solution isn't used there)

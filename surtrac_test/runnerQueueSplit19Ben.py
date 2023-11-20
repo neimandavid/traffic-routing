@@ -34,6 +34,17 @@ from collections import Counter
 from heapq import * #priorityqueue
 import threading
 import xml.etree.ElementTree as ET
+from multiprocessing import Pool
+from multiprocessing import Process
+import multiprocessing
+
+try:
+    multiprocessing.set_start_method("fork")
+except:
+    pass
+
+manager = multiprocessing.Manager()
+
 
 # we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -58,7 +69,7 @@ timestep = 0.5 #Amount of time between updates. In practice, mingap rounds up to
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
 
 #Hyperparameters for multithreading
-multithreadRouting = False #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
+multithreadRouting = True #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
 multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
@@ -1909,7 +1920,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
 
     #Cutoff in case of infinite loop?
     routestartwctime = time.time()
-    timeout = 60
+    timeout = 5
 
     #Store durations to compare to real durations
     storeSimDurations = False
@@ -2734,8 +2745,12 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
                 lightlinkconflicts[light][linktuple] = dict()
                 for linklist2 in linklistlist:
                     for linktuple2 in linklist2:
+                        if linktuple[0] == linktuple2[0] or linktuple[1] == linktuple2[1]:
+                            lightlinkconflicts[light][linktuple][linktuple2] = False
+                            continue
                         lightlinkconflicts[light][linktuple][linktuple2] = isIntersecting( (network.getLane(linktuple[0]).getShape()[1], (net.getLane(linktuple[1]).getShape()[0])), 
                         (net.getLane(linktuple2[0]).getShape()[1], (network.getLane(linktuple2[1]).getShape()[0])) )
+
 
     #Surtrac data
     for light in lights:
@@ -2899,7 +2914,8 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
 def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[], rerouteAuto=True):
     doAstar = True #Set to false to stick with SUMO default routing
     routingthreads = dict()
-    routingresults = dict()
+    
+    routingresults = manager.dict()
 
     if doAstar:
         for r in rerouters:
@@ -2916,8 +2932,8 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[],
 
             data = routingresults[vehicle]
             newroute = data[0]
-            print("New route")
-            print(newroute)
+            #print("New route")
+            #print(newroute)
 
             routeStats[vehicle]["nCalls"] += 1
             if timedata[vehicle][2] == -1:
@@ -2925,11 +2941,11 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[],
             else:
                 routeStats[vehicle]["nCallsAfterFirst"] += 1 #Not necessarily nCalls-1; want to account for vehicles that never got routed
 
-            print("Doing something")
+            #print("Doing something")
             if data[0] == None:
                 #There was an error, we gave up on routing
                 continue
-            print("Doing more something")
+            #print("Doing more something")
             if not tuple(newroute) == currentRoutes[vehicle] and not newroute == currentRoutes[vehicle][-len(newroute):]:
                 routeStats[vehicle]["nSwaps"] += 1
                 routeStats[vehicle]["swapped"] = True
@@ -2991,7 +3007,7 @@ def backwardDijkstraAStar(network, goal):
             succs.append(succ.getID())
         
         for succ in succs:
-            c = traci.lane.getLength(edge+"_0")/network.getEdge(edge).getSpeed()
+            c = lengths[edge+"_0"]/network.getEdge(edge).getSpeed()#traci.lane.getLength(edge+"_0")/network.getEdge(edge).getSpeed()
 
             h = 0 #Heuristic not needed here - search is fast
             if succ in gvals and gvals[succ] <= gval+c:
@@ -3031,12 +3047,14 @@ def AstarReroute(detector, network, rerouteAuto=True, remainingDuration=None, si
         #     print("Oops, don't know " + vehicle)
         #     isSmart[vehicle] = random.random() < pSmart
         if rerouteAuto and isSmart[vehicle]:
-            routingresults[vehicle] = [None, None]
+            routingresults[vehicle] = manager.list([None, None])
+            #routingresults[vehicle] = [None, None]
 
             #TODO multithread
             if multithreadRouting:
                 #print("Starting vehicle routing thread")
-                routingthreads[vehicle] = threading.Thread(target=AStarRerouteThread, args=(network, simtime, remainingDuration, vehicle, edge, routes, mainlastswitchtimes, routingresults[vehicle]))
+                args = [network, simtime, remainingDuration, vehicle, laneDict[vehicle], loadClusters(network, simtime, vehicle), routes, mainlastswitchtimes]
+                routingthreads[vehicle] = Process(target=AStarRerouteThread, args=(network, simtime, remainingDuration, vehicle, edge, routes, mainlastswitchtimes, routingresults[vehicle], args))
                 routingthreads[vehicle].start()
             else:
                 AStarRerouteThread(network, simtime, remainingDuration, vehicle, edge, routes, mainlastswitchtimes, routingresults[vehicle])
@@ -3044,18 +3062,17 @@ def AstarReroute(detector, network, rerouteAuto=True, remainingDuration=None, si
     if rerouteAuto:
         oldids[detector] = ids
 
-def AStarRerouteThread(network, simtime, remainingDuration, vehicle, edge, routes, mainlastswitchtimes, data):
+def AStarRerouteThread(network, simtime, remainingDuration, vehicle, edge, routes, mainlastswitchtimes, data, args):
     global nRoutingCalls
     global routingTime
     global currentRoutes
 
     starttime = time.time()
 
-    args = [network, simtime, remainingDuration, vehicle, laneDict[vehicle], loadClusters(network, simtime, vehicle), routes, mainlastswitchtimes]
     clustersAStar[edge] = pickle.loads(pickle.dumps(args))
 
     #Get goal
-    route = currentRoutes[vehicle]
+    route = routes[vehicle]
     goaledge = route[-1]
 
     if not goaledge in hmetadict:
@@ -3082,8 +3099,9 @@ def AStarRerouteThread(network, simtime, remainingDuration, vehicle, edge, route
         if edgeToExpand == goaledge:
             data[0] = stateinfo[goaledge]['path']
             data[1] = stateinfo[goaledge]['gval']
-            currentRoutes[vehicle] = stateinfo[goaledge]['path']
-            traci.vehicle.setRoute(vehicle, stateinfo[goaledge]['path']) #NOTE: Apparently this only updates the end of the route rather than completely overwriting it. I do not understand... (Should be fine though)
+            #print(data)
+            #currentRoutes[vehicle] = stateinfo[goaledge]['path']
+            #traci.vehicle.setRoute(vehicle, stateinfo[goaledge]['path']) #NOTE: Apparently this only updates the end of the route rather than completely overwriting it. I do not understand... (Should be fine though)
             break #Done routing this vehicle
 
         succs = getSuccessors(edgeToExpand, network)
@@ -3112,8 +3130,6 @@ def AStarRerouteThread(network, simtime, remainingDuration, vehicle, edge, route
             stateinfo[succ]['path'] = temppath
             heappush(pq, (gval+c+h, succ))
 
-    nRoutingCalls += 1
-    routingTime += time.time() - starttime
 
 #@profile
 # def AstarRerouteOld(detector, network, rerouteAuto=True, remainingDuration=None, simtime=0, sumoPredClusters=[]):
