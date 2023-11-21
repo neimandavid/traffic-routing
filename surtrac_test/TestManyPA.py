@@ -1,6 +1,6 @@
 import os
 import sys
-import runnerQueueSplit19 as runnerQueueSplit12 #Change this line if using a newer code version
+import runnerQueueSplit19SUMOEverywhere as runnerQueueSplit12 #Change this line if using a newer code version
 import pickle
 import statistics
 import matplotlib.pyplot as plt
@@ -9,7 +9,7 @@ from importlib import reload
 nIters = 1
 
 
-for p in [0.5, 0.75, 0.95, 0.99]+[0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
+for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
     reload(runnerQueueSplit12)
     print(p)
 
