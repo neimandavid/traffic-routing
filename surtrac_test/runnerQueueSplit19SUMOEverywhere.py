@@ -150,7 +150,7 @@ nRoutingCalls = 0
 routingTime = 0
 routeVerifyData = []
 
-AStarCutoff = 200#inf
+AStarCutoff = inf
 
 oldids = dict()
 timedata = dict()
