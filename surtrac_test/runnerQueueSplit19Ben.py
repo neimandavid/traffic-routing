@@ -74,8 +74,8 @@ multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate 
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
 simToSimStats = False
-mainSurtracFreq = 1e6 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
-routingSurtracFreq = 2.5e6 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+routingSurtracFreq = 2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 0 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
@@ -84,7 +84,7 @@ predDiscount = 1 #Multiply predicted vehicle weights by this because we're not a
 
 #To test
 testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
-testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
+testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
 appendTrainingData = False
 
@@ -162,7 +162,7 @@ nRoutingCalls = 0
 routingTime = 0
 routeVerifyData = []
 
-AStarCutoff = 200#inf
+AStarCutoff = inf
 
 oldids = dict()
 timedata = dict()
@@ -894,7 +894,6 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
     if realclusters == None and lightphases == None:
         inRoutingSim = False
         if clustersCache == None:
-            print("loadClusters from doSurtrac")
             clustersCache = loadClusters(network, simtime)
         (realclusters, lightphases) = pickle.loads(pickle.dumps(clustersCache))
 
@@ -1211,13 +1210,6 @@ def run(network, rerouters, pSmart, verbose = True):
             laneDict.pop(vehicle)
             dontReroute.append(vehicle) #Vehicle has left network and does not need to be rerouted
 
-        surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
-        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters)
-            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
-            sumoPredClusters = temp[1]
-            remainingDuration.update(temp[2])
-
         vehiclesOnNetwork = traci.vehicle.getIDList()
         carsOnNetwork.append(len(vehiclesOnNetwork)) #Store number of cars on network (for plotting)
 
@@ -1279,6 +1271,13 @@ def run(network, rerouters, pSmart, verbose = True):
                 #Compute distance travelled if on last edge of route (since we can't do this once we leave the network)
                 if newlane.split("_")[0] == currentRoutes[id][-1]:
                     routeStats[id]["distance"] = traci.vehicle.getDistance(id) + lengths[newlane]
+
+        surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
+        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
+            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters)
+            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
+            sumoPredClusters = temp[1]
+            remainingDuration.update(temp[2])
 
         #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
         for light in lights:
@@ -2941,11 +2940,9 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[],
             else:
                 routeStats[vehicle]["nCallsAfterFirst"] += 1 #Not necessarily nCalls-1; want to account for vehicles that never got routed
 
-            #print("Doing something")
             if data[0] == None:
                 #There was an error, we gave up on routing
                 continue
-            #print("Doing more something")
             if not tuple(newroute) == currentRoutes[vehicle] and not newroute == currentRoutes[vehicle][-len(newroute):]:
                 routeStats[vehicle]["nSwaps"] += 1
                 routeStats[vehicle]["swapped"] = True
