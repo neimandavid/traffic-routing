@@ -396,11 +396,6 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
     if not learnMinMaxDurations:
         if inRoutingSim:
-            freq = max(routingSurtracFreq, timestep)
-            ttimestep = timestep
-        else:
-            freq = max(mainSurtracFreq, 1)
-            ttimestep = 1
         #Force light to satisfy min/max duration requirements and don't store as training data
         if simtime - lastswitchtimes[light] < surtracdata[light][i]["minDur"]:
             dur = 1e6
@@ -885,7 +880,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
 
 ##@profile
-def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None):
+def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True):
+
     global clustersCache
     toSwitch = []
     catpreds = dict()
@@ -894,16 +890,20 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
 
     surtracThreads = dict()
 
-    inRoutingSim = True
-    if realclusters == None and lightphases == None:
+    #inRoutingSim = True
+    if realclusters == None or lightphases == None: #This is an issue; need getEdgeCost to pretend to be main sim, but update the correct lightphases array
         inRoutingSim = False
-        if clustersCache == None:
-            clustersCache = loadClusters(network, simtime)
-        (realclusters, lightphases) = pickle.loads(pickle.dumps(clustersCache))
+        #if clustersCache == None: #This scares me, let's not cache for now. Probably not the slow part here anyway
+        clustersCache = loadClusters(network, simtime)
+        (temprealclusters, templightphases) = pickle.loads(pickle.dumps(clustersCache))
+        if realclusters == None:
+            realclusters = temprealclusters
+        if lightphases == None:
+            lightphases = templightphases
 
     #predCutoff
     if inRoutingSim:
-        predictionCutoff = predCutoffMain #Routing
+        predictionCutoff = predCutoffMain #Routing #TODO getEdgeCost will always use predCutoffMain, fix this if we ever turn prediction on
     else:
         predictionCutoff = predCutoffRouting #Main simulation
     
@@ -1300,7 +1300,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
         surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters)
+            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
             #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
             sumoPredClusters = temp[1]
             remainingDuration.update(temp[2])
@@ -1724,7 +1724,7 @@ def runOld(network, rerouters, pSmart, verbose = True):
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
             # print("pre surtrac main")
             # print(traci.getLabel())
-            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters)
+            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
             # print("post surtrac main")
             # print(traci.getLabel())
             #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
@@ -2216,7 +2216,6 @@ def loadClusters(net, simtime, VOI=None):
     #Load locations of cars and current traffic light states into custom data structures
     #If given, VOI is the vehicle triggering the routing call that triggered this, and needs to be unaffected when we add noise
     #TODO: We're caching the loaded clusters, which means we'll need to be better about not adding noise to any vehicles that could potentially be routed
-    lightphases = dict()
     clusters = dict()
 
     #Cluster data structures
@@ -3385,7 +3384,7 @@ def AstarReroute(detector, network, rerouteAuto=True, remainingDuration=None, si
         if rerouteAuto and isSmart[vehicle]:
             tstart = time.time()
 
-            saveStateInfo(edge, remainingDuration, mainlastswitchtimes, sumoPredClusters) #Saves the traffic state and traffic light timings
+            saveStateInfo(edge, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) #Saves the traffic state and traffic light timings
 
             #Get goal
             route = traci.vehicle.getRoute(vehicle)
@@ -3426,6 +3425,7 @@ def AstarReroute(detector, network, rerouteAuto=True, remainingDuration=None, si
                         c = getEdgeCost(vehicle, succ, edgeToExpand, network, gval, simtime)
                     except Exception as e:
                         print("Error in getEdgeCost, giving up on routing")
+                        print(e)
                         traci.switch("main")
                         break
                     traci.switch("main")
@@ -3472,7 +3472,7 @@ def getSuccessors(edge, network):
         ids.append(succ.getID())
     return ids
 
-def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters):
+def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases):
     #Copy state from main sim to test sim
     traci.simulation.saveState("savestates/teststate_"+edge+".xml")
     #saveState apparently doesn't save traffic light states despite what the docs say
@@ -3491,6 +3491,8 @@ def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters):
         pickle.dump(lastSwitchTimes, handle, protocol=pickle.HIGHEST_PROTOCOL)
     with open("savestates/lightstate_"+edge+"_sumoPredClusters.pickle", 'wb') as handle:
         pickle.dump(sumoPredClusters, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open("savestates/lightstate_"+edge+"_lightphases.pickle", 'wb') as handle:
+        pickle.dump(lightphases, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def loadStateInfo(prevedge):
     traci.switch("test")
@@ -3511,7 +3513,9 @@ def loadStateInfo(prevedge):
         lastSwitchTimes = pickle.load(handle)
     with open("savestates/lightstate_"+prevedge+"_sumoPredClusters.pickle", 'rb') as handle:
         sumoPredClusters = pickle.load(handle)
-    return (remainingDuration, lastSwitchTimes, sumoPredClusters)
+    with open("savestates/lightstate_"+prevedge+"_lightphases.pickle", 'rb') as handle:
+        lightphases = pickle.load(handle)
+    return (remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases)
 
 #@profile
 #Calls the simulator (or doesn't, if g_value > AStarCutoff)
@@ -3524,7 +3528,7 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value, simtime=0):
 
     traci.switch("test")
     #tstart = time.time()
-    (remainingDuration, lastSwitchTimes, sumoPredClusters) = loadStateInfo(prevedge)
+    (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases) = loadStateInfo(prevedge)
     simtime = traci.simulation.getTime() #TODO this is probably slow, consider save/loading this as well
     #print("End load")
     #print(time.time() - tstart)
@@ -3578,9 +3582,9 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value, simtime=0):
                 remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
             else:
                 remainingDuration[light][0] -= 1
-            if temp != lightphases[light]:
+            if temp != testSUMOlightphases[light]:
                 lastSwitchTimes[light] = simtime
-                lightphases[light] = temp
+                testSUMOlightphases[light] = temp
                 #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
                 if light in remainingDuration and len(remainingDuration[light]) > 0:
                     #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
@@ -3596,7 +3600,7 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value, simtime=0):
         #doSurtrac should think we're in the main simulation (given we're passing None for those two arguments) and update the lights itself?
         surtracFreq = routingSurtracFreq #Period between updates
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, None, lastSwitchTimes, sumoPredClusters)
+            temp = doSurtrac(network, simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters, False)
             #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
             sumoPredClusters = temp[1]
             remainingDuration.update(temp[2])
@@ -3604,7 +3608,7 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value, simtime=0):
     #print("End sim")
     #print(time.time() - tstart)
     #tstart = time.time()
-    saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters) #Need this to continue the A* search
+    saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases) #Need this to continue the A* search
     #print("End save")
     #print(time.time() - tstart)
     

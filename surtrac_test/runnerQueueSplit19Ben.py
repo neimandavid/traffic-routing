@@ -407,12 +407,6 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         return
 
     if not learnMinMaxDurations:
-        if inRoutingSim:
-            freq = max(routingSurtracFreq, timestep)
-            ttimestep = timestep
-        else:
-            freq = max(mainSurtracFreq, 1)
-            ttimestep = 1
         #Force light to satisfy min/max duration requirements and don't store as training data
         if simtime - lastswitchtimes[light] < surtracdata[light][i]["minDur"]:
             dur = 1e6
