@@ -91,6 +91,8 @@ realdurations = dict()
 
 max_edge_speed = 0.0 #Overwritten when we read the route file
 
+lanes = []
+edges = []
 carsOnNetwork = []
 oldids = dict()
 isSmart = dict() #Store whether each vehicle does our routing or not
@@ -3022,6 +3024,7 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
     global lowprioritygreenlightlinks
     global prioritygreenlightlinks
     global edges
+    global lanes
     global turndata
     global actualStartDict
     global trainingdata
@@ -3500,6 +3503,17 @@ def loadStateInfo(prevedge):
     #Load light state
     with open("savestates/lightstate_"+prevedge+".pickle", 'rb') as handle:
         lightStates = pickle.load(handle)
+
+    #Randomize non-adopter routes
+    #TODO: This is inefficient since it happens every time we load state info
+    #TODO: Also stop ourselves from adding new vehicles (immediately deleting them causes problems?)
+    for lane in lanes:
+        if len(lane) == 0 or lane[0] == ":":
+            continue
+        for vehicle in traci.lane.getLastStepVehicleIDs(lane):
+            if not vehicle in isSmart or isSmart[vehicle] == False:
+                traci.vehicle.setRoute(vehicle, sampleRouteFromTurnData(vehicle, lane, turndata))
+
     #Copy traffic light timings
     for light in traci.trafficlight.getIDList():
         traci.trafficlight.setPhase(light, lightStates[light][0])
