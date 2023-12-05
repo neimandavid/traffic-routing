@@ -75,8 +75,8 @@ testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
 testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
 appendTrainingData = False
-learnYellow = False #False to strictly enforce that yellow lights are always their minimum length (no scheduling clusters during yellow+turn arrow, and ML solution isn't used there)
-learnMinMaxDurations = False #False to strictly enforce min/max duration limits (in particular, don't call ML, just do the right thing)
+learnYellow = True #False to strictly enforce that yellow lights are always their minimum length (no scheduling clusters during yellow+turn arrow, and ML solution isn't used there)
+learnMinMaxDurations = True #False to strictly enforce min/max duration limits (in particular, don't call ML, just do the right thing)
 FTP = True
 
 #Don't change parameters below here
@@ -1155,6 +1155,13 @@ def run(network, rerouters, pSmart, verbose = True):
         traci.simulationStep() #Tell the simulator to simulate the next time step
         clustersCache = None #Clear stored clusters list
 
+        surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
+        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
+            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters)
+            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
+            sumoPredClusters = temp[1]
+            remainingDuration.update(temp[2])
+
         #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
         for light in lights:
             temp = traci.trafficlight.getPhase(light)
@@ -1237,13 +1244,6 @@ def run(network, rerouters, pSmart, verbose = True):
             locDict.pop(vehicle)
             laneDict.pop(vehicle)
             dontReroute.append(vehicle) #Vehicle has left network and does not need to be rerouted
-
-        surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
-        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters)
-            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
-            sumoPredClusters = temp[1]
-            remainingDuration.update(temp[2])
 
         vehiclesOnNetwork = traci.vehicle.getIDList()
         carsOnNetwork.append(len(vehiclesOnNetwork)) #Store number of cars on network (for plotting)
