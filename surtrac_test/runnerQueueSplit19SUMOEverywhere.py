@@ -3063,8 +3063,8 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
                                 "--additional-files", "additional_autogen.xml",
                                 "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
         #Second simulator for running tests. No GUI
-        traci.start([sumoBinary, "-c", sumoconfig,
-        #traci.start([checkBinary('sumo'), "-c", sumoconfig,
+        #traci.start([sumoBinary, "-c", sumoconfig, #GUI in case we need to debug
+        traci.start([checkBinary('sumo'), "-c", sumoconfig, #No GUI
                                 "--additional-files", "additional_autogen.xml",
                                 "--start", "--no-step-log", "true",
                                 "--xml-validation", "never", "--quit-on-end",
@@ -3565,6 +3565,15 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value, simtime=0):
         #reroute(rerouters, network, False) #Randomly reroute the non-adopters - does nothing right now
         #TODO randomize non-adopter routes, then unrandomize in main sim...
         simtime+=1
+
+        for id in traci.simulation.getDepartedIDList():
+            if not id in isSmart:
+                try:
+                    traci.vehicle.remove(id)
+                except Exception as e:
+                    print("things going wrong when removing vehicles")
+                    print(id)
+                    print(e)
 
         #assert(simtime == traci.simulation.getTime())
         try:
