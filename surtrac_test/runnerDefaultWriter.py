@@ -84,7 +84,6 @@ def run(netfile, rerouters, sumoconfig):
 
     # get root element
     root = tree.getroot()
-    print(root)
 
     intendedStartDict = dict()
     fromDict = dict()

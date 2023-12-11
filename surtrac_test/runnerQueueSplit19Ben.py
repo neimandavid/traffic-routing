@@ -75,7 +75,7 @@ reuseSurtrac = False #Does Surtrac computations in a separate thread, shared bet
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
 simToSimStats = False
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
-routingSurtracFreq = 2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+routingSurtracFreq = 1#2.5 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 0 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
@@ -1266,6 +1266,24 @@ def run(network, rerouters, pSmart, verbose = True):
                 if newlane.split("_")[0] == currentRoutes[id][-1]:
                     routeStats[id]["distance"] = traci.vehicle.getDistance(id) + lengths[newlane]
 
+        #Update lights that switched phase (from SUMO, not Surtrac)
+        # for light in lights:
+        #     temp = traci.trafficlight.getPhase(light)
+        #     if temp != lightphases[light]:
+        #         mainlastswitchtimes[light] = simtime
+        #         lightphases[light] = temp
+        #         #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
+        #         if light in remainingDuration and len(remainingDuration[light]) > 0:
+        #             #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
+        #             #NOTE: The light switches when remaining duration goes negative (in this case -1)
+        #             remainingDuration[light].pop(0)
+        #             if len(remainingDuration[light]) == 0:
+        #                 remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
+        #             else:
+        #                 traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
+        #         else:
+        #             print("Unrecognized light " + light + ", this shouldn't happen")
+
         surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
             temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters)
@@ -1296,7 +1314,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 else:
                     print("Unrecognized light " + light + ", this shouldn't happen")
         
-        realdurations[simtime] = pickle.loads(pickle.dumps(remainingDuration))
+        # realdurations[simtime] = pickle.loads(pickle.dumps(remainingDuration))
         # if simtime in simdurations:
         #     print("DURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
         #     print(simdurations[simtime][lights[0]])
@@ -1913,7 +1931,7 @@ def runClusters(net, routesimtime, mainRemainingDuration, vehicleOfInterest, sta
 
     #Cutoff in case of infinite loop?
     routestartwctime = time.time()
-    timeout = 5
+    timeout = 60
 
     #Store durations to compare to real durations
     storeSimDurations = False
@@ -3023,6 +3041,7 @@ def AstarReroute(detector, network, rerouteAuto=True, remainingDuration=None, si
 
     routes = pickle.loads(pickle.dumps(currentRoutes))
 
+    #Stop cheating regarding knowing non-adopter routes
     for vehicletemp in vehiclesOnNetwork:
         if not isSmart[vehicletemp]:
             #Sample random routes for non-adopters
