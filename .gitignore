@@ -21,3 +21,5 @@ surtrac_test/additional_autogen.xml
 surtrac_test/LOGFILE
 surtrac_test/lastRNGstate.pickle
 *.lprof
+*.pyc
+surtrac_test/intersectiondata/*
