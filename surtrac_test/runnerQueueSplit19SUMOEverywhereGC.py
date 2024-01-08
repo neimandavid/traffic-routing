@@ -3540,12 +3540,12 @@ def getLeftEdge(startlane, network):
     return leftedge
 
 def prepGhostCars(VOIs, id, ghostcarlanes, network, spawnLeft, ghostcardata, simtime):
-    carcardist = 0 #TODO: Don't hard-code this in two different places in code!!! (Actually, maybe fine, other one might need a gap on both sides?)
+    
     #-5 on both seems good??
     if not spawnLeft:
-        defaultghostcarpos = -5
+        defaultghostcarpos = 5
     else:
-        defaultghostcarpos = -5
+        defaultghostcarpos = 5
     ghostcarpos = defaultghostcarpos
     replaceExistingCar = False
 
@@ -3566,39 +3566,21 @@ def prepGhostCars(VOIs, id, ghostcarlanes, network, spawnLeft, ghostcardata, sim
         for nextlanenum in range(lanenums[nextedge]):
             nextlane = nextedge+"_"+str(nextlanenum)
             if not nextlane in ghostcarlanes:
-                ghostcarlanes.append(nextlane)
+                
                 newghostcar = None
-                
-                
-                # for tempveh in traci.lane.getLastStepVehicleIDs(nextlane):
-                #     lanepos = traci.vehicle.getLanePosition(tempveh)
-                #     if lanepos <= defaultghostcarpos+carcardist:
-                #         if replaceExistingCar:
-                #             #Convert the last car on the lane within carcardist of the start, if such a car exists
-                #             newghostcar = tempveh
-                #             oldspeed = traci.vehicle.getSpeed(newghostcar)
-                #             ghostcarpos = traci.vehicle.getLanePosition(newghostcar)
-                #             traci.vehicle.setRoute(newghostcar, [nextedge])
-                #             break
-                #         else:
-                #             traci.vehicle.remove(tempveh) #Only need to remove one; if there was space for it, there's space for the ghost car
-                #             break
-                #     if lanepos > defaultghostcarpos+carcardist:
-                #         #Passed the insertion point, no need to keep checking cars
-                #         break
                 
                 if newghostcar == None:
                     newghostcar = id+"|"+nextlane
                     traci.route.add(nextlane, [nextedge])
 
-                    if getDTheta(lane.split("_")[0], nextlane.split("_")[0], network) < -1: #Right turn
-                        rightdelay = 5
-                        if not simtime + rightdelay in ghostcardata:
-                            ghostcardata[simtime+rightdelay] = []
-                        newspeed = min(10, oldspeed)
-                        ghostcardata[simtime+rightdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
-                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed=min(6, oldspeed))
-                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed="max")
+                    if spawnLeft:
+                        #Whatever the leftest road is (could conceivably be straight at a 3-way intersection)
+                        leftdelay = 0
+                        if not simtime + leftdelay in ghostcardata:
+                            ghostcardata[simtime+leftdelay] = []
+                        newspeed = min(13, oldspeed)
+                        ghostcardata[simtime+leftdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
+                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed=min(9, oldspeed))
                     elif abs(getDTheta(lane.split("_")[0], nextlane.split("_")[0], network)) < 0.1: #Straight
                         straightdelay = 3
                         if not simtime + straightdelay in ghostcardata:
@@ -3607,14 +3589,14 @@ def prepGhostCars(VOIs, id, ghostcarlanes, network, spawnLeft, ghostcardata, sim
                         ghostcardata[simtime+straightdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
                         #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed=min(13, oldspeed))
                         #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed="max")
-                    else:
-                        #Left turns (or weird intersections)
-                        leftdelay = 0
-                        if not simtime + leftdelay in ghostcardata:
-                            ghostcardata[simtime+leftdelay] = []
+                    else: #Right turn or weird intersection
+                        rightdelay = 5
+                        if not simtime + rightdelay in ghostcardata:
+                            ghostcardata[simtime+rightdelay] = []
                         newspeed = min(10, oldspeed)
-                        ghostcardata[simtime+leftdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
-                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed=min(9, oldspeed))
+                        ghostcardata[simtime+rightdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
+                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed=min(6, oldspeed))
+                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed="max")
 
                     
                     # if abs(getDTheta(lane.split("_")[0], nextedge, network)) < 0.1:
@@ -3629,24 +3611,48 @@ def prepGhostCars(VOIs, id, ghostcarlanes, network, spawnLeft, ghostcardata, sim
                 #     traci.vehicle.setRoute(newghostcar, [nextedge, leftedge])
                 # VOIs[newghostcar] = [nextlane, oldspeed, ghostcarpos, oldroute+[nextedge], leftedge, True]
 
-def spawnGhostCars(ghostcardata, simtime, network, VOIs):
+def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs):
+    carcardist = 15 #TODO: Don't hard-code this in two different places in code!!! (Actually, maybe fine, other one might need a gap on both sides?)
+    replaceExistingCar = False #TODO would turning this on help??
+
     if not simtime in ghostcardata:
         return
     for gcl in ghostcardata[simtime]:
         [newghostcar, nextlane, newspeed, ghostcarpos, oldroute] = gcl
-        nextedge = nextlane.split("_")[0]
-        traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departSpeed=max(0, min(newspeed, network.getEdge(nextedge).getSpeed())))
-        #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departPos="5", departSpeed=min(newspeed, network.getEdge(nextedge).getSpeed()))
-        #There should be a departPos argument, but somehow it takes a string? And probably tries to insert at or behind the pos, making VOIs disappear if no space if I don't explicitly call moveTo
-        traci.vehicle.moveTo(newghostcar, nextlane, ghostcarpos)
-        #traci.vehicle.setSpeedFactor(newghostcar, 1) #Worse??
-        traci.vehicle.setColor(newghostcar, [0, 255, 255, 255])
-        traci.vehicle.setDecel(newghostcar,999999)
-        leftedge = getLeftEdge(nextlane, network)
-        traci.vehicle.setRoute(newghostcar, [nextedge])
-        if not leftedge == None:
-            traci.vehicle.setRoute(newghostcar, [nextedge, leftedge])
-        VOIs[newghostcar] = [nextlane, newspeed, ghostcarpos, oldroute+[nextedge], leftedge, True]
+        if not nextlane in ghostcarlanes:
+            ghostcarlanes.append(nextlane)
+
+            #Actually add the new ghost car
+            for tempveh in traci.lane.getLastStepVehicleIDs(nextlane):
+                lanepos = traci.vehicle.getLanePosition(tempveh)
+                if lanepos <= ghostcarpos+carcardist:
+                    if replaceExistingCar:
+                        #Convert the last car on the lane within carcardist of the start, if such a car exists
+                        newghostcar = tempveh
+                        oldspeed = traci.vehicle.getSpeed(newghostcar)
+                        ghostcarpos = traci.vehicle.getLanePosition(newghostcar)
+                        traci.vehicle.setRoute(newghostcar, [nextedge])
+                        break
+                    else:
+                        traci.vehicle.remove(tempveh) #Only need to remove one; if there was space for it, there's space for the ghost car
+                        break
+                if lanepos > ghostcarpos+carcardist:
+                    #Passed the insertion point, no need to keep checking cars
+                    break
+
+            nextedge = nextlane.split("_")[0]
+            traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departSpeed=max(0, min(newspeed, network.getEdge(nextedge).getSpeed())))
+            #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departPos="5", departSpeed=min(newspeed, network.getEdge(nextedge).getSpeed()))
+            #There should be a departPos argument, but somehow it takes a string? And probably tries to insert at or behind the pos, making VOIs disappear if no space if I don't explicitly call moveTo
+            traci.vehicle.moveTo(newghostcar, nextlane, ghostcarpos)
+            traci.vehicle.setSpeedFactor(newghostcar, 1)
+            traci.vehicle.setColor(newghostcar, [0, 255, 255, 255])
+            #traci.vehicle.setDecel(newghostcar,999999)
+            leftedge = getLeftEdge(nextlane, network)
+            traci.vehicle.setRoute(newghostcar, [nextedge])
+            if not leftedge == None:
+                traci.vehicle.setRoute(newghostcar, [nextedge, leftedge])
+            VOIs[newghostcar] = [nextlane, newspeed, ghostcarpos, oldroute+[nextedge], leftedge, True]
 
 #@profile
 def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network):
@@ -3843,7 +3849,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
         for id in toDelete:
             del VOIs[id]
 
-        spawnGhostCars(ghostcardata, simtime, network, VOIs)
+        spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs)
 
         #Light logic for Surtrac, etc.
         #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
