@@ -1,15 +1,11 @@
 # traffic-routing
 
-Dumping my current traffic routing code here, in preparation for class projects, etc.
-Uses Sumo as the traffic simulator: https://www.eclipse.org/sumo/
+Current code is in surtrac_test, other folders are old versions
 
-Current exploratory work in shortlong2:
-- runnerAutoroute uses Sumo's default routing (Djikstra, edge weights based on current average speed), no rerouting). Alternates between sending too much traffic down each route due to lag on time estimates (current avg. speed isn't a good indicator of future travel time, leads to overreaction).
-- runner is probably shortest path with avg. speed edge weights, rerouting at each intersection. Not much better
-- runnerRandom routes cars randomly at each intersection, and does surprisingly well
-- runner Braess removes some routes that were user optimal but not system optimal. Best overall performance, but the process wasn't automated at all
-- runnerPredictive is hopefully going to use better travel time estimates based on queue models. WIP
+Main code file is runnerQueueSplit19SUMOEverywhereGC.py, set testNNdefault to run without needing a learned model for traffic lights. Command line arguments are the sumocfg file and the adoption probability
 
-Future work:
-15888 project: Converge to some form of equilibrium using CFR (counterfactual regret minimization)
-16811 project: ??? (planning through time with queue model?)
+runnerDefaultWriter.py takes a sumocfg file and creates a bunch of files needed to run runnerQueueSplit19SUMOEverywhereGC (specifically, edge-to-edge and lane-to-lane turn ratios for generating random routes for non-adopters, and yourconfigfile_auto.sumocfg which unwraps flows into individual cars for computing delay)
+
+trainNN2.py takes a sumocfg file and trains neural nets for all traffic lights (using the settings in runnerQueueSplit19SUMOEverywhereGC to decide whether it's fixed timing plans, actuated control, Surtrac, etc) using DAgger
+
+scenarioBuilder.py takes a text file of hourly demand data and builds a route.xml file for it
