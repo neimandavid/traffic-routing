@@ -17,18 +17,22 @@ import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
-import runnerQueueSplit18NN
+#import runnerQueueSplit18NN
+import runnerQueueSplit19SUMOEverywhereGC as runnerQueueSplit18NN
 from importlib import reload
 from Net import Net
 
 import openpyxl #For writing training data to .xlsx files
+import time
 
 #In case we want to pause a run and continue later, set these to false
 reset = False
-resetNN = False#reset
+resetNN = reset
 resetTrainingData2 = reset
+#Remember to set appendTrainingData = True, resetTrainingData = False in runnerQueueSplitWhatever
+#Also set testDumbtrac (there), testSurtrac (below) and FTP (there) appropriately, and surtracFreq = 1ish
 
-testSurtrac = False
+testSurtrac = True
 
 nEpochs = 10
 nDaggers = 100
@@ -128,9 +132,10 @@ def mainold(sumoconfig):
 
         #Get new training data
         #IMPORTANT: Make sure runnerQueueSplit18NN is set to testNN=True, testDumbtrac= not testSurtrac, resetTrainingData=False, appendTrainingData=True
-        print("Generating new training data")
-        reload(runnerQueueSplit18NN)
-        runnerQueueSplit18NN.main(sys.argv[1], 0, False, False, True)
+        if not(firstIter and not resetTrainingData2): #If first iteration and we already have training data, start by training on what we have
+            print("Generating new training data")
+            reload(runnerQueueSplit18NN)
+            runnerQueueSplit18NN.main(sys.argv[1], 0, False, False, True)
 
         #Load current dataset
         print("Loading training data")
@@ -145,7 +150,7 @@ def mainold(sumoconfig):
             #Do NN setup
             for light in trainingdata:
                 if testSurtrac:
-                    agents[light] = Net(362, 1, 1024)
+                    agents[light] = Net(182, 1, 64)
                 else:
                     agents[light] = Net(26, 1, 32)
                 optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
@@ -223,6 +228,8 @@ def trainLight(light, trainingdata):
 
 #Dumps training data to an Excel file for human readability
 def dumpTrainingData(trainingdata):
+    timeout = 60
+    starttime = time.time()
     print("Writing training data to spreadsheet")
     try:
         book = openpyxl.Workbook()
@@ -232,6 +239,8 @@ def dumpTrainingData(trainingdata):
             sheets[light].cell(1, 1, "Input")
             row = 2
             for batch in trainingdata[light]:
+                if time.time() - starttime > timeout:
+                    assert(False) #This should trigger the try-catch and get us out of here
                 for linenum in range(batch[0].size(0)):
                     col = 1
                     for entry in batch[0][linenum]:
@@ -260,6 +269,7 @@ if __name__ == "__main__":
 
 
 # #NOT WORKING; not sure what's going wrong
+# #Supposed to use the nice dataset interface, which would let me batch, etc.
 # def main(sumoconfig):
 #     trafficdataset = dict()
 #     dataloader = dict()
