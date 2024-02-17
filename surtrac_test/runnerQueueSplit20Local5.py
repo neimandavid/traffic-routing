@@ -3104,14 +3104,21 @@ def get_options():
 #Generates induction loops on all the edges
 def generate_additionalfile(sumoconfig, networkfile):
     #Create a third instance of a simulator so I can query the network
-    try:
+
+    #Shouldn't possibly fail except apparently on Batwing probably???
+    if useLibsumo:
         traci.start([checkBinary('sumo'), "-c", sumoconfig,
-                                "--start", "--no-step-log", "true",
-                                "--xml-validation", "never", "--quit-on-end"], label="setup")
-    except:
-        #Worried about re-calling this without old setup instance being removed
-        #traci.switch("setup")
-        pass
+                                    "--start", "--no-step-log", "true",
+                                    "--xml-validation", "never", "--quit-on-end"])
+    else:
+        try:
+            traci.start([checkBinary('sumo'), "-c", sumoconfig,
+                                    "--start", "--no-step-log", "true",
+                                    "--xml-validation", "never", "--quit-on-end"], label="setup")
+        except:
+            #Worried about re-calling this without old setup instance being removed
+            #traci.switch("setup")
+            pass
 
     net = sumolib.net.readNet(networkfile)
     rerouters = []
@@ -3232,33 +3239,38 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
-    try:
-        traci.start([sumoBinary, "-c", sumoconfig,
+    if useLibsumo:
+        traci.load(["-c", sumoconfig,
                                 "--additional-files", "additional_autogen.xml",
-                                "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
-        #Second simulator for running tests. No GUI
-        #traci.start([sumoBinary, "-c", sumoconfig, #GUI in case we need to debug
-        traci.start([checkBinary('sumo'), "-c", sumoconfig, #No GUI
-                                "--additional-files", "additional_autogen.xml",
-                                "--start", "--no-step-log", "true",
-                                "--xml-validation", "never", "--quit-on-end",
-                                "--step-length", "1"], label="test")
-        dontBreakEverything()
-    except:
-        #Worried about re-calling this without old main instance being removed
-        if not useLibsumo:
-            traci.switch("main")
-        traci.load([ "-c", sumoconfig,
-                                "--additional-files", "additional_autogen.xml",
-                                #"--time-to-teleport", "-1",
                                 "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
-        if not useLibsumo:
-            traci.switch("test")
-        traci.load([ "-c", sumoconfig,
-                                "--additional-files", "additional_autogen.xml",
-                                #"--time-to-teleport", "-1",
-                                "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
-        dontBreakEverything()
+    else:
+        try:
+            traci.start([sumoBinary, "-c", sumoconfig,
+                                    "--additional-files", "additional_autogen.xml",
+                                    "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
+            #Second simulator for running tests. No GUI
+            #traci.start([sumoBinary, "-c", sumoconfig, #GUI in case we need to debug
+            traci.start([checkBinary('sumo'), "-c", sumoconfig, #No GUI
+                                    "--additional-files", "additional_autogen.xml",
+                                    "--start", "--no-step-log", "true",
+                                    "--xml-validation", "never", "--quit-on-end",
+                                    "--step-length", "1"], label="test")
+            dontBreakEverything()
+        except:
+            #Worried about re-calling this without old main instance being removed
+            if not useLibsumo:
+                traci.switch("main")
+            traci.load([ "-c", sumoconfig,
+                                    "--additional-files", "additional_autogen.xml",
+                                    #"--time-to-teleport", "-1",
+                                    "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
+            if not useLibsumo:
+                traci.switch("test")
+            traci.load([ "-c", sumoconfig,
+                                    "--additional-files", "additional_autogen.xml",
+                                    #"--time-to-teleport", "-1",
+                                    "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
+            dontBreakEverything()
 
     
 
@@ -3547,7 +3559,6 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                         else:
                             #(remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) = loadStateInfo("MAIN")
                             loadStateInfo("MAIN") #This ends badly somehow, just not sure why
-                    
                     # for vehicle2 in traci.vehicle.getIDList():
                     #     if not vehicle2 in laneDict:
                     #         laneDict[vehicle2] = traci.vehicle.getLaneID(vehicle2)
@@ -3573,44 +3584,44 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
 
         oldids[detector] = ids
 
-        #TODO: Want this unindented one more layer, such that we start all routing threads before waiting for all of them to finish
-        #But that apparently gives None back as the route, which doesn't make sense...
-        for vehicle in routingresults:
-            if multithreadRouting:
-                routingthreads[vehicle].join()
-            [newroute, esttime] = routingresults[vehicle]
+    #TODO: Want this unindented one more layer, such that we start all routing threads before waiting for all of them to finish
+    #But that apparently gives None back as the route, which doesn't make sense...
+    for vehicle in routingresults:
+        if multithreadRouting:
+            routingthreads[vehicle].join()
+        [newroute, esttime] = routingresults[vehicle]
 
-            routeStats[vehicle]["nCalls"] += 1
-            if timedata[vehicle][2] == -1:
-                routeStats[vehicle]["nCallsFirst"] += 1
-            else:
-                routeStats[vehicle]["nCallsAfterFirst"] += 1 #Not necessarily nCalls-1; want to account for vehicles that never got routed
-            try:
-                if not tuple(newroute) == currentRoutes[vehicle] and not newroute == currentRoutes[vehicle][-len(newroute):]:
-                    routeStats[vehicle]["nSwaps"] += 1
-                    routeStats[vehicle]["swapped"] = True
-                    if timedata[vehicle][2] == -1:
-                        routeStats[vehicle]["nSwapsFirst"] += 1
-                    else:
-                        routeStats[vehicle]["nSwapsAfterFirst"] += 1
-            except:
-                print("Failed route compare")
-                print(currentRoutes[vehicle])
-                print(newroute)
+        routeStats[vehicle]["nCalls"] += 1
+        if timedata[vehicle][2] == -1:
+            routeStats[vehicle]["nCallsFirst"] += 1
+        else:
+            routeStats[vehicle]["nCallsAfterFirst"] += 1 #Not necessarily nCalls-1; want to account for vehicles that never got routed
+        try:
+            if not tuple(newroute) == currentRoutes[vehicle] and not newroute == currentRoutes[vehicle][-len(newroute):]:
+                routeStats[vehicle]["nSwaps"] += 1
+                routeStats[vehicle]["swapped"] = True
+                if timedata[vehicle][2] == -1:
+                    routeStats[vehicle]["nSwapsFirst"] += 1
+                else:
+                    routeStats[vehicle]["nSwapsAfterFirst"] += 1
+        except:
+            print("Failed route compare")
+            print(currentRoutes[vehicle])
+            print(newroute)
 
-            timedata[vehicle][0] = simtime #Time prediction was made
-            #timedata[vehicle][1] is going to be actual time at goal
-            timedata[vehicle][2] = esttime #Predicted time until goal
-            timedata[vehicle][3] = currentRoutes[vehicle][0]
-            timedata[vehicle][4] = currentRoutes[vehicle][-1]
-                    
-            try:
-                pass
-                traci.vehicle.setRoute(vehicle, newroute)
-                currentRoutes[vehicle] = newroute
-            except traci.exceptions.TraCIException as e:
-                print("Couldn't update route, not sure what happened, ignoring")
-                print(e)
+        timedata[vehicle][0] = simtime #Time prediction was made
+        #timedata[vehicle][1] is going to be actual time at goal
+        timedata[vehicle][2] = esttime #Predicted time until goal
+        timedata[vehicle][3] = currentRoutes[vehicle][0]
+        timedata[vehicle][4] = currentRoutes[vehicle][-1]
+                
+        try:
+            pass
+            traci.vehicle.setRoute(vehicle, newroute)
+            currentRoutes[vehicle] = newroute
+        except traci.exceptions.TraCIException as e:
+            print("Couldn't update route, not sure what happened, ignoring")
+            print(e)
         
 
         
@@ -3972,7 +3983,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         #Apparently the new thread just comes with a copy of the old simulation - don't need to do this at all?
         # traci.start([checkBinary('sumo'), "-c", sumoconfig,
         #                         "--additional-files", "additional_autogen.xml",
-        #                         "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main2")
+        #                         "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
         (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases) = loadStateInfo("MAIN")
     else:
         saveStateInfo(startedge, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) #Saves the traffic state and traffic light timings
@@ -4372,12 +4383,10 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value, simtime=0):
 
 #Magically makes the vehicle lists stop deleting themselves somehow???
 def dontBreakEverything():
-    try:
+    if not useLibsumo:
         traci.switch("test")
         traci.simulationStep()
         traci.switch("main")
-    except:
-        pass
 
 # this is the main entry point of this script
 if __name__ == "__main__":
