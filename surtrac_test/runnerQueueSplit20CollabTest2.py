@@ -16,9 +16,13 @@
 #17: Move computation of Surtrac's predicted outflows to the end, after we already know what the schedule should be, rather than building it into the algorithm and generating predicted outflows for schedules we won't end up using. Fixed a bug where initially splitting the VOI into all lanes added it at the modified start time, and possibly in the wrong place
 #18: Add imitation learning version of Surtrac
 #19: Going back to A* in SUMO since ghost cars are causing problems. Telling all ghost cars to turn left, and spawning left-turning ghost cars when the turn completes so we account for oncoming traffic
+#20: Storing Surtrac results for reuse
 
 from __future__ import absolute_import
 from __future__ import print_function
+
+import torch
+from torch import nn
 
 import os
 import sys
@@ -43,7 +47,9 @@ else:
     sys.exit("please declare environment variable 'SUMO_HOME'")
 
 from sumolib import checkBinary
-import traci  #To interface with SUMO simulations
+
+import libsumo as traci #Faster than traci, hopefully
+
 import sumolib #To query node/edge stuff about the network
 import pickle #To save/load traffic light states
 
@@ -140,6 +146,7 @@ rerouterLanes = dict()
 rerouterEdges = dict()
 vehiclesOnNetwork = []
 dontReroute = []
+surtracDict = dict()
 
 #Predict traffic entering network
 arrivals = dict()
@@ -195,6 +202,7 @@ ndumbtrac = 0
 ndumbtracerr = 0
 
 loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 50]))
+sumoconfig = None
 
 #Non-NN stuff
 def mergePredictions(clusters, predClusters):
@@ -1255,8 +1263,11 @@ def run(network, rerouters, pSmart, verbose = True):
                 # print("Percent error : %f" % ( ((timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2]) / (timedata[vehicle][1]-timedata[vehicle][0]) * 100))
                 # print("Route from " + timedata[vehicle][3] + " to " + timedata[vehicle][4])
             endDict[vehicle] = simtime
-            locDict.pop(vehicle)
-            laneDict.pop(vehicle)
+            try:
+                locDict.pop(vehicle)
+                laneDict.pop(vehicle)
+            except:
+                print("Vehicle not in locDict, something went wrong, ignoring")
             dontReroute.append(vehicle) #Vehicle has left network and does not need to be rerouted
 
         vehiclesOnNetwork = traci.vehicle.getIDList()
@@ -1285,13 +1296,13 @@ def run(network, rerouters, pSmart, verbose = True):
                     assert(laneDict[id].split("_")[0] in currentRoutes[id])
                 except Exception as e:
                     print("Vehicle got off route somehow?")
-                    print(traci.getLabel()) #Should be main
+                    #print(traci.getLabel()) #Should be main
                     print(id)
                     print(laneDict[id])
                     print(traci.vehicle.getLaneID(id))
                     print(currentRoutes[id])
                     print(traci.vehicle.getRoute(id))
-                    assert(traci.getLabel() == "main")
+                    #assert(traci.getLabel() == "main")
                     #raise(e)
                     laneDict[id] = traci.vehicle.getLaneID(id)
                     currentRoutes[id] = traci.vehicle.getRoute(id)
@@ -1379,7 +1390,7 @@ def run(network, rerouters, pSmart, verbose = True):
         oldRemainingDuration = pickle.loads(pickle.dumps(remainingDuration))
         oldMainLastSwitchTimes = pickle.loads(pickle.dumps(mainlastswitchtimes))
         reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters) #Reroute cars (including simulate-ahead cars)
-        assert(traci.getLabel() == "main")
+        #assert(traci.getLabel() == "main")
         assert(remainingDuration == oldRemainingDuration)
         assert(mainlastswitchtimes == oldMainLastSwitchTimes)
 
@@ -1792,7 +1803,7 @@ def runOld(network, rerouters, pSmart, verbose = True):
                     if len(remainingDuration[light]) == 0:
                         remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
                     else:
-                        assert(traci.getLabel() == "main")
+                        #assert(traci.getLabel() == "main")
                         traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
                 else:
                     print("Unrecognized light " + light + ", this shouldn't happen")
@@ -3087,8 +3098,9 @@ def generate_additionalfile(sumoconfig, networkfile):
                                 "--start", "--no-step-log", "true",
                                 "--xml-validation", "never", "--quit-on-end"], label="setup")
     except:
+        pass
         #Worried about re-calling this without old setup instance being removed
-        traci.switch("setup")
+        #traci.switch("setup")
 
     net = sumolib.net.readNet(networkfile)
     rerouters = []
@@ -3163,7 +3175,7 @@ def readSumoCfg(sumocfg):
                 roufile = data[1]
     return (netfile, roufile)
 
-def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrainingDataIn = False):
+def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTrainingDataIn = False):
     global lowprioritygreenlightlinks
     global prioritygreenlightlinks
     global edges
@@ -3174,7 +3186,9 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
     global testNN
     global appendTrainingData
     global noNNinMain
-    options = get_options()
+
+    global sumoconfig
+    sumoconfig = sumoconfigin
 
     if useLastRNGState:
         with open("lastRNGstate.pickle", 'rb') as handle:
@@ -3192,7 +3206,7 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
 
     # this script has been called from the command line. It will start sumo as a
     # server, then connect and run
-    if options.nogui:
+    if True:
         sumoBinary = checkBinary('sumo')
     else:
         sumoBinary = checkBinary('sumo-gui')
@@ -3207,18 +3221,19 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
     try:
-        traci.start([sumoBinary, "-c", sumoconfig,
+        traci.start([checkBinary('sumo'), "-c", sumoconfig,
                                 "--additional-files", "additional_autogen.xml",
                                 "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
         #Second simulator for running tests. No GUI
         #traci.start([sumoBinary, "-c", sumoconfig, #GUI in case we need to debug
-        traci.start([checkBinary('sumo'), "-c", sumoconfig, #No GUI
-                                "--additional-files", "additional_autogen.xml",
-                                "--start", "--no-step-log", "true",
-                                "--xml-validation", "never", "--quit-on-end",
-                                "--step-length", "1"], label="test")
-        dontBreakEverything()
+        # traci.start([checkBinary('sumo'), "-c", sumoconfig, #No GUI
+        #                         "--additional-files", "additional_autogen.xml",
+        #                         "--start", "--no-step-log", "true",
+        #                         "--xml-validation", "never", "--quit-on-end",
+        #                         "--step-length", "1"], label="test")
+        # dontBreakEverything()
     except:
+        #Shouldn't go off
         #Worried about re-calling this without old main instance being removed
         traci.switch("main")
         traci.load([ "-c", sumoconfig,
@@ -3459,6 +3474,10 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
 def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[]):
     doAstar = True #Set to false to stick with SUMO default routing
 
+    #Clear any stored Surtrac stuff
+    global surtracDict
+    surtracDict = dict()
+
     if doAstar:
         for r in rerouters:
             detectorReroute(r, network, remainingDuration, simtime, sumoPredClusters)
@@ -3524,9 +3543,11 @@ def detectorReroute(detector, network, remainingDuration=None, simtime=0, sumoPr
             isSmart[vehicle] = random.random() < pSmart
         if isSmart[vehicle]:
             try:
+                saveStateInfo("MAIN", remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
                 [newroute, esttime] = rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network)
-            
-                assert(traci.getLabel() == "main")
+                assert(newroute[-1] == currentRoutes[vehicle][-1])
+                loadStateInfo("MAIN")
+                #assert(traci.getLabel() == "main")
 
                 routeStats[vehicle]["nCalls"] += 1
                 if timedata[vehicle][2] == -1:
@@ -3550,8 +3571,9 @@ def detectorReroute(detector, network, remainingDuration=None, simtime=0, sumoPr
                         
                 try:
                     pass
-                    traci.vehicle.setRoute(vehicle, newroute)
                     currentRoutes[vehicle] = newroute
+                    traci.vehicle.setRoute(vehicle, newroute)
+                    
                 except traci.exceptions.TraCIException as e:
                     print("Couldn't update route, not sure what happened, ignoring")
                     print(e)
@@ -3560,7 +3582,7 @@ def detectorReroute(detector, network, remainingDuration=None, simtime=0, sumoPr
                 #TODO ghost cars disappearing sometimes? Possibly related to intersection behavior (speed of new spawn?)
                 print("Error in rerouteSUMOGC?? Ignoring")
                 print(e)
-                traci.switch("main")
+                #traci.switch("main")
 
     oldids[detector] = ids
 
@@ -3717,6 +3739,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
     global nRoutingCalls
     global nSuccessfulRoutingCalls
     global routingTime
+    global surtracDict
 
     nRoutingCalls += 1
     vehicle = startvehicle
@@ -3736,7 +3759,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
     #When a VOI reaches the end of a road, we'll insert new ghost cars on all outgoing lanes
     #Unless it reached the end of the goal road, in which case great, we're done
     #Hopefully those new inserts take priority over standard cars and it all works?
-    assert(traci.getLabel() == "main")
+    #assert(traci.getLabel() == "main")
 
     #Get goal
     startroute = traci.vehicle.getRoute(vehicle)
@@ -3748,11 +3771,17 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
         #No rerouting needed, we're basically done
         #traci.switch("main") #Not needed, didn't even switch to test yet
         routingTime += time.time() - routestartwctime
-        assert(traci.getLabel() == "main")
+        #assert(traci.getLabel() == "main")
         return (startroute, -1)
 
     saveStateInfo(startedge, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) #Saves the traffic state and traffic light timings
-    traci.switch("test")
+    #traci.switch("test")
+
+    #No GUI for now
+    print(sumoconfig)
+    traci.start([checkBinary('sumo'), "-c", sumoconfig,
+                                "--additional-files", "additional_autogen.xml",
+                                "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
     (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases) = loadStateInfo(startedge) #NOTE: This will cause problems if running code in two separate terminal tabs...
     assert(traci.vehicle.getRoadID(vehicle) == startedge)
 
@@ -3770,7 +3799,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
     except Exception as e:
         print("Something went wrong - couldn't set vehicle route.")
         print(e)
-        traci.switch("main")
+        #traci.switch("main")
         routingTime += time.time() - routestartwctime
         return (startroute, -1) #Which we'll parse as "oops, stop"
 
@@ -3827,7 +3856,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
             routeStats[startvehicle]["nTimeouts"] += 1
             
             #nToReroute -= 1
-            traci.switch("main")
+            #traci.switch("main")
             routingTime += time.time() - routestartwctime
             return (startroute, -1)
 
@@ -3858,7 +3887,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
         for id in traci.simulation.getStartingTeleportIDList():
             if id in VOIs:
                 print("VOI started to teleport, simulation results unreliable, giving up")
-                traci.switch("main")
+                #traci.switch("main")
                 routingTime += time.time() - routestartwctime
                 return (startroute, -1)
 
@@ -3871,7 +3900,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
                 if traci.vehicle.getLaneID(id) != VOIs[id][0]:
                     #If we've successfully started turning left out of the goal edge, we're actually done and should note that
                     if VOIs[id][0].split("_")[0] == goaledge:
-                        traci.switch("main")
+                        #traci.switch("main")
                         nSuccessfulRoutingCalls += 1
                         routingTime += time.time() - routestartwctime
                         return(VOIs[id][3], simtime - starttime)
@@ -3896,7 +3925,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
             if id in VOIs:
                 #If we've successfully exited the goal edge, we're done
                 if VOIs[id][0].split("_")[0] == goaledge:
-                    traci.switch("main")
+                    #traci.switch("main")
                     nSuccessfulRoutingCalls += 1
                     routingTime += time.time() - routestartwctime
                     return(VOIs[id][3], simtime - starttime)
@@ -3935,10 +3964,32 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
 
         surtracFreq = routingSurtracFreq #Period between updates
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters, True)
+            
+            updateLights = True
+            if not(reuseSurtrac and simtime in surtracDict): #Overwrite unless we want to reuse
+                updateLights = False
+                surtracDict[simtime] = doSurtrac(network, simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters, True)
+            # else:
+            #     print("Reusing Surtrac, yay!")
+
+            temp = pickle.loads(pickle.dumps(surtracDict[simtime]))
+
             #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
             sumoPredClusters = temp[1]
             remainingDuration.update(temp[2])
+
+            if updateLights:
+                #We got to reuse stuff, but we still need to update the lights
+                toUpdate = temp[0]
+                for light in toUpdate:
+                    curphase = lightphases[light]
+                    nPhases = len(surtracdata[light]) #Number of phases
+
+                    traci.trafficlight.setPhase(light, (curphase+1)%nPhases) #Increment phase, duration defaults to default
+                for light in lights:
+                    if len(remainingDuration[light]) > 0:
+                        #And set the new duration if possible
+                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #Update duration if we know it
 
 
 # Gets successor edges of a given edge in a given network
@@ -3976,7 +4027,7 @@ def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, li
         pickle.dump(lightphases, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def loadStateInfo(prevedge):
-    traci.switch("test")
+    #traci.switch("test")
     #Load traffic state
     traci.simulation.loadState("savestates/teststate_"+prevedge+".xml")
     #Load light state
@@ -4026,7 +4077,7 @@ def getEdgeCost(vehicle, edge, prevedge, network, g_value, simtime=0):
 
     #Tell the vehicle to drive to the end of edge
     try:
-        assert(traci.getLabel() == "test")
+        #assert(traci.getLabel() == "test")
         traci.vehicle.setRoute(vehicle, [prevedge, edge])
     except Exception as e:
         print("Something went wrong - couldn't set vehicle route")
@@ -4123,6 +4174,7 @@ def dontBreakEverything():
 
 # this is the main entry point of this script
 if __name__ == "__main__":
+    sumoconfig = sys.argv[1]
     if len(sys.argv) >= 3:
         pSmart = float(sys.argv[2])
     if len(sys.argv) >= 4:

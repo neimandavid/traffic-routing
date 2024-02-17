@@ -16,9 +16,13 @@
 #17: Move computation of Surtrac's predicted outflows to the end, after we already know what the schedule should be, rather than building it into the algorithm and generating predicted outflows for schedules we won't end up using. Fixed a bug where initially splitting the VOI into all lanes added it at the modified start time, and possibly in the wrong place
 #18: Add imitation learning version of Surtrac
 #19: Going back to A* in SUMO since ghost cars are causing problems. Telling all ghost cars to turn left, and spawning left-turning ghost cars when the turn completes so we account for oncoming traffic
+#20: Storing Surtrac results for reuse
 
 from __future__ import absolute_import
 from __future__ import print_function
+
+import torch
+from torch import nn
 
 import os
 import sys
@@ -61,7 +65,7 @@ detectordist = 50 #How far before the end of a road the detectors that trigger r
 #Hyperparameters for multithreading
 multithreadRouting = False #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
 multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
-reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
+reuseSurtrac = True #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
 simToSimStats = False
 routingSimUsesSUMO = True #Only switch this if we go back to custom routing simulator or something
@@ -140,6 +144,7 @@ rerouterLanes = dict()
 rerouterEdges = dict()
 vehiclesOnNetwork = []
 dontReroute = []
+surtracDict = dict()
 
 #Predict traffic entering network
 arrivals = dict()
@@ -3459,6 +3464,10 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
 def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[]):
     doAstar = True #Set to false to stick with SUMO default routing
 
+    #Clear any stored Surtrac stuff
+    global surtracDict
+    surtracDict = dict()
+
     if doAstar:
         for r in rerouters:
             detectorReroute(r, network, remainingDuration, simtime, sumoPredClusters)
@@ -3717,6 +3726,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
     global nRoutingCalls
     global nSuccessfulRoutingCalls
     global routingTime
+    global surtracDict
 
     nRoutingCalls += 1
     vehicle = startvehicle
@@ -3935,10 +3945,32 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDuration, mainlastswitchtime
 
         surtracFreq = routingSurtracFreq #Period between updates
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters, True)
+            
+            updateLights = True
+            if not(reuseSurtrac and simtime in surtracDict): #Overwrite unless we want to reuse
+                updateLights = False
+                surtracDict[simtime] = doSurtrac(network, simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters, True)
+            # else:
+            #     print("Reusing Surtrac, yay!")
+
+            temp = pickle.loads(pickle.dumps(surtracDict[simtime]))
+
             #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
             sumoPredClusters = temp[1]
             remainingDuration.update(temp[2])
+
+            if updateLights:
+                #We got to reuse stuff, but we still need to update the lights
+                toUpdate = temp[0]
+                for light in toUpdate:
+                    curphase = lightphases[light]
+                    nPhases = len(surtracdata[light]) #Number of phases
+
+                    traci.trafficlight.setPhase(light, (curphase+1)%nPhases) #Increment phase, duration defaults to default
+                for light in lights:
+                    if len(remainingDuration[light]) > 0:
+                        #And set the new duration if possible
+                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #Update duration if we know it
 
 
 # Gets successor edges of a given edge in a given network

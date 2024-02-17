@@ -3,7 +3,8 @@ import sys
 #import runnerQueueSplit19SUMOEverywhere as runnerQueueSplit12 #Change this line if using a newer code version
 #import runnerQueueSplit19Ben as runnerQueueSplit12 #Change this line if using a newer code version
 #import runnerQueueSplit18NN as runnerQueueSplit12 #Change this line if using a newer code version
-import runnerQueueSplit19SUMOEverywhereGC as runnerQueueSplit12 #Change this line if using a newer code version
+#import runnerQueueSplit19SUMOEverywhereGC as runnerQueueSplit12 #Change this line if using a newer code version
+import runnerQueueSplit20Local5 as runnerQueueSplit12 #Change this line if using a newer code version
 
 import pickle
 import statistics
