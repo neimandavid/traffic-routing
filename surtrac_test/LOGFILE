@@ -1,0 +1,17 @@
+Loading net-file from 'shortlongshort3.net.xml' ... done (4ms).
+Loading additional-files from 'additional_autogen.xml' ... done (2ms).
+Loading done.
+Simulation started with time: 0.00.
+Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
+Quitting (on error).
+Simulation ended at time: 3681.00
+Performance: 
+ Duration: 86.25s
+ TraCI-Duration: 62.67s
+ Real time factor: 42.6797
+ UPS: 1374.250699
+Vehicles: 
+ Inserted: 1600
+ Running: 0
+ Waiting: 0
+

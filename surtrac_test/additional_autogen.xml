@@ -1,14 +1,18 @@
 <additional>
-    <inductionLoop id="IL_Din_0" freq="1" file="outputAuto.xml" lane="Din_0" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Din_1" freq="1" file="outputAuto.xml" lane="Din_1" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Dout_0" freq="1" file="outputAuto.xml" lane="Dout_0" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Lin_0" freq="1" file="outputAuto.xml" lane="Lin_0" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Lin_1" freq="1" file="outputAuto.xml" lane="Lin_1" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Lout_0" freq="1" file="outputAuto.xml" lane="Lout_0" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Rin_0" freq="1" file="outputAuto.xml" lane="Rin_0" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Rin_1" freq="1" file="outputAuto.xml" lane="Rin_1" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Rout_0" freq="1" file="outputAuto.xml" lane="Rout_0" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Uin_0" freq="1" file="outputAuto.xml" lane="Uin_0" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Uin_1" freq="1" file="outputAuto.xml" lane="Uin_1" pos="-50" friendlyPos="true" />
-    <inductionLoop id="IL_Uout_0" freq="1" file="outputAuto.xml" lane="Uout_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_C1_0" freq="1" file="outputAuto.xml" lane="C1_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_C2_0" freq="1" file="outputAuto.xml" lane="C2_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_L_0" freq="1" file="outputAuto.xml" lane="L_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_LL1_0" freq="1" file="outputAuto.xml" lane="LL1_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_LL2_0" freq="1" file="outputAuto.xml" lane="LL2_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_LR_0" freq="1" file="outputAuto.xml" lane="LR_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_R_0" freq="1" file="outputAuto.xml" lane="R_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_RL_0" freq="1" file="outputAuto.xml" lane="RL_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_RR1_0" freq="1" file="outputAuto.xml" lane="RR1_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_RR2_0" freq="1" file="outputAuto.xml" lane="RR2_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_goal_0" freq="1" file="outputAuto.xml" lane="goal_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_goal_1" freq="1" file="outputAuto.xml" lane="goal_1" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_goal_2" freq="1" file="outputAuto.xml" lane="goal_2" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_start_0" freq="1" file="outputAuto.xml" lane="start_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_startL_0" freq="1" file="outputAuto.xml" lane="startL_0" pos="-50" friendlyPos="true" />
+    <inductionLoop id="IL_startR_0" freq="1" file="outputAuto.xml" lane="startR_0" pos="-50" friendlyPos="true" />
 </additional>

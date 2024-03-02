@@ -26,7 +26,7 @@ import openpyxl #For writing training data to .xlsx files
 import time
 
 #In case we want to pause a run and continue later, set these to false
-reset = False
+reset = True
 resetNN = reset
 resetTrainingData2 = reset
 #Remember to set appendTrainingData = True, resetTrainingData = False in runnerQueueSplitWhatever
