@@ -816,6 +816,9 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                                 #Car has zero chance of going here, skip
                                 continue
 
+                            if not nextlane in newPredClusters:
+                                nerPredClusters[nextlane] = []
+
                             if len(newPredClusters[nextlane]) == 0 or arr > newPredClusters[nextlane][-1]["departure"] + clusterthresh:
                                 #Add a new cluster
                                 newPredCluster = dict()
