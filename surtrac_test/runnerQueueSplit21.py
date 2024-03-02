@@ -17,6 +17,7 @@
 #18: Add imitation learning version of Surtrac
 #19: Going back to A* in SUMO since ghost cars are causing problems. Telling all ghost cars to turn left, and spawning left-turning ghost cars when the turn completes so we account for oncoming traffic
 #20: Storing Surtrac results for reuse
+#21: Libsumo (optional hopefully), multithreaded routing, save files under different names so we can run two sets of code without making one error
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -940,7 +941,10 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
         testNNrolls.append(testNN)
 
     toSwitch = []
-    catpreds = manager.dict()
+    if disableSurtracPred or not multithreadRouting:
+        catpreds = dict()
+    else:
+        catpreds = manager.dict()
     remainingDuration = dict()
     bestschedules = dict()
 
