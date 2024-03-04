@@ -816,9 +816,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                                 #Car has zero chance of going here, skip
                                 continue
 
-                            if not nextlane in newPredClusters:
-                                newPredClusters[nextlane] = []
-
+                            #NEXT TODO getting key errors here not sure why
                             if len(newPredClusters[nextlane]) == 0 or arr > newPredClusters[nextlane][-1]["departure"] + clusterthresh:
                                 #Add a new cluster
                                 newPredCluster = dict()
@@ -1610,6 +1608,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 print("\nCurrent simulation time: %f" % simtime)
                 print("Total run time: %f" % (time.time() - tstart))
                 print("Number of vehicles in network: %f" % traci.vehicle.getIDCount())
+                print("Total cars that left the network: %f" % len(endDict))
                 print("Average delay: %f" % avgTime)
                 print("Average delay0: %f" % avgTime0)
                 print("Best delay: %f" % bestTime)
@@ -1716,7 +1715,7 @@ def run(network, rerouters, pSmart, verbose = True):
     if dumpIntersectionData:
         dumpIntersectionDataFun(intersectionData, network)
 
-    return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0]  
+    return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart]  
 
 def dumpIntersectionDataFun(intersectionData, network):
     print("Writing intersection data to spreadsheet")

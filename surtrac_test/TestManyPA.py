@@ -47,6 +47,8 @@ for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
         data[p]["All0"].append(newdata[9])
         data[p]["Adopters0"].append(newdata[10])
         data[p]["Non-Adopters0"].append(newdata[11])
+        data[p]["Runtime"].append(newdata[12])
+        
         data[p]["RNGStates"].append(newrngstate)
         with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
             pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)

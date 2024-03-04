@@ -1,17 +1,24 @@
-Loading net-file from 'shortlongshort3.net.xml' ... done (4ms).
-Loading additional-files from 'additional_autogen.xml' ... done (2ms).
+***Starting server on port 49389 ***
+Loading net-file from 'blocks5.net.xml' ... done (10ms).
+Loading additional-files from 'additional_autogen.xml' ... done (48ms).
 Loading done.
 Simulation started with time: 0.00.
-Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
-Quitting (on error).
-Simulation ended at time: 3681.00
+Warning: Vehicle 'Sflow36.2' performs emergency braking on lane ':J10_3_0' with decel=9.00, wished=4.50, severity=1.00, time=208.00.
+Warning: Vehicle 'Sflow23.5' performs emergency braking on lane ':J11_1_0' with decel=9.00, wished=4.50, severity=1.00, time=388.00.
+Warning: Vehicle 'Sflow57.28' performs emergency braking on lane ':J15_5_0' with decel=9.00, wished=4.50, severity=1.00, time=1558.00.
+Warning: Vehicle 'Sflow52.68' performs emergency braking on lane ':J21_5_0' with decel=9.00, wished=4.50, severity=1.00, time=3628.00.
+Simulation ended at time: 3882.00
+Reason: TraCI requested termination.
 Performance: 
- Duration: 86.25s
- TraCI-Duration: 62.67s
- Real time factor: 42.6797
- UPS: 1374.250699
+ Duration: 242.94s
+ TraCI-Duration: 209.20s
+ Real time factor: 15.9793
+ UPS: 3394.761648
 Vehicles: 
- Inserted: 1600
+ Inserted: 4032
  Running: 0
  Waiting: 0
+ Emergency Braking: 4
 
+DijkstraRouter answered 4032 queries and explored 22.74 edges on average.
+DijkstraRouter spent 0.02s answering queries (0.00ms on average).
