@@ -92,12 +92,12 @@ routingSimUsesSUMO = True #Only switch this if we go back to custom routing simu
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
-disableSurtracPred = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
+disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 10 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 10 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
-testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
+testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
 testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)

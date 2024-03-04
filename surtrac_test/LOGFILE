@@ -1,6 +1,6 @@
-***Starting server on port 49389 ***
-Loading net-file from 'blocks5.net.xml' ... done (10ms).
-Loading additional-files from 'additional_autogen.xml' ... done (48ms).
+***Starting server on port 49526 ***
+Loading net-file from 'blocks5.net.xml' ... done (15ms).
+Loading additional-files from 'additional_autogen.xml' ... done (145ms).
 Loading done.
 Simulation started with time: 0.00.
 Warning: Vehicle 'Sflow36.2' performs emergency braking on lane ':J10_3_0' with decel=9.00, wished=4.50, severity=1.00, time=208.00.
@@ -10,10 +10,10 @@ Warning: Vehicle 'Sflow52.68' performs emergency braking on lane ':J21_5_0' with
 Simulation ended at time: 3882.00
 Reason: TraCI requested termination.
 Performance: 
- Duration: 242.94s
- TraCI-Duration: 209.20s
- Real time factor: 15.9793
- UPS: 3394.761648
+ Duration: 233.62s
+ TraCI-Duration: 200.68s
+ Real time factor: 16.6169
+ UPS: 3530.207433
 Vehicles: 
  Inserted: 4032
  Running: 0
@@ -21,4 +21,4 @@ Vehicles:
  Emergency Braking: 4
 
 DijkstraRouter answered 4032 queries and explored 22.74 edges on average.
-DijkstraRouter spent 0.02s answering queries (0.00ms on average).
+DijkstraRouter spent 0.03s answering queries (0.01ms on average).
