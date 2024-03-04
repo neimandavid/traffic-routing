@@ -63,8 +63,11 @@ labels = []
 for x in ["", "2", "3", "0"]:
     for w in ["All", "Adopters", "Non-Adopters"]:
         labels.append(w+x)
-if len(data[p] >= 13):
-    labels.append("Runtime")
+
+for p in sorted(data.keys()): 
+    if len(data[p]) >= 13:
+        labels.append("Runtime")
+        break
 #labels = ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2"]
 plotdata = dict()
 for l in labels:
