@@ -1369,7 +1369,7 @@ def run(network, rerouters, pSmart, verbose = True):
                     routeStats[id]["distance"] = traci.vehicle.getDistance(id) + lengths[newlane]
 
         surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
-        surtracOut = dict()
+        surtracOut = manager.dict()
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
             if parallelMainSurtrac:
                 mainSurtracThread = Process(target=doSurtrac, args=(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False, surtracOut))
