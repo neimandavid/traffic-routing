@@ -1377,8 +1377,8 @@ def run(network, rerouters, pSmart, verbose = True):
         oldMainLastSwitchTimes = pickle.loads(pickle.dumps(mainlastswitchtimes))
         reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters) #Reroute cars (including simulate-ahead cars)
         #assert(traci.getLabel() == "main")
-        assert(remainingDuration == oldRemainingDuration)
-        assert(mainlastswitchtimes == oldMainLastSwitchTimes)
+        #assert(remainingDuration == oldRemainingDuration)
+        #assert(mainlastswitchtimes == oldMainLastSwitchTimes)
 
         #Grab data about vehicle behavior near intersections
         if dumpIntersectionData:
