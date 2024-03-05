@@ -3473,7 +3473,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 #Tell all the detectors to reroute the cars they've seen
 #@profile
 def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[]):
-    global sumoPredClusters
+    #global sumoPredClusters #TODO problem?
     global currentRoutes
     global hmetadict
     global delay3adjdict
