@@ -1391,12 +1391,16 @@ def run(network, rerouters, pSmart, verbose = True):
         assert(remainingDuration == oldRemainingDuration)
         assert(mainlastswitchtimes == oldMainLastSwitchTimes)
 
-        if parallelMainSurtrac:
-            mainSurtracThread.join()
-        temp = surtracOut["Surtrac"]
-        #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
-        sumoPredClusters = temp[1]
-        remainingDuration.update(temp[2])
+        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
+            if parallelMainSurtrac:
+                mainSurtracThread.join()
+            else:
+                surtracOut["Surtrac"] = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
+            
+            temp = surtracOut["Surtrac"]
+            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
+            sumoPredClusters = temp[1]
+            remainingDuration.update(temp[2])
 
         #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
         for light in lights:
