@@ -1375,7 +1375,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 mainSurtracThread = Process(target=doSurtrac, args=(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False, surtracOut))
                 mainSurtracThread.start()
             else:
-                surtracOut["Surtrac"] = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
+                pass#surtracOut["Surtrac"] = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
         
         #TODO: I'm slightly worried about causing an off-by-one in the routing due to updating the lights after starting the routing...
 
