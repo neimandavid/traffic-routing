@@ -85,7 +85,6 @@ multithreadRouting = True #Do each routing simulation in a separate thread. Enab
 if not useLibsumo:
     multithreadRouting = False
 multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
-parallelMainSurtrac = True #Do current step's Surtrac in parallel with any routing sims for speed hopefully
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
 simToSimStats = False
@@ -930,7 +929,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
 
 #@profile
-def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True, output=dict()):
+def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True):
 
     global clustersCache
     global totalLoadRuns
@@ -1157,7 +1156,6 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
                     weightsum += catpreds[lane][preind]["cars"][ind][2]
                 assert(abs(weightsum - catpreds[lane][preind]["weight"]) < 1e-10)
 
-    output["Surtrac"] = (toSwitch, catpreds, remainingDuration)
     return (toSwitch, catpreds, remainingDuration)
 
 #For computing free-flow time, which is used for computing delay. Stolen from my old A* code, where it was a heuristic function.
@@ -1368,17 +1366,8 @@ def run(network, rerouters, pSmart, verbose = True):
                 if newlane.split("_")[0] == currentRoutes[id][-1]:
                     routeStats[id]["distance"] = traci.vehicle.getDistance(id) + lengths[newlane]
 
-        surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
-        surtracOut = manager.dict()
-
-        #COMMENTED BECAUSE TRYING TO PARALLELMAINSURTRAC
-        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
-            sumoPredClusters = temp[1]
-            remainingDuration.update(temp[2])
         
-        #TODO: I'm slightly worried about causing an off-by-one in the routing due to updating the lights after starting the routing...
-
+        
         for car in traci.simulation.getStartingTeleportIDList():
             routeStats[car]["nTeleports"] += 1
             print("Warning: Car " + car + " teleported, time=" + str(simtime))
@@ -1390,41 +1379,6 @@ def run(network, rerouters, pSmart, verbose = True):
         #assert(traci.getLabel() == "main")
         assert(remainingDuration == oldRemainingDuration)
         assert(mainlastswitchtimes == oldMainLastSwitchTimes)
-
-        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
-            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
-            sumoPredClusters = temp[1]
-            remainingDuration.update(temp[2])
-
-        #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
-        for light in lights:
-            temp = traci.trafficlight.getPhase(light)
-            if not(light in remainingDuration and len(remainingDuration[light]) > 0):
-                #Only update remainingDuration if we have no schedule, in which case grab the actual remaining duration from SUMO
-                remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
-            else:
-                remainingDuration[light][0] -= 1
-            if temp != lightphases[light]:
-                mainlastswitchtimes[light] = simtime
-                lightphases[light] = temp
-                #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
-                if light in remainingDuration and len(remainingDuration[light]) > 0:
-                    #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
-                    #NOTE: The light switches when remaining duration goes negative (in this case -1)
-                    remainingDuration[light].pop(0)
-                    if len(remainingDuration[light]) == 0:
-                        remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
-                    else:
-                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
-                else:
-                    print("Unrecognized light " + light + ", this shouldn't happen")
-        
-        realdurations[simtime] = pickle.loads(pickle.dumps(remainingDuration))
-        # if simtime in simdurations:
-        #     print("DURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
-        #     print(simdurations[simtime][lights[0]])
-        #     print(realdurations[simtime][lights[0]])
 
         #Grab data about vehicle behavior near intersections
         if dumpIntersectionData:
@@ -3519,6 +3473,15 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 #Tell all the detectors to reroute the cars they've seen
 #@profile
 def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[]):
+    global sumoPredClusters
+    global currentRoutes
+    global hmetadict
+    global delay3adjdict
+    global actualStartDict
+    global locDict
+    global laneDict
+    global clustersCache
+
     #Clear any stored Surtrac stuff
     global surtracDict
     surtracDict = dict()
@@ -3549,6 +3512,23 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
             if isSmart[vehicle]:
                 try:
                     
+                    #TODO comment maybe?
+                    # for vehicle2 in traci.vehicle.getIDList():
+                    #     if not vehicle2 in laneDict:
+                    #         laneDict[vehicle2] = traci.vehicle.getLaneID(vehicle2)
+                    #         locDict[vehicle2] = traci.vehicle.getRoadID(vehicle2)
+                    #     if vehicle2 in currentRoutes and vehicle2 in laneDict:
+                    #         try:
+                    #             assert(laneDict[vehicle2].split("_")[0] in currentRoutes[vehicle2])
+                    #         except Exception as e:
+                    #             print("vehicle2 got off route somehow during save???")
+                    #             #print(traci.getLabel()) #Should be main
+                    #             print(vehicle2)
+                    #             print(laneDict[vehicle2])
+                    #             print(traci.vehicle2.getLaneID(vehicle2))
+                    #             print(currentRoutes[vehicle2])
+                    #             print(traci.vehicle2.getRoute(vehicle2))
+                    
                     routingresults[vehicle] = manager.list([None, None]) #TODO is this needed?
                     #routingresults[vehicle] = [None, None]
 
@@ -3563,7 +3543,20 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                             assert(traci.getLabel() == "main")
                         else:
                             #(remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) = loadStateInfo("MAIN")
-                            loadStateInfo(savename)
+                            loadStateInfo(savename) #This ends badly somehow, just not sure why
+                    # for vehicle2 in traci.vehicle.getIDList():
+                    #     if not vehicle2 in laneDict:
+                    #         laneDict[vehicle2] = traci.vehicle.getLaneID(vehicle2)
+                    #     if vehicle2 in currentRoutes:
+                    #         # print("Route test")
+                    #         # print(traci.vehicle.getRoute(vehicle2))
+                    #         # print(currentRoutes[vehicle2])
+                    #         # print(traci.vehicle.getLaneID(vehicle2))
+                    #         if laneDict[vehicle2].split("_")[0] in currentRoutes[vehicle2]:
+                    #             routeind = currentRoutes[vehicle2].index(laneDict[vehicle2].split("_")[0])
+                    #             traci.vehicle.setRoute(vehicle2, currentRoutes[vehicle2][routeind:])
+                    #         else:
+                    #             print("Umm... we're off route, I guess??")
 
                     #assert(traci.getLabel() == "main")
 
@@ -3576,9 +3569,44 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
 
         oldids[detector] = ids
 
-    if parallelMainSurtrac:
-        #TODO do stuff
+    #Putting main Surtrac logic here so it runs in parallel with routing
+    if True:#parallelMainSurtrac:
+        surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
+        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
+            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
+            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
+            sumoPredClusters = temp[1]
+            remainingDuration.update(temp[2])
 
+        #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
+        for light in lights:
+            temp = traci.trafficlight.getPhase(light)
+            if not(light in remainingDuration and len(remainingDuration[light]) > 0):
+                #Only update remainingDuration if we have no schedule, in which case grab the actual remaining duration from SUMO
+                remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
+            else:
+                remainingDuration[light][0] -= 1
+            if temp != lightphases[light]:
+                mainlastswitchtimes[light] = simtime
+                lightphases[light] = temp
+                #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
+                if light in remainingDuration and len(remainingDuration[light]) > 0:
+                    #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
+                    #NOTE: The light switches when remaining duration goes negative (in this case -1)
+                    remainingDuration[light].pop(0)
+                    if len(remainingDuration[light]) == 0:
+                        remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
+                    else:
+                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
+                else:
+                    print("Unrecognized light " + light + ", this shouldn't happen")
+        
+        realdurations[simtime] = pickle.loads(pickle.dumps(remainingDuration))
+        # if simtime in simdurations:
+        #     print("DURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
+        #     print(simdurations[simtime][lights[0]])
+        #     print(realdurations[simtime][lights[0]])
+        
     for vehicle in routingresults:
         if multithreadRouting:
             routingthreads[vehicle].join()
@@ -4146,8 +4174,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             del VOIs[id]
 
         spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs)
-
-        #TODO parallelMainSurtrac logic wants this moved before the simulationStep call
 
         #Light logic for Surtrac, etc.
         #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
