@@ -3537,23 +3537,6 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
             if isSmart[vehicle]:
                 try:
                     
-                    #TODO comment maybe?
-                    # for vehicle2 in traci.vehicle.getIDList():
-                    #     if not vehicle2 in laneDict:
-                    #         laneDict[vehicle2] = traci.vehicle.getLaneID(vehicle2)
-                    #         locDict[vehicle2] = traci.vehicle.getRoadID(vehicle2)
-                    #     if vehicle2 in currentRoutes and vehicle2 in laneDict:
-                    #         try:
-                    #             assert(laneDict[vehicle2].split("_")[0] in currentRoutes[vehicle2])
-                    #         except Exception as e:
-                    #             print("vehicle2 got off route somehow during save???")
-                    #             #print(traci.getLabel()) #Should be main
-                    #             print(vehicle2)
-                    #             print(laneDict[vehicle2])
-                    #             print(traci.vehicle2.getLaneID(vehicle2))
-                    #             print(currentRoutes[vehicle2])
-                    #             print(traci.vehicle2.getRoute(vehicle2))
-                    
                     routingresults[vehicle] = manager.list([None, None]) #TODO is this needed?
                     #routingresults[vehicle] = [None, None]
 
@@ -3568,20 +3551,7 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                             assert(traci.getLabel() == "main")
                         else:
                             #(remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) = loadStateInfo("MAIN")
-                            loadStateInfo(savename) #This ends badly somehow, just not sure why
-                    # for vehicle2 in traci.vehicle.getIDList():
-                    #     if not vehicle2 in laneDict:
-                    #         laneDict[vehicle2] = traci.vehicle.getLaneID(vehicle2)
-                    #     if vehicle2 in currentRoutes:
-                    #         # print("Route test")
-                    #         # print(traci.vehicle.getRoute(vehicle2))
-                    #         # print(currentRoutes[vehicle2])
-                    #         # print(traci.vehicle.getLaneID(vehicle2))
-                    #         if laneDict[vehicle2].split("_")[0] in currentRoutes[vehicle2]:
-                    #             routeind = currentRoutes[vehicle2].index(laneDict[vehicle2].split("_")[0])
-                    #             traci.vehicle.setRoute(vehicle2, currentRoutes[vehicle2][routeind:])
-                    #         else:
-                    #             print("Umm... we're off route, I guess??")
+                            loadStateInfo(savename)
 
                     #assert(traci.getLabel() == "main")
 
@@ -3594,8 +3564,6 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
 
         oldids[detector] = ids
 
-    #TODO: Want this unindented one more layer, such that we start all routing threads before waiting for all of them to finish
-    #But that apparently gives None back as the route, which doesn't make sense...
     for vehicle in routingresults:
         if multithreadRouting:
             routingthreads[vehicle].join()
@@ -4165,29 +4133,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs)
 
         #Light logic for Surtrac, etc.
-        #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
-        for light in lights:
-            temp = traci.trafficlight.getPhase(light)
-            if not(light in remainingDuration and len(remainingDuration[light]) > 0):
-                #Only update remainingDuration if we have no schedule, in which case grab the actual remaining duration from SUMO
-                remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
-            else:
-                remainingDuration[light][0] -= 1
-            if temp != testSUMOlightphases[light]:
-                lastSwitchTimes[light] = simtime
-                testSUMOlightphases[light] = temp
-                #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
-                if light in remainingDuration and len(remainingDuration[light]) > 0:
-                    #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
-                    #NOTE: The light switches when remaining duration goes negative (in this case -1)
-                    remainingDuration[light].pop(0)
-                    if len(remainingDuration[light]) == 0:
-                        remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
-                    else:
-                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
-                else:
-                    print("Unrecognized light " + light + ", this shouldn't happen")
-
 
         surtracFreq = routingSurtracFreq #Period between updates
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
@@ -4217,6 +4162,29 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     if len(remainingDuration[light]) > 0:
                         #And set the new duration if possible
                         traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #Update duration if we know it
+
+        #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
+        for light in lights:
+            temp = traci.trafficlight.getPhase(light)
+            if not(light in remainingDuration and len(remainingDuration[light]) > 0):
+                #Only update remainingDuration if we have no schedule, in which case grab the actual remaining duration from SUMO
+                remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
+            else:
+                remainingDuration[light][0] -= 1
+            if temp != testSUMOlightphases[light]:
+                lastSwitchTimes[light] = simtime
+                testSUMOlightphases[light] = temp
+                #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
+                if light in remainingDuration and len(remainingDuration[light]) > 0:
+                    #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
+                    #NOTE: The light switches when remaining duration goes negative (in this case -1)
+                    remainingDuration[light].pop(0)
+                    if len(remainingDuration[light]) == 0:
+                        remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
+                    else:
+                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
+                else:
+                    print("Unrecognized light " + light + ", this shouldn't happen")
 
 
 # Gets successor edges of a given edge in a given network

@@ -1366,7 +1366,41 @@ def run(network, rerouters, pSmart, verbose = True):
                 if newlane.split("_")[0] == currentRoutes[id][-1]:
                     routeStats[id]["distance"] = traci.vehicle.getDistance(id) + lengths[newlane]
 
+        surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
+        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
+            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
+            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
+            sumoPredClusters = temp[1]
+            remainingDuration.update(temp[2])
+
+        #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
+        for light in lights:
+            temp = traci.trafficlight.getPhase(light)
+            if not(light in remainingDuration and len(remainingDuration[light]) > 0):
+                #Only update remainingDuration if we have no schedule, in which case grab the actual remaining duration from SUMO
+                remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
+            else:
+                remainingDuration[light][0] -= 1
+            if temp != lightphases[light]:
+                mainlastswitchtimes[light] = simtime
+                lightphases[light] = temp
+                #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
+                if light in remainingDuration and len(remainingDuration[light]) > 0:
+                    #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
+                    #NOTE: The light switches when remaining duration goes negative (in this case -1)
+                    remainingDuration[light].pop(0)
+                    if len(remainingDuration[light]) == 0:
+                        remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
+                    else:
+                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
+                else:
+                    print("Unrecognized light " + light + ", this shouldn't happen")
         
+        realdurations[simtime] = pickle.loads(pickle.dumps(remainingDuration))
+        # if simtime in simdurations:
+        #     print("DURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
+        #     print(simdurations[simtime][lights[0]])
+        #     print(realdurations[simtime][lights[0]])
         
         for car in traci.simulation.getStartingTeleportIDList():
             routeStats[car]["nTeleports"] += 1
@@ -1375,10 +1409,10 @@ def run(network, rerouters, pSmart, verbose = True):
         #Moving this to the bottom so we've already updated the vehicle locations (when we checked left turns)
         oldRemainingDuration = pickle.loads(pickle.dumps(remainingDuration))
         oldMainLastSwitchTimes = pickle.loads(pickle.dumps(mainlastswitchtimes))
-        rerouteAndLights(rerouters, network, simtime, remainingDuration, sumoPredClusters) #Reroute cars (including simulate-ahead cars). NOTE: This also now handles Surtrac and lights!
+        reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters) #Reroute cars (including simulate-ahead cars)
         #assert(traci.getLabel() == "main")
-        #assert(remainingDuration == oldRemainingDuration)
-        #assert(mainlastswitchtimes == oldMainLastSwitchTimes)
+        assert(remainingDuration == oldRemainingDuration)
+        assert(mainlastswitchtimes == oldMainLastSwitchTimes)
 
         #Grab data about vehicle behavior near intersections
         if dumpIntersectionData:
@@ -3472,16 +3506,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 
 #Tell all the detectors to reroute the cars they've seen
 #@profile
-def rerouteAndLights(rerouters, network, simtime, remainingDuration, sumoPredClusters=[]):
-    #global sumoPredClusters #TODO problem?
-    global currentRoutes
-    global hmetadict
-    global delay3adjdict
-    global actualStartDict
-    global locDict
-    global laneDict
-    global clustersCache
-
+def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[]):
     #Clear any stored Surtrac stuff
     global surtracDict
     surtracDict = dict()
@@ -3569,44 +3594,8 @@ def rerouteAndLights(rerouters, network, simtime, remainingDuration, sumoPredClu
 
         oldids[detector] = ids
 
-    #Putting main Surtrac logic here so it runs in parallel with routing
-    if True:#parallelMainSurtrac:
-        surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
-        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
-            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
-            sumoPredClusters = temp[1]
-            remainingDuration.update(temp[2])
-
-        #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
-        for light in lights:
-            temp = traci.trafficlight.getPhase(light)
-            if not(light in remainingDuration and len(remainingDuration[light]) > 0):
-                #Only update remainingDuration if we have no schedule, in which case grab the actual remaining duration from SUMO
-                remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
-            else:
-                remainingDuration[light][0] -= 1
-            if temp != lightphases[light]:
-                mainlastswitchtimes[light] = simtime
-                lightphases[light] = temp
-                #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
-                if light in remainingDuration and len(remainingDuration[light]) > 0:
-                    #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
-                    #NOTE: The light switches when remaining duration goes negative (in this case -1)
-                    remainingDuration[light].pop(0)
-                    if len(remainingDuration[light]) == 0:
-                        remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
-                    else:
-                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
-                else:
-                    print("Unrecognized light " + light + ", this shouldn't happen")
-        
-        realdurations[simtime] = pickle.loads(pickle.dumps(remainingDuration))
-        # if simtime in simdurations:
-        #     print("DURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
-        #     print(simdurations[simtime][lights[0]])
-        #     print(realdurations[simtime][lights[0]])
-        
+    #TODO: Want this unindented one more layer, such that we start all routing threads before waiting for all of them to finish
+    #But that apparently gives None back as the route, which doesn't make sense...
     for vehicle in routingresults:
         if multithreadRouting:
             routingthreads[vehicle].join()
@@ -4091,61 +4080,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             reroutedata[startvehicle] = [startroute, -1]
             return reroutedata[startvehicle]
 
-        #We've moved main Surtrac after the start of the routing sims, so the routing sims now need to update lights before the simulationStep() call
-        
-        surtracFreq = routingSurtracFreq #Period between updates
-        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            
-            updateLights = True
-            if not(reuseSurtrac and simtime in surtracDict): #Overwrite unless we want to reuse
-                updateLights = False
-                surtracDict[simtime] = doSurtrac(network, simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters, True)
-            # else:
-            #     print("Reusing Surtrac, yay!")
-
-            temp = pickle.loads(pickle.dumps(surtracDict[simtime]))
-
-            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
-            sumoPredClusters = temp[1]
-            remainingDuration.update(temp[2])
-
-            if updateLights:
-                #We got to reuse stuff, but we still need to update the lights
-                toUpdate = temp[0]
-                for light in toUpdate:
-                    curphase = lightphases[light]
-                    nPhases = len(surtracdata[light]) #Number of phases
-
-                    traci.trafficlight.setPhase(light, (curphase+1)%nPhases) #Increment phase, duration defaults to default
-                for light in lights:
-                    if len(remainingDuration[light]) > 0:
-                        #And set the new duration if possible
-                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #Update duration if we know it
-
-        #Light logic for Surtrac, etc.
-        #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
-        for light in lights:
-            temp = traci.trafficlight.getPhase(light)
-            if not(light in remainingDuration and len(remainingDuration[light]) > 0):
-                #Only update remainingDuration if we have no schedule, in which case grab the actual remaining duration from SUMO
-                remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
-            else:
-                remainingDuration[light][0] -= 1
-            if temp != testSUMOlightphases[light]:
-                lastSwitchTimes[light] = simtime
-                testSUMOlightphases[light] = temp
-                #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
-                if light in remainingDuration and len(remainingDuration[light]) > 0:
-                    #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
-                    #NOTE: The light switches when remaining duration goes negative (in this case -1)
-                    remainingDuration[light].pop(0)
-                    if len(remainingDuration[light]) == 0:
-                        remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
-                    else:
-                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
-                else:
-                    print("Unrecognized light " + light + ", this shouldn't happen")
-
         traci.simulationStep()
         simtime+=1
         #print(VOIs)
@@ -4229,6 +4163,60 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             del VOIs[id]
 
         spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs)
+
+        #Light logic for Surtrac, etc.
+        #Check for lights that switched phase (because previously-planned duration ran out, not because Surtrac etc. changed the plan); update custom data structures and current phase duration
+        for light in lights:
+            temp = traci.trafficlight.getPhase(light)
+            if not(light in remainingDuration and len(remainingDuration[light]) > 0):
+                #Only update remainingDuration if we have no schedule, in which case grab the actual remaining duration from SUMO
+                remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
+            else:
+                remainingDuration[light][0] -= 1
+            if temp != testSUMOlightphases[light]:
+                lastSwitchTimes[light] = simtime
+                testSUMOlightphases[light] = temp
+                #Duration of previous phase was first element of remainingDuration, so pop that and read the next, assuming everything exists
+                if light in remainingDuration and len(remainingDuration[light]) > 0:
+                    #print(remainingDuration[light][0]) #Prints -1. Might be an off-by-one somewhere, but should be pretty close to accurate?
+                    #NOTE: The light switches when remaining duration goes negative (in this case -1)
+                    remainingDuration[light].pop(0)
+                    if len(remainingDuration[light]) == 0:
+                        remainingDuration[light] = [traci.trafficlight.getNextSwitch(light) - simtime]
+                    else:
+                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
+                else:
+                    print("Unrecognized light " + light + ", this shouldn't happen")
+
+
+        surtracFreq = routingSurtracFreq #Period between updates
+        if simtime%surtracFreq >= (simtime+1)%surtracFreq:
+            
+            updateLights = True
+            if not(reuseSurtrac and simtime in surtracDict): #Overwrite unless we want to reuse
+                updateLights = False
+                surtracDict[simtime] = doSurtrac(network, simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters, True)
+            # else:
+            #     print("Reusing Surtrac, yay!")
+
+            temp = pickle.loads(pickle.dumps(surtracDict[simtime]))
+
+            #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
+            sumoPredClusters = temp[1]
+            remainingDuration.update(temp[2])
+
+            if updateLights:
+                #We got to reuse stuff, but we still need to update the lights
+                toUpdate = temp[0]
+                for light in toUpdate:
+                    curphase = lightphases[light]
+                    nPhases = len(surtracdata[light]) #Number of phases
+
+                    traci.trafficlight.setPhase(light, (curphase+1)%nPhases) #Increment phase, duration defaults to default
+                for light in lights:
+                    if len(remainingDuration[light]) > 0:
+                        #And set the new duration if possible
+                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #Update duration if we know it
 
 
 # Gets successor edges of a given edge in a given network
