@@ -1,24 +1,17 @@
-***Starting server on port 49526 ***
-Loading net-file from 'blocks5.net.xml' ... done (15ms).
-Loading additional-files from 'additional_autogen.xml' ... done (145ms).
+***Starting server on port 57180 ***
+Loading net-file from 'pittsburghsmaller2lefts.net.xml' ... done (22ms).
+Loading additional-files from 'additional_autogen.xml' ... done (2ms).
 Loading done.
 Simulation started with time: 0.00.
-Warning: Vehicle 'Sflow36.2' performs emergency braking on lane ':J10_3_0' with decel=9.00, wished=4.50, severity=1.00, time=208.00.
-Warning: Vehicle 'Sflow23.5' performs emergency braking on lane ':J11_1_0' with decel=9.00, wished=4.50, severity=1.00, time=388.00.
-Warning: Vehicle 'Sflow57.28' performs emergency braking on lane ':J15_5_0' with decel=9.00, wished=4.50, severity=1.00, time=1558.00.
-Warning: Vehicle 'Sflow52.68' performs emergency braking on lane ':J21_5_0' with decel=9.00, wished=4.50, severity=1.00, time=3628.00.
-Simulation ended at time: 3882.00
+Simulation ended at time: 4285.00
 Reason: TraCI requested termination.
 Performance: 
- Duration: 233.62s
- TraCI-Duration: 200.68s
- Real time factor: 16.6169
- UPS: 3530.207433
+ Duration: 34521.64s
+ TraCI-Duration: 34125.23s
+ Real time factor: 0.124125
+ UPS: 21.248699
 Vehicles: 
- Inserted: 4032
+ Inserted: 5838
  Running: 0
  Waiting: 0
- Emergency Braking: 4
 
-DijkstraRouter answered 4032 queries and explored 22.74 edges on average.
-DijkstraRouter spent 0.03s answering queries (0.01ms on average).

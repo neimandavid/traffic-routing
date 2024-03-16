@@ -345,7 +345,7 @@ def generate_additionalfile(sumoconfig, networkfile):
         #TODO: Something better than hard-coding a second name
         traci.start([checkBinary('sumo'), "-c", sumoconfig,
                             "--start", "--no-step-log", "true",
-                            "--xml-validation", "never"], label="setup2")
+                            "--xml-validation", "never"], label=str(random.random()))
 
 
     net = sumolib.net.readNet(networkfile)

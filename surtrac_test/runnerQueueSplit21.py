@@ -168,7 +168,7 @@ surtracDict = dict()
 
 #Predict traffic entering network
 arrivals = dict()
-maxarrivalwindow = -300 #Use negative number to not predict new incoming cars during routing
+maxarrivalwindow = 300 #Use negative number to not predict new incoming cars during routing
 newcarcounter = 0
 
 totalSurtracTime = 0
@@ -1266,7 +1266,6 @@ def run(network, rerouters, pSmart, verbose = True):
             delayDict[vehicle] = -hmetadict[goaledge][currentRoutes[vehicle][0]] #I'll add the actual travel time once the vehicle arrives
             laneDict[vehicle] = traci.vehicle.getLaneID(vehicle)
             locDict[vehicle] = traci.vehicle.getRoadID(vehicle)
-            #currentRoutes[vehicle] = traci.vehicle.getRoute(vehicle) #Did this above already
 
             startDict[vehicle] = simtime
             leftDict[vehicle] = 0
@@ -3156,20 +3155,37 @@ def generate_additionalfile(sumoconfig, networkfile):
     
     return rerouters
 
-def sampleRouteFromTurnData(vehicle, startlane, turndata):
+def sampleRouteFromTurnData(vehicle, startlane, turndata): #TODO vehicle arg unnecessary
     lane = startlane
     route = [lane.split("_")[0]]
     while lane in turndata:
         r = random.random()
+
+        oops = True
         for nextlane in turndata[lane]:
             r -= turndata[lane][nextlane]
             if r <= 0:
                 if nextlane.split("_")[0] == lane.split("_")[0]:
                     print("Warning: Sampling is infinite looping, stopping early")
                     return route
+
+                #Check if lane connects to nextlane aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                for nextlinktuple in links[lane]:
+                    tempnextedge = nextlinktuple[0].split("_")[0]
+                    if nextlane.split("_")[0] == tempnextedge:
+                        oops = False
+                        break
+                if oops:
+                    print("sampleRouteFromTurnData found an invalid connection??? Trying again...")
+                    print(lane + " -> " + nextlane)
+                    break
+                # else:
+                #     print("Yay, did a thing!!!")
+                #     print(lane + " -> " + nextlane)
                 lane = nextlane
                 break
-        route.append(lane.split("_")[0])
+        if not oops:
+            route.append(lane.split("_")[0])
         #print(route)
     return route
 
@@ -3593,14 +3609,16 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
         timedata[vehicle][3] = currentRoutes[vehicle][0]
         timedata[vehicle][4] = currentRoutes[vehicle][-1]
                 
-        try:
-            pass
-            traci.vehicle.setRoute(vehicle, newroute)
-            currentRoutes[vehicle] = newroute
-        except traci.exceptions.TraCIException as e:
-            print("Couldn't update route, not sure what happened, ignoring")
-            print(e)
-        
+        if not newroute == None:
+            try:
+                pass
+                traci.vehicle.setRoute(vehicle, newroute)
+                currentRoutes[vehicle] = newroute
+            except traci.exceptions.TraCIException as e:
+                print("Couldn't update route, not sure what happened, ignoring")
+                print(e)
+        else:
+            print("newroute == None, likely a problem in routing")        
 
         
 
@@ -3899,7 +3917,8 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs):
                     break
 
             nextedge = nextlane.split("_")[0]
-            traci.route.add(nextlane, [nextedge])
+            if not nextlane in traci.route.getIDList():
+                traci.route.add(nextlane, [nextedge])
             if not replacedCar:
                 traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departSpeed=max(0, min(newspeed, network.getEdge(nextedge).getSpeed())))
                 #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departPos="5", departSpeed=min(newspeed, network.getEdge(nextedge).getSpeed()))
@@ -4017,7 +4036,8 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         if newghostcar == None:
             newghostcar = vehicle+"newghostcar"+nextlane #Hopefully this name isn't taken...
             newspeed = VOIs[startvehicle][1]
-            traci.route.add(nextlane, [nextlane.split("_")[0]]) #TODO will this error if I call it repeatedly?
+            if not nextlane in traci.route.getIDList():
+                traci.route.add(nextlane, [nextlane.split("_")[0]])
             traci.vehicle.add(newghostcar, nextlane, departLane=lanenum, departSpeed=newspeed)
             traci.vehicle.moveTo(newghostcar, nextlane, VOIs[startvehicle][2])
             #traci.vehicle.setSpeed(newghostcar, newspeed)
@@ -4061,6 +4081,32 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     print("things going wrong when removing vehicles")
                     print(id)
                     print(e)
+
+        #Add new cars
+        for nextlane in arrivals:
+            nextedge = nextlane.split("_")[0]
+            if len(arrivals[nextlane]) == 0:
+                #No recent arrivals, nothing to add
+                continue
+            timeperarrival = min(starttime, maxarrivalwindow)/len(arrivals[nextlane])
+            if timeperarrival <= timestep or simtime%timeperarrival >= (simtime+timestep)%timeperarrival:
+                #Add a car
+                newvehicle = nextlane+"predcar"+str(simtime)
+                #Need a temp route so we don't immediately error, though we'll overwrite the route immediately afterwards anyway
+                nextedge = nextlane.split("_")[0]
+                if not nextlane in traci.route.getIDList():
+                    traci.route.add(nextlane, [nextedge])
+                traci.vehicle.add(newvehicle, nextlane) #No fancy args here, should be fine
+                isSmart[newvehicle] = False
+
+                temproute = sampleRouteFromTurnData(newvehicle, nextlane, turndata)
+                try:
+                    traci.vehicle.setRoute(newvehicle, temproute)
+                except Exception as e:
+                    print("Failing to set initial route of predicted vehicle")
+                    print(temproute)
+                    print(newvehicle)
+                    raise(e)
 
         #Sanity check for all VOIs deleted. (NOTE: This assumes VOIs list works...)
         if len(VOIs) == 0 and max(ghostcardata.keys()) < simtime:

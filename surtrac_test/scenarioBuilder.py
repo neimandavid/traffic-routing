@@ -227,4 +227,4 @@ if __name__ == "__main__":
         trafficmultfactor = float(sys.argv[5])
 
     parseData(datafile, netfilename, routefilename, configfilename)
-    #runnerDefaultWriter.main(netfilename, configfilename) #Errors because second instance of SUMO. TODO: Fix this eventually
+    runnerDefaultWriter.main(netfilename, configfilename) #Errors because second instance of SUMO. TODO: Fix this eventually
