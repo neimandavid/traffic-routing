@@ -1714,7 +1714,7 @@ def run(network, rerouters, pSmart, verbose = True):
     if dumpIntersectionData:
         dumpIntersectionDataFun(intersectionData, network)
 
-    return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart]  
+    return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart, nteleports]  
 
 def dumpIntersectionDataFun(intersectionData, network):
     print("Writing intersection data to spreadsheet")
