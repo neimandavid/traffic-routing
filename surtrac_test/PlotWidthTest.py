@@ -39,7 +39,15 @@ except Exception as e:
 
 for p in data:
     print(p)
+    print("Delay")
     print(data[p]["All"])
+    #print(data[p]["All2"])
+    print("NTeleports")
+    print(data[p]["NTeleports"])
+
+# with open("newlastRNGstate.pickle", 'wb') as handle:
+#     pickle.dump(data[0.25]["RNGStates"][1], handle, protocol=pickle.HIGHEST_PROTOCOL)
+# asdf
 
 # #Split to groups of 5 runs in case of concatenation with old data:
 # #Blindly assume same amount of data in all runs (or less in last p)
@@ -68,9 +76,11 @@ for x in ["", "2", "3", "0"]:
         labels.append(w+x)
 
 for p in sorted(data.keys()): 
-    if len(data[p]) >= 13:
+    if len(data[p]) >= 13 and not "Runtime" in labels:
         labels.append("Runtime")
-        break
+    if len(data[p]) >= 14 and not "NTeleports" in labels:
+        labels.append("NTeleports")
+
 #labels = ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2"]
 plotdata = dict()
 for l in labels:
@@ -99,7 +109,7 @@ for v in ["", "2", "3", "0"]:
 
         #Error bars
         ax.errorbar(x, y, linestyle='None', markersize = 10.0, capsize = 3.0, yerr=np.array(sddata[w+v]))
-        ax.axis([0, 1, 130, 250]) #To standardize axes
+        #ax.axis([0, 1, 130, 155]) #To standardize axes
         
         maxwidth = (ax.get_ylim()[1] - ax.get_ylim()[0])/500.0 #0.1 #0.99#1.0#
 
@@ -151,7 +161,7 @@ for v in ["", "2", "3", "0"]:
 for w in ["Runtime", "NTeleports"]:
     if w in labels:
         fig, ax = plt.subplots()
-        w = "Runtime"
+        #w = "Runtime"
         v = ""
         #plt.plot(p, plotdata[w], label=w)
         x = np.array(p)
@@ -194,12 +204,14 @@ for w in ["Runtime", "NTeleports"]:
         ax.text(0.05, 1, s, transform = ax.transAxes, fontsize=8, verticalalignment='top', bbox=props)
 
         plt.xlabel("Adoption Probability")
-        plt.ylabel("Average Delay (s)")
+        plt.ylabel(w)
         plt.title(w)
         plt.legend()
         #plt.show() #NOTE: Blocks code execution until you close the plot
         plt.savefig("Plots/PW" + w + v + sys.argv[1].split(".")[0] +".png")
         plt.close()
+    else:
+        print("Couldn't find data " + w)
 
 for d in sorted(data.keys()):
     print(d)

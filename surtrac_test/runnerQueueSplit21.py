@@ -3114,7 +3114,6 @@ def get_options():
 def generate_additionalfile(sumoconfig, networkfile):
     #Create a third instance of a simulator so I can query the network
 
-    #Shouldn't possibly fail except apparently on Batwing probably???
     if useLibsumo:
         traci.start([checkBinary('sumo'), "-c", sumoconfig,
                                     "--start", "--no-step-log", "true",
@@ -3135,6 +3134,8 @@ def generate_additionalfile(sumoconfig, networkfile):
 
     with open("additional_autogen.xml", "w") as additional:
         print("""<additional>""", file=additional)
+        print('    <edgeData id="%s" file="%s" period="%i"/>' % (savename, "edgedata/"+savename+".xml", 1e6), file=additional)
+        print('    <laneData id="%s" file="%s" period="%i"/>' % (savename, "lanedata/"+savename+".xml", 1e6), file=additional)
         for edge in traci.edge.getIDList():
             if edge[0] == ":":
                 #Skip internal edges (=edges for the inside of each intersection)
@@ -3151,6 +3152,19 @@ def generate_additionalfile(sumoconfig, networkfile):
                     rerouters.append("IL_"+lane)
                     rerouterLanes["IL_"+lane] = lane
                     rerouterEdges["IL_"+lane] = edge
+        print("</additional>", file=additional)
+
+    with open("additionalrouting_autogen.xml", "w") as additional:
+        print("""<additional>""", file=additional)
+        for edge in traci.edge.getIDList():
+            if edge[0] == ":":
+                #Skip internal edges (=edges for the inside of each intersection)
+                continue
+
+            for lanenum in range(traci.edge.getLaneNumber(edge)):
+                lane = edge+"_"+str(lanenum)
+                print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
+                      % (lane, lane, detectordist), file=additional)
         print("</additional>", file=additional)
     
     return rerouters
@@ -3277,7 +3291,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             #Second simulator for running tests. No GUI
             #traci.start([sumoBinary, "-c", sumoconfig, #GUI in case we need to debug
             traci.start([checkBinary('sumo'), "-c", sumoconfig, #No GUI
-                                    "--additional-files", "additional_autogen.xml",
+                                    "--additional-files", "additionalrouting_autogen.xml",
                                     "--start", "--no-step-log", "true",
                                     "--xml-validation", "never", "--quit-on-end",
                                     "--step-length", "1"], label="test")
@@ -3293,7 +3307,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             if not useLibsumo:
                 traci.switch("test")
             traci.load([ "-c", sumoconfig,
-                                    "--additional-files", "additional_autogen.xml",
+                                    "--additional-files", "additionalrouting_autogen.xml",
                                     #"--time-to-teleport", "-1",
                                     "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
             dontBreakEverything()
@@ -3516,7 +3530,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
         print("Saving training data")
         with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'wb') as handle:
             pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    traci.close()
+    #traci.close()
 
     return [outdata, rngstate]
 

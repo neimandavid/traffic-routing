@@ -23,3 +23,5 @@ surtrac_test/lastRNGstate.pickle
 *.lprof
 *.pyc
 surtrac_test/intersectiondata/*
+/surtrac_test/edgedata
+/surtrac_test/lanedata

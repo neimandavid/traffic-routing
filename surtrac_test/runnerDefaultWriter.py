@@ -203,7 +203,8 @@ def run(netfile, rerouters, sumoconfig):
                 locDict.pop(id)
                 #Store the turn onto the exit road in lanetransitiondata
                 assert(prevLaneDict[id] in lanetransitiondata) #Should always be true because psuedocount stuff
-                lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
+                if not id in traci.simulation.getEndingTeleportIDList():
+                    lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
 
                 laneDict.pop(id)
                 prevLaneDict.pop(id)
@@ -227,10 +228,11 @@ def run(netfile, rerouters, sumoconfig):
                     locDict[id] = traci.vehicle.getRoadID(id)
 
                     #Track lane-by-lane turn data
-                    if prevLaneDict[id] in lanetransitiondata:
-                        lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
-                    else:
-                        lanetransitiondata[prevLaneDict[id]] = [laneDict[id]]
+                    if not id in traci.simulation.getEndingTeleportIDList():
+                        if prevLaneDict[id] in lanetransitiondata:
+                            lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
+                        else:
+                            lanetransitiondata[prevLaneDict[id]] = [laneDict[id]]
                     prevLaneDict[id] = laneDict[id]
                     
                     if not road in roadcarcounter:
