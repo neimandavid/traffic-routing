@@ -3537,6 +3537,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 #Tell all the detectors to reroute the cars they've seen
 #@profile
 def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[]):
+    global delay3adjdict
     #Clear any stored Surtrac stuff
     global surtracDict
     surtracDict = dict()
@@ -3559,6 +3560,10 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
             if detector in oldids and vehicle in oldids[detector]:
                 #print("Duplicate car " + vehicle + " at detector " + detector)
                 continue
+
+            #For delay3, get time at first routing decision point
+            if vehicle not in delay3adjdict:
+                delay3adjdict[vehicle] = simtime
 
             #Decide whether we route this vehicle
             if not vehicle in isSmart:
