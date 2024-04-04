@@ -3134,8 +3134,9 @@ def generate_additionalfile(sumoconfig, networkfile):
 
     with open("additional_autogen.xml", "w") as additional:
         print("""<additional>""", file=additional)
-        print('    <edgeData id="%s" file="%s" period="%i"/>' % (savename, "edgedata/"+savename+".xml", 1e6), file=additional)
-        print('    <laneData id="%s" file="%s" period="%i"/>' % (savename, "lanedata/"+savename+".xml", 1e6), file=additional)
+        if not useLibsumo:
+            print('    <edgeData id="%s" file="%s" period="%i"/>' % (savename, "edgedata/"+savename+".xml", 1e6), file=additional)
+            print('    <laneData id="%s" file="%s" period="%i"/>' % (savename, "lanedata/"+savename+".xml", 1e6), file=additional)
         for edge in traci.edge.getIDList():
             if edge[0] == ":":
                 #Skip internal edges (=edges for the inside of each intersection)
