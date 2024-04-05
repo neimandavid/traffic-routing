@@ -1,6 +1,4 @@
 <additional>
-    <edgeData id="MAIN_1712200132.814945" file="edgedata/MAIN_1712200132.814945.xml" period="1000000"/>
-    <laneData id="MAIN_1712200132.814945" file="lanedata/MAIN_1712200132.814945.xml" period="1000000"/>
     <inductionLoop id="IL_Fifth-Grant-Ross_0" freq="1" file="outputAuto.xml" lane="Fifth-Grant-Ross_0" pos="-50" friendlyPos="true" />
     <inductionLoop id="IL_Fifth-Grant-Ross_1" freq="1" file="outputAuto.xml" lane="Fifth-Grant-Ross_1" pos="-50" friendlyPos="true" />
     <inductionLoop id="IL_Fifth-Grant-Ross-2_0" freq="1" file="outputAuto.xml" lane="Fifth-Grant-Ross-2_0" pos="-50" friendlyPos="true" />
