@@ -43,7 +43,8 @@ for p in data:
     print(data[p]["All"])
     #print(data[p]["All2"])
     print("NTeleports")
-    print(data[p]["NTeleports"])
+    if "NTeleports" in data[p]:
+        print(data[p]["NTeleports"])
 
 # with open("newlastRNGstate.pickle", 'wb') as handle:
 #     pickle.dump(data[0.25]["RNGStates"][1], handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -76,9 +77,9 @@ for x in ["", "2", "3", "0"]:
         labels.append(w+x)
 
 for p in sorted(data.keys()): 
-    if len(data[p]) >= 13 and not "Runtime" in labels:
+    if len(data[p]) >= 14 and not "Runtime" in labels:
         labels.append("Runtime")
-    if len(data[p]) >= 14 and not "NTeleports" in labels:
+    if len(data[p]) >= 15 and not "NTeleports" in labels:
         labels.append("NTeleports")
 
 #labels = ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2"]
@@ -109,7 +110,7 @@ for v in ["", "2", "3", "0"]:
 
         #Error bars
         ax.errorbar(x, y, linestyle='None', markersize = 10.0, capsize = 3.0, yerr=np.array(sddata[w+v]))
-        #ax.axis([0, 1, 130, 155]) #To standardize axes
+        ax.axis([0, 1, 130, 175]) #To standardize axes
         
         maxwidth = (ax.get_ylim()[1] - ax.get_ylim()[0])/500.0 #0.1 #0.99#1.0#
 
