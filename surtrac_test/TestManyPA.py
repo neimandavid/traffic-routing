@@ -14,7 +14,7 @@ from importlib import reload
 nIters = 1
 
 
-for p in [0.01]*1000:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
+for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
     reload(runnerQueueSplit12)
     print(p)
 
@@ -53,10 +53,6 @@ for p in [0.01]*1000:#[0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
         data[p]["RNGStates"].append(newrngstate)
         with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
             pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-        #Try to generate bad stuff
-        if data[p]["All"][-1] > 250:
-            asdf
 
         # #Dump stats
         # for d in data:
