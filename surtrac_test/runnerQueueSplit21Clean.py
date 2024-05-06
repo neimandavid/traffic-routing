@@ -1764,6 +1764,61 @@ def dumpIntersectionDataFun(intersectionData, network):
         for dtheta in thetabooks:
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
+#@profile
+def loadClusters(net, simtime, VOI=None):
+    global totalLoadCars
+    global nVehicles
+    #Load locations of cars and current traffic light states into custom data structures
+    #If given, VOI is the vehicle triggering the routing call that triggered this, and needs to be unaffected when we add noise
+    #TODO: We're caching the loaded clusters, which means we'll need to be better about not adding noise to any vehicles that could potentially be routed
+    clusters = dict()
+    nVehicles.append(0)
+
+    #Cluster data structures
+    for edge in edges:
+        if edge[0] == ":":
+            #Skip internal edges (=edges for the inside of each intersection)
+            continue
+        for lanenum in range(lanenums[edge]):
+            lane = edge + "_" + str(lanenum)
+            clusters[lane] = []
+            temp = traci.lane.getLastStepVehicleIDs(lane)
+            totalLoadCars += len(temp)
+            nVehicles[-1] += len(temp)
+            for vehicle in reversed(temp): #Reversed so we go from end of edge to start of edge - first clusters to leave are listed first
+                #Process vehicle into cluster somehow
+                #If nearby cluster, add to cluster in sorted order (could probably process in sorted order)
+                lanepos = traci.vehicle.getLanePosition(vehicle)
+                if len(clusters[lane]) > 0 and abs(clusters[lane][-1]["time"] - simtime) < clusterthresh and abs(clusters[lane][-1]["endpos"] - lanepos)/speeds[edge] < clusterthresh:
+                    #Add to cluster. pos and time track newest added vehicle to see if the next vehicle merges
+                    #Departure time (=time to fully clear cluster) increases, arrival doesn't
+                    clusters[lane][-1]["endpos"] = lanepos
+                    clusters[lane][-1]["time"] = simtime
+                    clusters[lane][-1]["departure"] = simtime + (lengths[lane]-clusters[lane][-1]["endpos"])/speeds[edge]
+                    clusters[lane][-1]["cars"].append((vehicle, clusters[lane][-1]["departure"], 1, "Load append"))
+                    clusters[lane][-1]["weight"] = len(clusters[lane][-1]["cars"])
+                else:
+                    #Else make a new cluster
+                    newcluster = dict()
+                    newcluster["startpos"] = lanepos
+                    newcluster["endpos"] = lanepos
+                    newcluster["time"] = simtime
+                    newcluster["arrival"] = simtime + (lengths[edge+"_0"]-newcluster["endpos"])/speeds[edge]
+                    newcluster["departure"] = newcluster["arrival"]
+                    newcluster["cars"] = [(vehicle, newcluster["departure"], 1, "Load new")]
+                    newcluster["weight"] = len(newcluster["cars"])
+                    clusters[lane].append(newcluster)
+                assert(clusters[lane][-1]["departure"] > simtime - 1e-10)
+    
+    #Traffic light info
+    lightphases = dict()
+    for light in lights:
+        lightphases[light] = traci.trafficlight.getPhase(light)
+
+    #Add noise
+    #clusters = addNoise(clusters, VOI, 0.9, 2) #To simulate detector stuff
+    return (clusters, lightphases)
+
 # def addNoise(clusters, VOI, detectprob, timeerr):
 #     #Randomly delete cars with probability noiseprob
 #     #Randomly clone non-deleted cars to make up for it
