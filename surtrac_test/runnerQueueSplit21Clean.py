@@ -2292,6 +2292,39 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
     #traci.close()
 
+    p = pSmart
+    newdata = outdata
+    try:
+        with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
+                data = pickle.load(handle)
+        except:
+            #If no data found, start fresh
+            data = dict()
+        if not p in data:
+            data[p] = dict()
+        for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "Runtime", "NTeleports", "RNGStates"]:
+            if not l in data[p]:
+                data[p][l] = []
+
+        data[p]["All"].append(newdata[0])
+        data[p]["Adopters"].append(newdata[1])
+        data[p]["Non-Adopters"].append(newdata[2])
+        data[p]["All2"].append(newdata[3])
+        data[p]["Adopters2"].append(newdata[4])
+        data[p]["Non-Adopters2"].append(newdata[5])
+        data[p]["All3"].append(newdata[6])
+        data[p]["Adopters3"].append(newdata[7])
+        data[p]["Non-Adopters3"].append(newdata[8])
+        data[p]["All0"].append(newdata[9])
+        data[p]["Adopters0"].append(newdata[10])
+        data[p]["Non-Adopters0"].append(newdata[11])
+        data[p]["Runtime"].append(newdata[12])
+        data[p]["NTeleports"].append(newdata[13])
+        
+        data[p]["RNGStates"].append(newrngstate)
+        with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
+            pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
     return [outdata, rngstate]
 
 #Tell all the detectors to reroute the cars they've seen
