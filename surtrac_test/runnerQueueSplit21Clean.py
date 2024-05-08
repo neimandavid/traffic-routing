@@ -2321,7 +2321,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     data[p]["Runtime"].append(newdata[12])
     data[p]["NTeleports"].append(newdata[13])
     
-    data[p]["RNGStates"].append(newrngstate)
+    data[p]["RNGStates"].append(rngstate)
     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
         pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
