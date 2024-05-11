@@ -128,7 +128,6 @@ def parseData(datafilepath, netfilename, routefilename, configfilename):
         print("""</routes>""", file=routefile)
 
     runnerDefaultWriter.writeSumoCfg(configfilename, netfilename, routefilename)
-
     postoptcarcounter = runnerDefaultWriter.main(netfilename, configfilename)
     reload(runnerDefaultWriter)
 
@@ -227,4 +226,4 @@ if __name__ == "__main__":
         trafficmultfactor = float(sys.argv[5])
 
     parseData(datafile, netfilename, routefilename, configfilename)
-    runnerDefaultWriter.main(netfilename, configfilename) #Errors because second instance of SUMO. TODO: Fix this eventually
+    runnerDefaultWriter.main(netfilename, configfilename)

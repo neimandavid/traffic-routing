@@ -1,5 +1,5 @@
 #import os
-#import sys
+import sys
 
 import runnerQueueSplit21 as runnerQueueSplit12 #Change this line if using a newer code version
 
@@ -19,37 +19,37 @@ for p in [0.99]:
         print(i)
         [newdata, newrngstate] = runnerQueueSplit12.main(sys.argv[1], p, False, False, False)
 
-        # try:
-        #     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
-        #         data = pickle.load(handle)
-        # except:
-        #     #If no data found, start fresh
-        #     data = dict()
-        # #print(data[0.01]["All"])
-        # if not p in data:
-        #     data[p] = dict()
-        # for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "Runtime", "NTeleports", "RNGStates"]:
-        #     if not l in data[p]:
-        #         data[p][l] = []
+            # try:
+            #     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
+            #         data = pickle.load(handle)
+            # except:
+            #     #If no data found, start fresh
+            #     data = dict()
+            # #print(data[0.01]["All"])
+            # if not p in data:
+            #     data[p] = dict()
+            # for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "Runtime", "NTeleports", "RNGStates"]:
+            #     if not l in data[p]:
+            #         data[p][l] = []
 
-        # data[p]["All"].append(newdata[0])
-        # data[p]["Adopters"].append(newdata[1])
-        # data[p]["Non-Adopters"].append(newdata[2])
-        # data[p]["All2"].append(newdata[3])
-        # data[p]["Adopters2"].append(newdata[4])
-        # data[p]["Non-Adopters2"].append(newdata[5])
-        # data[p]["All3"].append(newdata[6])
-        # data[p]["Adopters3"].append(newdata[7])
-        # data[p]["Non-Adopters3"].append(newdata[8])
-        # data[p]["All0"].append(newdata[9])
-        # data[p]["Adopters0"].append(newdata[10])
-        # data[p]["Non-Adopters0"].append(newdata[11])
-        # data[p]["Runtime"].append(newdata[12])
-        # data[p]["NTeleports"].append(newdata[13])
-        
-        # data[p]["RNGStates"].append(newrngstate)
-        # with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
-        #     pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            # data[p]["All"].append(newdata[0])
+            # data[p]["Adopters"].append(newdata[1])
+            # data[p]["Non-Adopters"].append(newdata[2])
+            # data[p]["All2"].append(newdata[3])
+            # data[p]["Adopters2"].append(newdata[4])
+            # data[p]["Non-Adopters2"].append(newdata[5])
+            # data[p]["All3"].append(newdata[6])
+            # data[p]["Adopters3"].append(newdata[7])
+            # data[p]["Non-Adopters3"].append(newdata[8])
+            # data[p]["All0"].append(newdata[9])
+            # data[p]["Adopters0"].append(newdata[10])
+            # data[p]["Non-Adopters0"].append(newdata[11])
+            # data[p]["Runtime"].append(newdata[12])
+            # data[p]["NTeleports"].append(newdata[13])
+            
+            # data[p]["RNGStates"].append(newrngstate)
+            # with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
+            #     pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         # # #Dump stats
         # # for d in data:

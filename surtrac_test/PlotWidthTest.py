@@ -99,7 +99,10 @@ for p in sorted(data.keys()):
                 sddata[w].append(0)
 
 p = sorted(data.keys())
-print(plotdata)
+#print(plotdata)
+# print(data[0.25]["All0"])
+# print(data[0.25]["Runtime"])
+
 
 for v in ["", "2", "3", "0"]:
     fig, ax = plt.subplots()
@@ -110,7 +113,7 @@ for v in ["", "2", "3", "0"]:
 
         #Error bars
         ax.errorbar(x, y, linestyle='None', markersize = 10.0, capsize = 3.0, yerr=np.array(sddata[w+v]))
-        ax.axis([0, 1, 130, 175]) #To standardize axes
+        #ax.axis([0, 1, 130, 175]) #To standardize axes
         
         maxwidth = (ax.get_ylim()[1] - ax.get_ylim()[0])/500.0 #0.1 #0.99#1.0#
 
