@@ -25,3 +25,4 @@ surtrac_test/lastRNGstate.pickle
 surtrac_test/intersectiondata/*
 /surtrac_test/edgedata
 /surtrac_test/lanedata
+surtrac_test/outputAuto.xml

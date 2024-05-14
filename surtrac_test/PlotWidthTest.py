@@ -99,9 +99,6 @@ for p in sorted(data.keys()):
                 sddata[w].append(0)
 
 p = sorted(data.keys())
-#print(plotdata)
-# print(data[0.25]["All0"])
-# print(data[0.25]["Runtime"])
 
 
 for v in ["", "2", "3", "0"]:
