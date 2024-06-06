@@ -26,3 +26,8 @@ surtrac_test/intersectiondata/*
 /surtrac_test/edgedata
 /surtrac_test/lanedata
 surtrac_test/outputAuto.xml
+surtrac_test/additionalrouting_autogen.xml
+surtrac_test/lastRNGstate.pickle
+surtrac_test/LOGFILE
+surtrac_test/outputAuto.xml
+surtrac_test/Plots/.DS_Store

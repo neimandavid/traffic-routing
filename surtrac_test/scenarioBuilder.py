@@ -42,6 +42,8 @@ import runnerDefaultWriter
 preoptcarcounter = dict()
 postoptcarcounter = dict()
 
+smoothDemand = False
+
 trafficmultfactor = 1
 
 #Assume we have a network, edge-to-edge turn data, and #vehicles/hr on input roads (pass these in)
@@ -107,13 +109,13 @@ def parseData(datafilepath, netfilename, routefilename, configfilename):
             nToGenerate = int(nout[edge]*trafficmultfactor)
             print("Generating " + str(nToGenerate) + " cars on edge " + edge)
             for carindex in range(nToGenerate):
-                cars.append(makeCar(edge, carindex, edgeturnratios, nin, nout))
+                cars.append(makeCar(edge, carindex, edgeturnratios, nin, nout, nToGenerate))
         else:
             nToGenerate = int((nout[edge]-nin[edge])*trafficmultfactor)
             if nToGenerate > 0:
                 print("Warning: " + str(nToGenerate) + " cars appear on edge " + edge + ". Double-check data to make sure that's intended.")
                 for carindex in range(nToGenerate):
-                    cars.append(makeCar(edge, carindex, edgeturnratios, nin, nout))
+                    cars.append(makeCar(edge, carindex, edgeturnratios, nin, nout, nToGenerate))
     
     cars.sort(key = lambda y: y[1])
 
@@ -179,8 +181,11 @@ def parseData(datafilepath, netfilename, routefilename, configfilename):
 
 #Also does a blind copy routes rather than just O-D pairs so we match the input data better
 #I'm still not sure I like this - it'll make routing look better just by throwing out trivial inefficiencies like going in circles
-def makeCar(edge, carindex, edgeturnratios, nin, nout):
-    starttime = np.floor(random.random()*3600)
+def makeCar(edge, carindex, edgeturnratios, nin, nout, nToGenerate):
+    if smoothDemand:
+        starttime = np.floor(carindex/nToGenerate*3600)
+    else:
+        starttime = np.floor(random.random()*3600)
     startedge = edge
     prevedge = startedge
     route = [startedge]
@@ -225,5 +230,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 5:
         trafficmultfactor = float(sys.argv[5])
 
+    print("smoothDemand=" + str(smoothDemand))
     parseData(datafile, netfilename, routefilename, configfilename)
     runnerDefaultWriter.main(netfilename, configfilename)
