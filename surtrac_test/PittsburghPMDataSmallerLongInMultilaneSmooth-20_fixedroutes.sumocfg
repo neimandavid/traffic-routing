@@ -2,6 +2,6 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 <input>
 <net-file value="pittsburghsmaller2lmultilanetwoway.net.xml"/>
-<route-files value="PittsburghPMDataSmallerLongInSmooth-20_auto.rou.xml"/>
+<route-files value="PittsburghPMDataSmallerLongInMultiLaneSmooth-20_fixedroutes.rou.xml"/>
 </input>
 </configuration>
