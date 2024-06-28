@@ -103,7 +103,7 @@ predDiscount = 1 #Multiply predicted vehicle weights by this because we're not a
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
-testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
+testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
 appendTrainingData = False
 
@@ -230,7 +230,7 @@ nLossesBeforeReset = 1000
 ndumbtrac = 0
 ndumbtracerr = 0
 
-loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 50]))
+#loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 50]))
 
 #Non-NN stuff
 def mergePredictions(clusters, predClusters):
@@ -275,11 +275,14 @@ def dumbtracFTP(simtime, light, clusters, lightphases, lastswitchtimes):
     phase = lightphases[light]
     lastSwitch = lastswitchtimes[light]
 
-    #For FTP
-    if "Y" in lightphasedata[light][phase].state or "y" in lightphasedata[light][phase].state:
-        return surtracdata[light][phase]["minDur"] - (simtime-lastSwitch)
-    else:
-        return 30 - (simtime-lastSwitch)
+    #assert(traci.trafficlight.getNextSwitch(light) - simtime == lightphasedata[light][phase].duration - (simtime-lastSwitch)) #Falso occasionally. Probably has to do with phase switches, but haven't checked in detail.
+    return lightphasedata[light][phase].duration - (simtime-lastSwitch)
+
+    # #For FTP
+    # if "Y" in lightphasedata[light][phase].state or "y" in lightphasedata[light][phase].state:
+    #     return surtracdata[light][phase]["minDur"] - (simtime-lastSwitch)
+    # else:
+    #     return 30 - (simtime-lastSwitch)
 
     
 
@@ -473,7 +476,9 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
         if (testNN and (inRoutingSim or not noNNinMain)):
             if testDumbtrac:
-                nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
+                nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+
+                # nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
             else:
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
             
@@ -916,7 +921,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         if testDumbtrac:
             outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
             target = torch.tensor([[outputDumbtrac-0.25]])#.unsqueeze(1) # Target from expert
-            nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
+            #nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
+            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
             target = torch.tensor([[bestschedule[7][0]-0.25]])#.unsqueeze(1) # - (simtime - lastswitchtimes[light])]) # Target from expert
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
@@ -1013,7 +1019,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
         bestschedule = bestschedules[light]
         if not bestschedule[0] == []: #Check for the case of Surtrac seeing no vehicles (which would default to default fixed timing plans)
             spentDuration = simtime - lastswitchtimes[light]
-            remainingDuration[light] = pickle.loads(pickle.dumps(bestschedule[7])) #TODO test whether this fixes the empty Surtrac schedules I'm getting. Seriously, that worked? WHY?! Also some (all?) lights are now 0 length, oops
+            remainingDuration[light] = pickle.loads(pickle.dumps(bestschedule[7]))
 
             if len(remainingDuration[light]) == 0:
                 print('pretest - empty remainingDuration')
@@ -1022,9 +1028,11 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
                 #     remainingDuration[light][0] = 0.01
                 if remainingDuration[light][0] >= 0 and (not inRoutingSim or routingSimUsesSUMO):
                     #Update duration
-                    traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #setPhaseDuration sets the remaining duration in the phase
+
+                    if not(testDumbtrac and FTP):
+                        traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #setPhaseDuration sets the remaining duration in the phase
                 
-                if remainingDuration[light][0] <= 0: #Light needs to change
+                if remainingDuration[light][0] < 0: #Light needs to change
                     pass
                     #Light needs to change
                     toSwitch.append(light)
@@ -2353,8 +2361,10 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 
         if testNNdefault:
             if testDumbtrac:
-                agents[light] = Net(26, 1, 32)
-                #agents[light] = Net(2, 1, 32)
+                # agents[light] = Net(26, 1, 32)
+                # #agents[light] = Net(2, 1, 32)
+                # if FTP:
+                agents[light] = Net(182, 1, 64)
             else:
                 agents[light] = Net(182, 1, 64)
             optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)

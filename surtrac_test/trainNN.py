@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+#Code is old, probably shouldn't be used
+assert(False)
+
 import os
 import sys
 import optparse

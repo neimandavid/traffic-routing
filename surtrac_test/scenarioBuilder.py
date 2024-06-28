@@ -42,7 +42,7 @@ import runnerDefaultWriter
 preoptcarcounter = dict()
 postoptcarcounter = dict()
 
-smoothDemand = False
+smoothDemand = True
 
 trafficmultfactor = 1
 

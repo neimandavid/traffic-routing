@@ -18,7 +18,7 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
 #import runnerQueueSplit18NN
-import runnerQueueSplit19SUMOEverywhereGC as runnerQueueSplit18NN
+import runnerQueueSplit23 as runnerQueueSplit18NN #KEEP THIS UP TO DATE!!!
 from importlib import reload
 from Net import Net
 
@@ -32,7 +32,7 @@ resetTrainingData2 = reset
 #Remember to set appendTrainingData = True, resetTrainingData = False in runnerQueueSplitWhatever
 #Also set testDumbtrac (there), testSurtrac (below) and FTP (there) appropriately, and surtracFreq = 1ish
 
-testSurtrac = True
+testSurtrac = True #Currently testing whether Surtrac architecture works on FTP
 
 nEpochs = 10
 nDaggers = 100
@@ -240,6 +240,7 @@ def dumpTrainingData(trainingdata):
             row = 2
             for batch in trainingdata[light]:
                 if time.time() - starttime > timeout:
+                    print("Timed out while writing data to Excel")
                     assert(False) #This should trigger the try-catch and get us out of here
                 for linenum in range(batch[0].size(0)):
                     col = 1

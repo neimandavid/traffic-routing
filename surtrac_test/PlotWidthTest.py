@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 nIters = 1
+filterNonzeroTeleports = False
 
 try:
     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
@@ -37,13 +38,23 @@ except Exception as e:
     raise(e)
 #print(data)
 
+if filterNonzeroTeleports:
+    for p in data:
+        i = 0
+        while i < len(data[p]["NTeleports"]):
+            if data[p]["NTeleports"][i] > 0:
+                for label in data[p]:
+                    data[p][label].pop(i)
+            else:
+                i+=1
+
 for p in data:
     print(p)
     print("Delay")
     print(data[p]["All"])
     #print(data[p]["All2"])
-    print("NTeleports")
     if "NTeleports" in data[p]:
+        print("NTeleports")
         print(data[p]["NTeleports"])
 
 # with open("newlastRNGstate.pickle", 'wb') as handle:
