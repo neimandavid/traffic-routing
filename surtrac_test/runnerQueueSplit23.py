@@ -176,7 +176,7 @@ surtracDict = dict()
 arrivals = dict()
 maxarrivalwindow = 300 #Use negative number to not predict new incoming cars during routing
 arrivals2 = dict()
-maxarrivalwindow2 = 60
+maxarrivalwindow2 = 300
 newcarcounter = 0
 
 totalSurtracTime = 0
