@@ -7,10 +7,10 @@ surtrac_test/trainingdata/*
 surtrac_test/imitate.log
 surtrac_test/lastRNGstate.pickle
 surtrac_test/outputAuto.xml
-surtrac_test/models/*
 surtrac_test/trainingdata/*
 surtrac_test/imitate.log
 surtrac_test/savestates/*
+surtrac_test/models/Archive*
 shortlong2_16782/additional_autogen.xml
 shortlong2_16782/LOGFILE
 shortlong2_16782/outputAuto.xml
@@ -27,6 +27,12 @@ surtrac_test/intersectiondata/*
 /surtrac_test/lanedata
 surtrac_test/outputAuto.xml
 surtrac_test/additionalrouting_autogen.xml
+surtrac_test/lastRNGstate.pickle
+surtrac_test/LOGFILE
+surtrac_test/outputAuto.xml
+surtrac_test/Plots/.DS_Store
+surtrac_test/delaydata/.DS_Store
+surtrac_test/imitate.log
 surtrac_test/lastRNGstate.pickle
 surtrac_test/LOGFILE
 surtrac_test/outputAuto.xml

@@ -56,6 +56,9 @@ for p in data:
     if "NTeleports" in data[p]:
         print("NTeleports")
         print(data[p]["NTeleports"])
+    if "TeleportData" in data[p]:
+        print("TeleportData")
+        print(data[p]["TeleportData"])
 
 # with open("newlastRNGstate.pickle", 'wb') as handle:
 #     pickle.dump(data[0.25]["RNGStates"][1], handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -121,7 +124,7 @@ for v in ["", "2", "3", "0"]:
 
         #Error bars
         ax.errorbar(x, y, linestyle='None', markersize = 10.0, capsize = 3.0, yerr=np.array(sddata[w+v]))
-        #ax.axis([0, 1, 130, 175]) #To standardize axes
+        #ax.axis([0, 1, 150, 330]) #To standardize axes
         
         maxwidth = (ax.get_ylim()[1] - ax.get_ylim()[0])/500.0 #0.1 #0.99#1.0#
 

@@ -31,7 +31,7 @@ for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
         #print(data[0.01]["All"])
         if not p in data:
             data[p] = dict()
-        for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "Runtime", "NTeleports", "RNGStates"]:
+        for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "Runtime", "NTeleports", "TeleportData", "RNGStates"]:
             if not l in data[p]:
                 data[p][l] = []
 
@@ -49,6 +49,7 @@ for p in [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]*5:
         data[p]["Non-Adopters0"].append(newdata[11])
         data[p]["Runtime"].append(newdata[12])
         data[p]["NTeleports"].append(newdata[13])
+        data[p]["TeleportData"].append(newdata[14])
         
         data[p]["RNGStates"].append(newrngstate)
         with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:

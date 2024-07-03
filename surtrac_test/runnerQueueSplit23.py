@@ -103,7 +103,7 @@ predDiscount = 1 #Multiply predicted vehicle weights by this because we're not a
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
-testDumbtrac = True #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
+testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
 appendTrainingData = False
 
@@ -176,7 +176,7 @@ surtracDict = dict()
 arrivals = dict()
 maxarrivalwindow = 300 #Use negative number to not predict new incoming cars during routing
 arrivals2 = dict()
-maxarrivalwindow2 = 300#60
+maxarrivalwindow2 = 60
 newcarcounter = 0
 
 totalSurtracTime = 0
@@ -229,6 +229,8 @@ nLossesBeforeReset = 1000
 
 ndumbtrac = 0
 ndumbtracerr = 0
+
+teleportdata = []
 
 #loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 50]))
 
@@ -1233,6 +1235,7 @@ def run(network, rerouters, pSmart, verbose = True):
     global locDict
     global laneDict
     global clustersCache
+    global teleportdata
     #netfile is the filepath to the network file, so we can call sumolib to get successors
     #rerouters is the list of induction loops on edges with multiple successor edges
     
@@ -1440,6 +1443,13 @@ def run(network, rerouters, pSmart, verbose = True):
         for car in traci.simulation.getStartingTeleportIDList():
             routeStats[car]["nTeleports"] += 1
             print("Warning: Car " + car + " teleported, time=" + str(simtime))
+            if car in laneDict:
+                teleportdata.append((car, simtime, laneDict[car]))
+            else:
+                try:
+                    teleportdata.append((car, simtime, traci.vehicle.getLaneID(car)+"_TraCIlookup"))
+                except:
+                    teleportdata.append((car, simtime, "TraCI lookup failed, not sure what happened"))
 
         #Moving this to the bottom so we've already updated the vehicle locations (when we checked left turns)
         oldRemainingDuration = pickle.loads(pickle.dumps(remainingDuration))
@@ -1754,7 +1764,7 @@ def run(network, rerouters, pSmart, verbose = True):
     if dumpIntersectionData:
         dumpIntersectionDataFun(intersectionData, network)
 
-    return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart, nteleports]  
+    return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart, nteleports, teleportdata]  
 
 def dumpIntersectionDataFun(intersectionData, network):
     print("Writing intersection data to spreadsheet")
@@ -2141,11 +2151,13 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     if useLibsumo:
         traci.load(["-c", sumoconfig,
                                 "--additional-files", "additional_autogen.xml",
+                                "--no-step-log", "true",
                                 "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
     else:
         try:
             traci.start([sumoBinary, "-c", sumoconfig,
                                     "--additional-files", "additional_autogen.xml",
+                                    "--no-step-log", "true",
                                     "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
             #Second simulator for running tests. No GUI
             #traci.start([sumoBinary, "-c", sumoconfig, #GUI in case we need to debug
@@ -2161,12 +2173,14 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
                 traci.switch("main")
             traci.load([ "-c", sumoconfig,
                                     "--additional-files", "additional_autogen.xml",
+                                    "--no-step-log", "true",
                                     #"--time-to-teleport", "-1",
                                     "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
             if not useLibsumo:
                 traci.switch("test")
             traci.load([ "-c", sumoconfig,
                                     "--additional-files", "additionalrouting_autogen.xml",
+                                    "--no-step-log", "true",
                                     #"--time-to-teleport", "-1",
                                     "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
             dontBreakEverything()
@@ -2403,7 +2417,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
         data = dict()
     if not p in data:
         data[p] = dict()
-    for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "Runtime", "NTeleports", "RNGStates"]:
+    for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "Runtime", "NTeleports", "TeleportData", "RNGStates"]:
         if not l in data[p]:
             data[p][l] = []
 
@@ -2421,6 +2435,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     data[p]["Non-Adopters0"].append(newdata[11])
     data[p]["Runtime"].append(newdata[12])
     data[p]["NTeleports"].append(newdata[13])
+    data[p]["TeleportData"].append(newdata[14])
     
     data[p]["RNGStates"].append(rngstate)
     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
