@@ -174,9 +174,9 @@ surtracDict = dict()
 
 #Predict traffic entering network
 arrivals = dict()
-maxarrivalwindow = 300 #Use negative number to not predict new incoming cars during routing
+maxarrivalwindow = -300 #Use negative number to not predict new incoming cars during routing
 arrivals2 = dict()
-maxarrivalwindow2 = 300
+maxarrivalwindow2 = -300
 newcarcounter = 0
 
 totalSurtracTime = 0
@@ -475,20 +475,19 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             bestschedules[light] = [None, None, None, None, None, None, None, temp]
             return
 
-    if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
-        if (testNN and (inRoutingSim or not noNNinMain)):
-            if testDumbtrac:
+    if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac: #If using NN and/or dumbtrac
+        if (testNN and (inRoutingSim or not noNNinMain)): #If using NN
+            if testDumbtrac: #And also dumbtrac
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
-                # nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
-            else:
+                # nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #Obsolete - Surtrac architecture works for dumbtrac too!
+            else: #NN but not dumbtrac
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
             
             surtracStartTime = time.time()
             totalSurtracRuns += 1
         
             outputNN = agents[light](nnin) # Output from NN
-            #outputNN = 2 #NEXT TODO change this back once we know it's not helping (turns out it does)
 
             if debugMode:
                 totalSurtracTime += time.time() - surtracStartTime
@@ -498,12 +497,12 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             else:
                 actionNN = 0 #Stick
 
-        if testDumbtrac and not (testNN and (inRoutingSim or not noNNinMain)):
+        if testDumbtrac and not (testNN and (inRoutingSim or not noNNinMain)): #Dumbtrac but not NN
             outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-            if outputDumbtrac <= 0:
-                actionDumbtrac = 1
+            if outputDumbtrac <= 0: #Stick for <= 0 seconds
+                actionDumbtrac = 1 #Switch
             else:
-                actionDumbtrac = 0
+                actionDumbtrac = 0 #Stick
             actionNN = actionDumbtrac
 
         if actionNN == 0:
@@ -514,7 +513,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         assert(len(testnnschedule[7]) > 0)
         #return #Don't return early, might still need to append training data
 
-    if (not (testNN and (inRoutingSim or not noNNinMain)) and not testDumbtrac) or (appendTrainingData and not testDumbtrac):
+    if (not (testNN and (inRoutingSim or not noNNinMain)) and not testDumbtrac) or (appendTrainingData and not testDumbtrac): #(No NN or append training data) and no dumbtrac - get the actual Surtrac result
         #print("Running surtrac, double-check that this is intended.")
         #We're actually running Surtrac
 
@@ -579,9 +578,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             for schedule in schedules:
                 for laneindex in range(lenlightlaneslight):
                     lane = lightlanes[light][laneindex]
-    #            laneindex = -1
-    #            for lane in lightlanes[light]:
-    #                laneindex += 1
+    
                     if schedule[1][lane] == fullStatus[lane]:
                         continue
                     #Consider adding next cluster from surtracdata[light][i]["lanes"][j] to schedule
@@ -922,28 +919,22 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     if appendTrainingData:
         if testDumbtrac:
             outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-            target = torch.tensor([[outputDumbtrac-0.25]])#.unsqueeze(1) # Target from expert
-            #nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes)
+            target = torch.tensor([[outputDumbtrac-0.25]]) # Target from expert
+            #nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #Obsolete - use Surtrac architecture anyway
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
-            target = torch.tensor([[bestschedule[7][0]-0.25]])#.unsqueeze(1) # - (simtime - lastswitchtimes[light])]) # Target from expert
+            target = torch.tensor([[bestschedule[7][0]-0.25]]) # Target from expert
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
-        if (testNN and (inRoutingSim or not noNNinMain)):
+        if (testNN and (inRoutingSim or not noNNinMain)): #If NN
             trainingdata[light].append((nnin, target, torch.tensor([[outputNN]])))
         else:
-            trainingdata[light].append((nnin, target))
-        #NEXT TODO this seems to go through all lights three times before printing the doSurtrac output for all lights three times. Why?
-        #No chance trainNN is creating multiple interacting instances of this, is there?
-        #print("Light phase training data")
-        #print(light)
-        #print(nnin[:, -2:])
+            trainingdata[light].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+        
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
         bestschedules[light] = testnnschedule
-        #if len(bestschedules[light][7]) == 0:
-        #    print('prepretest apparently empty duration list') #NEXT TODO this isn't triggering but the ones in doSurtrac are - what's happening??? Something to do with shallow copies, it looks like...
-
+        
 
 #@profile
 def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True):
