@@ -1443,13 +1443,16 @@ def run(network, rerouters, pSmart, verbose = True):
         for car in traci.simulation.getStartingTeleportIDList():
             routeStats[car]["nTeleports"] += 1
             print("Warning: Car " + car + " teleported, time=" + str(simtime))
-            if car in laneDict:
-                teleportdata.append((car, simtime, laneDict[car]))
+            isSmartVal = "Unknown"
+            if car in isSmart:
+                isSmartVal = isSmart[car]
+            if car in laneDict and car in isSmart:
+                teleportdata.append((car, simtime, laneDict[car], isSmartVal))
             else:
                 try:
-                    teleportdata.append((car, simtime, traci.vehicle.getLaneID(car)+"_TraCIlookup"))
+                    teleportdata.append((car, simtime, traci.vehicle.getLaneID(car)+"_TraCIlookup", isSmartVal))
                 except:
-                    teleportdata.append((car, simtime, "TraCI lookup failed, not sure what happened"))
+                    teleportdata.append((car, simtime, "TraCI lookup failed, not sure what happened", isSmartVal))
 
         #Moving this to the bottom so we've already updated the vehicle locations (when we checked left turns)
         oldRemainingDuration = pickle.loads(pickle.dumps(remainingDuration))
@@ -2121,6 +2124,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     if useLastRNGState:
         with open("lastRNGstate.pickle", 'rb') as handle:
             rngstate = pickle.load(handle)
+            random.setstate(rngstate)
     else:
         rngstate = random.getstate()
         with open("lastRNGstate.pickle", 'wb') as handle:

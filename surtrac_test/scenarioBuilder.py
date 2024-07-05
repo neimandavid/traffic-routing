@@ -36,9 +36,6 @@ import pickle
 import runnerDefaultWriter
 from importlib import reload
 
-import runnerDefaultWriter
-
-
 preoptcarcounter = dict()
 postoptcarcounter = dict()
 
@@ -165,7 +162,6 @@ def parseData(datafilepath, netfilename, routefilename, configfilename):
         print("""</routes>""", file=routefile)
 
     runnerDefaultWriter.writeSumoCfg(newconfigfilename, netfilename, newroutefilename)
-    #TODO: This is throwing an error and I don't know why
     preoptcarcounter2 = runnerDefaultWriter.main(netfilename, newconfigfilename)
 
     preoptcounter2err = dict()

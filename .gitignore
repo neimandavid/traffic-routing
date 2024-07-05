@@ -37,3 +37,7 @@ surtrac_test/lastRNGstate.pickle
 surtrac_test/LOGFILE
 surtrac_test/outputAuto.xml
 surtrac_test/Plots/.DS_Store
+surtrac_test/additional_autogen.xml
+surtrac_test/additionalrouting_autogen.xml
+surtrac_test/delaydata/.DS_Store
+surtrac_test/lastRNGstate.pickle

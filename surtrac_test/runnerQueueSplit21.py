@@ -49,7 +49,7 @@ else:
 
 from sumolib import checkBinary
 
-useLibsumo = True
+useLibsumo = False
 if useLibsumo:
     import libsumo as traci
 else:
@@ -89,8 +89,8 @@ reuseSurtrac = False #Does Surtrac computations in a separate thread, shared bet
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
 simToSimStats = False
 routingSimUsesSUMO = True #Only switch this if we go back to custom routing simulator or something
-mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
-routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+mainSurtracFreq = 1e6 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
+routingSurtracFreq = 1e6 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 10 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
