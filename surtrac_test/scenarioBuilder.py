@@ -39,7 +39,7 @@ from importlib import reload
 preoptcarcounter = dict()
 postoptcarcounter = dict()
 
-smoothDemand = True
+smoothDemand = False
 
 trafficmultfactor = 1
 
