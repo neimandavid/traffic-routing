@@ -29,10 +29,12 @@ import time
 reset = True
 resetNN = reset
 resetTrainingData2 = reset
-#Remember to set appendTrainingData = True, resetTrainingData = False in runnerQueueSplitWhatever
-#Also set testDumbtrac (there), testSurtrac (below) and FTP (there) appropriately, and surtracFreq = 1ish
+#UPDATE: Turns out appendTrainingData (there) gets updated automatically, as does noNNInMain
+#Also, Surtrac infrastructure works for FTPs as well
+#So just make sure resetTrainingData=False, testDumbtrac and FTP are correct, and surtracFreq = 1ish (all in runnerQueueSplitWhatever)
 
-testSurtrac = True #Currently testing whether Surtrac architecture works on FTP
+
+testSurtrac = True #Surtrac architecture works on FTP - just always setting this to true seems fine
 
 nEpochs = 10
 nDaggers = 100

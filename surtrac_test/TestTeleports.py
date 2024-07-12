@@ -57,8 +57,8 @@ for p in data:
     print(p)
     for q in range(len(data[p]["NTeleports"])):
         print(q)
-        if(data[p]["NTeleports"][q] == 0):
-            print("No teleports")
+        if(data[p]["NTeleports"][q] <= 1):
+            print("Not enough teleports")
         else:
             
             reload(runnerQueueSplit12)
