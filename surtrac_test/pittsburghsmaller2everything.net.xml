@@ -1128,14 +1128,14 @@
         <phase duration="3"  state="rryrrrrryrrr"/>
     </tlLogic>
     <tlLogic id="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" type="static" programID="0" offset="0">
-        <phase duration="45" state="rrrGGgrrrGGg"/>
-        <phase duration="3"  state="rrryygrrryyg"/>
-        <phase duration="9"  state="rrrrrGrrrrrG"/>
-        <phase duration="3"  state="rrrrryrrrrry"/>
-        <phase duration="45" state="GGgrrrGGgrrr"/>
-        <phase duration="3"  state="yygrrryygrrr"/>
-        <phase duration="9"  state="rrGrrrrrGrrr"/>
-        <phase duration="3"  state="rryrrrrryrrr"/>
+        <phase duration="45" state="rrrGGgrrrrGGg"/>
+        <phase duration="3"  state="rrryygrrrryyg"/>
+        <phase duration="9"  state="rrrrrGrrrrrrG"/>
+        <phase duration="3"  state="rrrrryrrrrrry"/>
+        <phase duration="45" state="GGgrrrGGGgrrr"/>
+        <phase duration="3"  state="yygrrryyygrrr"/>
+        <phase duration="9"  state="rrGrrrrrrGrrr"/>
+        <phase duration="3"  state="rryrrrrrryrrr"/>
     </tlLogic>
     <tlLogic id="cluster_105012751_8484067060_8484067061_8484284979_8484284980" type="static" programID="0" offset="0">
         <phase duration="45" state="rrrGGgrrrGGg"/>
