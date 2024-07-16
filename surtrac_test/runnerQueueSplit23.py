@@ -2270,8 +2270,8 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 
             if "G" in lightphasedata[light][i].state or "g" in lightphasedata[light][i].state:
                 surtracdata[light][i]["minDur"] = 5 #1#3.5#5#lightphasedata[light][i].minDur #Min duration of green
-            if "y" in lightphasedata[light][i].state:
-                surtracdata[light][i]["minDur"] = 7 #1#3.5#5#lightphasedata[light][i].minDur #Min duration of yellow
+            # if "y" in lightphasedata[light][i].state:
+            #     surtracdata[light][i]["minDur"] = 7 #1#3.5#5#lightphasedata[light][i].minDur #Min duration of yellow
             # if "Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state:
             #     surtracdata[light][i]["minDur"] = 2#5#lightphasedata[light][i].minDur #There is no all-red phase, keep this long
             
