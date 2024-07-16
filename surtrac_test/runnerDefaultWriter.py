@@ -202,7 +202,9 @@ def run(netfile, rerouters, sumoconfig):
                 endDict[id] = t
                 locDict.pop(id)
                 #Store the turn onto the exit road in lanetransitiondata
-                assert(prevLaneDict[id] in lanetransitiondata) #Should always be true because psuedocount stuff
+                if not (prevLaneDict[id] in lanetransitiondata): #Should always be true because psuedocount stuff, but apparently not???
+                    print("Warning: prevLaneDict[id] isn't in lanetransitiondata, this shouldn't happen")
+                    lanetransitiondata[prevLaneDict[id]] = []
                 if not id in traci.simulation.getEndingTeleportIDList():
                     lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
 

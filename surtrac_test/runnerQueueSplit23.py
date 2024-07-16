@@ -2061,7 +2061,7 @@ def sampleRouteFromTurnData(vehicle, startlane, turndata): #TODO vehicle arg unn
                     print("Warning: Sampling is infinite looping, stopping early")
                     return route
 
-                #Check if lane connects to nextlane aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                #Check if lane connects to nextlane
                 for nextlinktuple in links[lane]:
                     tempnextedge = nextlinktuple[0].split("_")[0]
                     if nextlane.split("_")[0] == tempnextedge:
@@ -2265,11 +2265,13 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
         n = len(lightphasedata[light])
         for i in range(n):
             surtracdata[light].append(dict())
-            surtracdata[light][i]["minDur"] = 7#5#lightphasedata[light][i].minDur
-            surtracdata[light][i]["maxDur"] = 120#lightphasedata[light][i].maxDur
+            surtracdata[light][i]["minDur"] = 7#5#lightphasedata[light][i].minDur #Min duration of yellow
+            surtracdata[light][i]["maxDur"] = 120#lightphasedata[light][i].maxDur #Max duration of everything
 
             if "G" in lightphasedata[light][i].state or "g" in lightphasedata[light][i].state:
-                surtracdata[light][i]["minDur"] = 5 #1#3.5#5#lightphasedata[light][i].minDur
+                surtracdata[light][i]["minDur"] = 5 #1#3.5#5#lightphasedata[light][i].minDur #Min duration of green
+            if "y" in lightphasedata[light][i].state:
+                surtracdata[light][i]["minDur"] = 7 #1#3.5#5#lightphasedata[light][i].minDur #Min duration of yellow
             # if "Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state:
             #     surtracdata[light][i]["minDur"] = 2#5#lightphasedata[light][i].minDur #There is no all-red phase, keep this long
             
