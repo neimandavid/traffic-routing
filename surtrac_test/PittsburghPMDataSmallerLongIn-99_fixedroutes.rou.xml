@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+
+<vType id="noVar" speedFactor="1.0" speedDev="0.0"/>
+<trip type="noVar" depart="27" id="Grant-Fourth-Forbes.2" from="Grant-Fourth-Forbes" to="Grant-Sixth-Seventh" via="Grant-Forbes-Fifth Grant-Fifth-Oliver Grant-Oliver-Sixth"  />
+<trip type="noVar" depart="489" id="Fifth-RHS-Ross.0" from="Fifth-RHS-Ross" to="Fifth-WilliamPenn-Smithfield" via="Fifth-Ross-Grant Fifth-Grant-WilliamPenn"  />
+<trip type="noVar" depart="556" id="Fifth-RHS-Ross.3" from="Fifth-RHS-Ross" to="Fifth-WilliamPenn-Smithfield" via="Fifth-Ross-Grant Fifth-Grant-WilliamPenn"  />
+<trip type="noVar" depart="612" id="Ross-Fourth-Forbes.0" from="Ross-Fourth-Forbes" to="WilliamPenn-Forbes-Fourth" via="Forbes-Ross-Grant Forbes-Grant-WilliamPenn"  />
+<trip type="noVar" depart="709" id="Ross-Fourth-Forbes.2" from="Ross-Fourth-Forbes" to="Forbes-Ross-RHS"  />
+<trip type="noVar" depart="845" id="Fifth-Smithfield-WilliamPenn.0" from="Fifth-Smithfield-WilliamPenn" to="Fifth-Ross-RHS" via="Fifth-WilliamPenn-Grant Fifth-Grant-Ross"  />
+<trip type="noVar" depart="880" id="Ross-Seventh-Sixth.5" from="Ross-Seventh-Sixth" to="Fifth-Ross-RHS" via="Ross-Sixth-Fifth"  />
+<trip type="noVar" depart="964" id="WilliamPenn-Seventh-Sixth.2" from="WilliamPenn-Seventh-Sixth" to="Grant-Forbes-Fourth" via="WilliamPenn-Sixth-Oliver Oliver-WilliamPenn-Grant Grant-Oliver-Fifth Grant-Fifth-Forbes"  />
+<trip type="noVar" depart="990" id="Ross-Seventh-Sixth.4" from="Ross-Seventh-Sixth" to="Grant-Sixth-Seventh" via="Sixth-Ross-Grant"  />
+<trip type="noVar" depart="1017" id="Sixth-Smithfield-WilliamPenn.0" from="Sixth-Smithfield-WilliamPenn" to="Sixth-Ross-RHS" via="Sixth-WilliamPenn-Grant Sixth-Grant-Ross"  />
+<trip type="noVar" depart="1118" id="Sixth-RHS-Ross.0" from="Sixth-RHS-Ross" to="Grant-Sixth-Seventh" via="Sixth-Ross-Grant"  />
+<trip type="noVar" depart="1210" id="Ross-Seventh-Sixth.2" from="Ross-Seventh-Sixth" to="Fifth-Ross-RHS" via="Ross-Sixth-Fifth"  />
+<trip type="noVar" depart="1236" id="Ross-Fourth-Forbes.4" from="Ross-Fourth-Forbes" to="Forbes-Ross-RHS"  />
+<trip type="noVar" depart="1254" id="Sixth-RHS-Ross.1" from="Sixth-RHS-Ross" to="Grant-Sixth-Seventh" via="Sixth-Ross-Grant"  />
+<trip type="noVar" depart="1300" id="Sixth-RHS-Ross.2" from="Sixth-RHS-Ross" to="Ross-Sixth-Seventh"  />
+<trip type="noVar" depart="1568" id="Grant-Seventh-Sixth.1" from="Grant-Seventh-Sixth" to="Forbes-Ross-RHS" via="Grant-Sixth-Oliver Grant-Oliver-Fifth Grant-Fifth-Forbes Forbes-Grant-Ross"  />
+<trip type="noVar" depart="1669" id="Grant-Seventh-Sixth.3" from="Grant-Seventh-Sixth" to="Grant-Forbes-Fourth" via="Grant-Sixth-Oliver Grant-Oliver-Fifth Grant-Fifth-Forbes"  />
+<trip type="noVar" depart="1758" id="Grant-Fourth-Forbes.3" from="Grant-Fourth-Forbes" to="WilliamPenn-Forbes-Fourth" via="Forbes-Grant-WilliamPenn"  />
+<trip type="noVar" depart="1910" id="Sixth-Smithfield-WilliamPenn.2" from="Sixth-Smithfield-WilliamPenn" to="Ross-Forbes-Fourth" via="Sixth-WilliamPenn-Grant Sixth-Grant-Ross Ross-Sixth-Fifth Ross-Fifth-Forbes"  />
+<trip type="noVar" depart="2138" id="Sixth-RHS-Ross.3" from="Sixth-RHS-Ross" to="Grant-Forbes-Fourth" via="Sixth-Ross-Grant Grant-Sixth-Oliver Grant-Oliver-Fifth Grant-Fifth-Forbes"  />
+<trip type="noVar" depart="2145" id="Grant-Seventh-Sixth.0" from="Grant-Seventh-Sixth" to="Grant-Forbes-Fourth" via="Grant-Sixth-Oliver Grant-Oliver-Fifth Grant-Fifth-Forbes"  />
+<trip type="noVar" depart="2265" id="Fifth-RHS-Ross.2" from="Fifth-RHS-Ross" to="Grant-Forbes-Fourth" via="Fifth-Ross-Grant Grant-Fifth-Forbes"  />
+<trip type="noVar" depart="2290" id="Oliver-Smithfield-WilliamPenn.1" from="Oliver-Smithfield-WilliamPenn" to="Grant-Sixth-Seventh" via="Oliver-WilliamPenn-Grant Grant-Oliver-Sixth"  />
+<trip type="noVar" depart="2331" id="Grant-Seventh-Sixth.4" from="Grant-Seventh-Sixth" to="Fifth-WilliamPenn-Smithfield" via="Grant-Sixth-Oliver Grant-Oliver-Fifth Fifth-Grant-WilliamPenn"  />
+<trip type="noVar" depart="2336" id="Sixth-RHS-Ross.4" from="Sixth-RHS-Ross" to="Grant-Sixth-Seventh" via="Sixth-Ross-Grant"  />
+<trip type="noVar" depart="2337" id="Forbes-RHS-Ross.0" from="Forbes-RHS-Ross" to="Ross-Forbes-Fourth"  />
+<trip type="noVar" depart="2342" id="Ross-Fourth-Forbes.3" from="Ross-Fourth-Forbes" to="Ross-Sixth-Seventh" via="Ross-Forbes-Fifth Ross-Fifth-Sixth"  />
+<trip type="noVar" depart="2405" id="Oliver-Smithfield-WilliamPenn.2" from="Oliver-Smithfield-WilliamPenn" to="WilliamPenn-Forbes-Fourth" via="WilliamPenn-Oliver-Fifth WilliamPenn-Fifth-Forbes"  />
+<trip type="noVar" depart="2413" id="Grant-Fourth-Forbes.4" from="Grant-Fourth-Forbes" to="Grant-Sixth-Seventh" via="Grant-Forbes-Fifth Grant-Fifth-Oliver Grant-Oliver-Sixth"  />
+<trip type="noVar" depart="2497" id="Ross-Seventh-Sixth.0" from="Ross-Seventh-Sixth" to="Grant-Forbes-Fourth" via="Sixth-Ross-Grant Grant-Sixth-Oliver Grant-Oliver-Fifth Grant-Fifth-Forbes"  />
+<trip type="noVar" depart="2508" id="Fifth-RHS-Ross.1" from="Fifth-RHS-Ross" to="Grant-Forbes-Fourth" via="Fifth-Ross-Grant Grant-Fifth-Forbes"  />
+<trip type="noVar" depart="2559" id="Sixth-Smithfield-WilliamPenn.3" from="Sixth-Smithfield-WilliamPenn" to="Grant-Sixth-Seventh" via="WilliamPenn-Sixth-Oliver Oliver-WilliamPenn-Grant Grant-Oliver-Sixth"  />
+<trip type="noVar" depart="2579" id="Forbes-RHS-Ross.3" from="Forbes-RHS-Ross" to="Ross-Forbes-Fourth"  />
+<trip type="noVar" depart="2655" id="Ross-Fourth-Forbes.1" from="Ross-Fourth-Forbes" to="Forbes-Ross-RHS"  />
+<trip type="noVar" depart="2770" id="Sixth-Smithfield-WilliamPenn.1" from="Sixth-Smithfield-WilliamPenn" to="Sixth-Ross-RHS" via="Sixth-WilliamPenn-Grant Sixth-Grant-Ross"  />
+<trip type="noVar" depart="2818" id="WilliamPenn-Seventh-Sixth.1" from="WilliamPenn-Seventh-Sixth" to="Oliver-WilliamPenn-Smithfield" via="WilliamPenn-Sixth-Oliver"  />
+<trip type="noVar" depart="2847" id="Grant-Fourth-Forbes.0" from="Grant-Fourth-Forbes" to="Forbes-WilliamPenn-Smithfield" via="Forbes-Grant-WilliamPenn"  />
+<trip type="noVar" depart="2928" id="Grant-Seventh-Sixth.2" from="Grant-Seventh-Sixth" to="Fifth-Ross-RHS" via="Grant-Sixth-Oliver Grant-Oliver-Fifth Fifth-Grant-Ross"  />
+<trip type="noVar" depart="3115" id="Forbes-RHS-Ross.4" from="Forbes-RHS-Ross" to="Ross-Forbes-Fourth"  />
+<trip type="noVar" depart="3339" id="Oliver-Smithfield-WilliamPenn.0" from="Oliver-Smithfield-WilliamPenn" to="Grant-Sixth-Seventh" via="Oliver-WilliamPenn-Grant Grant-Oliver-Sixth"  />
+<trip type="noVar" depart="3395" id="Grant-Seventh-Sixth.5" from="Grant-Seventh-Sixth" to="Grant-Forbes-Fourth" via="Grant-Sixth-Oliver Grant-Oliver-Fifth Grant-Fifth-Forbes"  />
+<trip type="noVar" depart="3447" id="WilliamPenn-Seventh-Sixth.0" from="WilliamPenn-Seventh-Sixth" to="Sixth-WilliamPenn-Smithfield"  />
+<trip type="noVar" depart="3519" id="Forbes-RHS-Ross.1" from="Forbes-RHS-Ross" to="Ross-Forbes-Fourth"  />
+<trip type="noVar" depart="3521" id="Ross-Seventh-Sixth.3" from="Ross-Seventh-Sixth" to="Grant-Sixth-Seventh" via="Sixth-Ross-Grant"  />
+<trip type="noVar" depart="3523" id="Ross-Seventh-Sixth.1" from="Ross-Seventh-Sixth" to="Ross-Forbes-Fourth" via="Ross-Sixth-Fifth Ross-Fifth-Forbes"  />
+<trip type="noVar" depart="3584" id="Grant-Fourth-Forbes.1" from="Grant-Fourth-Forbes" to="Fifth-WilliamPenn-Smithfield" via="Grant-Forbes-Fifth Fifth-Grant-WilliamPenn"  />
+<trip type="noVar" depart="3585" id="Forbes-RHS-Ross.2" from="Forbes-RHS-Ross" to="WilliamPenn-Forbes-Fourth" via="Forbes-Ross-Grant Forbes-Grant-WilliamPenn"  />
+</routes>

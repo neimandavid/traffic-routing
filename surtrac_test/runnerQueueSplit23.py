@@ -100,13 +100,17 @@ predCutoffMain = 10 #Surtrac receives communications about clusters arriving thi
 predCutoffRouting = 10 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
-testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
+testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
 testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
 FTP = True #If false, and testDumbtrac = True, runs actuated control instead of fixed timing plans. If true, runs fixed timing plans (should now be same as SUMO defaults)
 resetTrainingData = False
 appendTrainingData = False
+
+detectorModel = True
+detectorSurtrac = detectorModel
+detectorRouting = detectorModel
 
 testNNrolls = []
 nVehicles = []
@@ -173,10 +177,11 @@ dontReroute = []
 surtracDict = dict()
 
 #Predict traffic entering network
+#TODO re-enable these at some point now that I'm fairly sure they work on Pittsburgh non-historical routing?
 arrivals = dict()
-maxarrivalwindow = -300 #Use negative number to not predict new incoming cars during routing
+maxarrivalwindow = -300 #300 #Use negative number to not predict new incoming cars during routing
 arrivals2 = dict()
-maxarrivalwindow2 = -300
+maxarrivalwindow2 = -300 #60
 newcarcounter = 0
 
 totalSurtracTime = 0
@@ -615,7 +620,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                             pst = schedule[3][j]
                             newLastSwitch = schedule[6] #Last switch time doesn't change
                             ast = max(ist, pst)
-                            newdur = max(dur - (ast-ist), mindur)
+                            newdur = max(dur - (ast-ist), mindur) #Try to compress cluster as it runs into an existing queue
                             currentDuration = max(ist, ast)+newdur-schedule[6] #Total duration of current light phase if we send this cluster without changing phase
 
                         if not phase == i or currentDuration > surtracdata[light][i]["maxDur"]: #We'll have to switch the light, possibly mid-cluster
@@ -960,7 +965,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
     surtracThreads = dict()
 
     #inRoutingSim = True
-    if realclusters == None or lightphases == None: #This is an issue; need getEdgeCost to pretend to be main sim, but update the correct lightphases array
+    if realclusters == None or lightphases == None:
         #inRoutingSim = False
         #if clustersCache == None: #This scares me, let's not cache for now. Probably not the slow part here anyway
         totalLoadRuns += 1
@@ -968,8 +973,12 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
         if inRoutingSim: #Only use the detector model for Surtrac if we're not routing
             clustersCache = loadClusters(network, simtime)
         else:
-            clustersCache = loadClusters(network, simtime)
-            #clustersCache = loadClustersDetectors(network, simtime)
+            if detectorSurtrac:
+                clustersCache = loadClustersDetectors(network, simtime) #This at least grabs the same vehicles as standard loadClusters, including ungrabbing them once they hit an exit road. Positions are probably slightly inaccurate, though, since this uses a detector model
+            else:
+                clustersCache = loadClusters(network, simtime)
+
+            
         runTime = time.time() - loadStart
         totalLoadTime += runTime
         if debugNNslowness and runTime > 1.5*totalLoadTime/totalLoadRuns:
@@ -1223,7 +1232,7 @@ def run(network, rerouters, pSmart, verbose = True):
     global hmetadict
     global delay3adjdict
     global actualStartDict
-    global locDict
+    global edgeDict
     global laneDict
     global clustersCache
     global teleportdata
@@ -1235,7 +1244,7 @@ def run(network, rerouters, pSmart, verbose = True):
     delayDict = dict()
     delay2adjdict = dict()
     delay3adjdict = dict()
-    locDict = dict()
+    edgeDict = dict()
     laneDict = dict()
     leftDict = dict()
     carsOnNetwork = []
@@ -1280,7 +1289,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 hmetadict[goaledge] = backwardDijkstra(network, goaledge)
             delayDict[vehicle] = -hmetadict[goaledge][currentRoutes[vehicle][0]] #I'll add the actual travel time once the vehicle arrives
             laneDict[vehicle] = traci.vehicle.getLaneID(vehicle)
-            locDict[vehicle] = traci.vehicle.getRoadID(vehicle)
+            edgeDict[vehicle] = traci.vehicle.getRoadID(vehicle)
 
             startDict[vehicle] = simtime
             leftDict[vehicle] = 0
@@ -1292,6 +1301,15 @@ def run(network, rerouters, pSmart, verbose = True):
             arrivals[lane].append(simtime) #Don't care who arrived, just when they arrived - this is for estimating future inflows if we turn that on in routing
             arrivals2[lane].append(simtime)
 
+            #Manually pretend to be a detector at the start of the input lanes, since newly added vehicles have issues triggering those
+            lastDetections[vehicle] = (lane, simtime)
+            if lane in nonExitLaneDetections: #If it's an exit lane we hopefully don't care as long as it got removed from its previous non-exit lane
+                nonExitLaneDetections[lane].append((vehicle, simtime))
+
+            #Don't keep track of the car once we know it's on an exit lane
+            else:
+                lastDetections.pop(vehicle)
+
         #Update detector info
         for detector in simDetectors:
             ids = traci.inductionloop.getLastStepVehicleIDs(detector)
@@ -1301,9 +1319,15 @@ def run(network, rerouters, pSmart, verbose = True):
                     (oldlane, oldtime) = lastDetections[id]
                     if oldlane in nonExitLaneDetections: #Because we might get a duplicate detection on an exit lane
                         nonExitLaneDetections[oldlane].remove((id, oldtime))
+                else:
+                    "Warning: Detected a vehicle " + id + " that we weren't aware of before, this isn't good"
                 lastDetections[id] = (lane, simtime)
                 if lane in nonExitLaneDetections: #If it's an exit lane we hopefully don't care as long as it got removed from its previous non-exit lane
                     nonExitLaneDetections[lane].append((id, simtime))
+
+                #Don't keep track of the car once we know it's on an exit lane
+                else:
+                    lastDetections.pop(id)
 
         #Check predicted vs. actual travel times
         for vehicle in traci.simulation.getArrivedIDList():
@@ -1315,7 +1339,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 # print("Percent error : %f" % ( ((timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2]) / (timedata[vehicle][1]-timedata[vehicle][0]) * 100))
                 # print("Route from " + timedata[vehicle][3] + " to " + timedata[vehicle][4])
             endDict[vehicle] = simtime
-            locDict.pop(vehicle)
+            edgeDict.pop(vehicle)
             laneDict.pop(vehicle)
             dontReroute.append(vehicle) #Vehicle has left network and does not need to be rerouted
 
@@ -1329,8 +1353,8 @@ def run(network, rerouters, pSmart, verbose = True):
                 dontReroute.append(id) #Vehicle is mid-intersection or off network, don't try to reroute them
             if newlane != laneDict[id] and len(newlane) > 0 and  newlane[0] != ":":
                 newloc = traci.vehicle.getRoadID(id)
-                c0 = network.getEdge(locDict[id]).getFromNode().getCoord()
-                c1 = network.getEdge(locDict[id]).getToNode().getCoord()
+                c0 = network.getEdge(edgeDict[id]).getFromNode().getCoord()
+                c1 = network.getEdge(edgeDict[id]).getToNode().getCoord()
                 theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
 
                 c2 = network.getEdge(newloc).getToNode().getCoord()
@@ -1339,7 +1363,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 if (theta1-theta0+math.pi)%(2*math.pi)-math.pi > 0:
                     leftDict[id] += 1
                 laneDict[id] = newlane
-                locDict[id] = newloc
+                edgeDict[id] = newloc
                 #assert(laneDict[id] == traci.vehicle.getLaneID(id))
                 try:
                     assert(laneDict[id].split("_")[0] in currentRoutes[id])
@@ -1636,12 +1660,17 @@ def run(network, rerouters, pSmart, verbose = True):
                 if routeStats[id]["swapped"] == True:
                     nswapped += 1
 
-                if isSmart[id]:
-                    avgerror += ((timedata[id][1]-timedata[id][0]) - timedata[id][2])/nSmart
-                    avgabserror += abs((timedata[id][1]-timedata[id][0]) - timedata[id][2])/nSmart
-                    avgpcterror += ((timedata[id][1]-timedata[id][0]) - timedata[id][2])/(timedata[id][1]-timedata[id][0])/nSmart*100
-                    avgabspcterror += abs((timedata[id][1]-timedata[id][0]) - timedata[id][2])/(timedata[id][1]-timedata[id][0])/nSmart*100
-        
+                try:
+                    if isSmart[id]:
+                        avgerror += ((timedata[id][1]-timedata[id][0]) - timedata[id][2])/nSmart
+                        avgabserror += abs((timedata[id][1]-timedata[id][0]) - timedata[id][2])/nSmart
+                        avgpcterror += ((timedata[id][1]-timedata[id][0]) - timedata[id][2])/(timedata[id][1]-timedata[id][0])/nSmart*100
+                        avgabspcterror += abs((timedata[id][1]-timedata[id][0]) - timedata[id][2])/(timedata[id][1]-timedata[id][0])/nSmart*100
+                except:
+                    print("Missing timedata for vehicle " + id)
+                    print(isSmart[id])
+                    print(timedata[id])
+
             if verbose or not traci.simulation.getMinExpectedNumber() > 0 or (appendTrainingData and simtime == 5000):
                 print(pSmart)
                 print("\nCurrent simulation time: %f" % simtime)
@@ -1758,6 +1787,8 @@ def run(network, rerouters, pSmart, verbose = True):
     if dumpIntersectionData:
         dumpIntersectionDataFun(intersectionData, network)
 
+    os.remove("savestates/teststate_"+savename+".xml") #Delete the savestates file so we don't have random garbage building up over time
+
     return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart, nteleports, teleportdata]  
 
 def dumpIntersectionDataFun(intersectionData, network):
@@ -1820,14 +1851,21 @@ def loadClusters(net, simtime, VOI=None):
 
     #Cluster data structures
     for edge in edges:
-        if edge[0] == ":":
-            #Skip internal edges (=edges for the inside of each intersection)
+        if edge[0] == ":": #Edge is an internal edge, so we're inside an intersection
+
+            #Add those vehicles to the nVehicles total, but that's it
+            for lanenum in range(lanenums[edge]):
+                lane = edge + "_" + str(lanenum)
+                temp = traci.lane.getLastStepVehicleIDs(lane)
+                nVehicles[-1] += len(temp)
             continue
+
         for lanenum in range(lanenums[edge]):
             lane = edge + "_" + str(lanenum)
             clusters[lane] = []
             temp = traci.lane.getLastStepVehicleIDs(lane)
             totalLoadCars += len(temp)
+            #if lane in nonExitLaneDetections: #Needed this to confirm that nVehicles from this matched nVehicles from the detectors version
             nVehicles[-1] += len(temp)
             for vehicle in reversed(temp): #Reversed so we go from end of edge to start of edge - first clusters to leave are listed first
                 #Process vehicle into cluster somehow
@@ -1914,6 +1952,8 @@ def loadClustersDetectors(net, simtime, VOI=None):
 
     #Add noise
     #clusters = addNoise(clusters, VOI, 0.9, 2) #To simulate detector stuff
+
+    assert(len(lastDetections) == nVehicles[-1]) #This now works, since lastDetections now clears out vehicles that got to exit lanes
     return (clusters, lightphases)
 
 # def addNoise(clusters, VOI, detectprob, timeerr):
@@ -2212,8 +2252,8 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             lengths[lane] = traci.lane.getLength(lane)
 
     for edge in edges:
+        lanenums[edge] = traci.edge.getLaneNumber(edge)
         if not edge[0] == ":":
-            lanenums[edge] = traci.edge.getLaneNumber(edge)
             speeds[edge] = network.getEdge(edge).getSpeed()
             fftimes[edge] = lengths[edge+"_0"]/speeds[edge]
 
@@ -2463,7 +2503,7 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
         lane = traci.vehicle.getLaneID(ids[0])
         # print(lane)
         # print(rerouters[detector])
-        #assert lane == rerouters[detector] #Verify that we have the correct lane. NEXT TODO replace above lane call with a call to this dictionary once we know this works. Except it's bad - sometimes we get lane changes at exactly the wrong time!
+        #assert lane == rerouters[detector] #Verify that we have the correct lane. Except it's bad - sometimes we get lane changes at exactly the wrong time!
         #lane = rerouters[detector] #Because apparently lane changes on top of the detector happen???
 
         for vehicle in ids:
@@ -2497,8 +2537,8 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                         if not useLibsumo:
                             assert(traci.getLabel() == "main")
                         else:
-                            #(remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) = loadStateInfo("MAIN")
-                            loadStateInfo(savename)
+                            #(remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) = loadStateInfo("MAIN", simtime)
+                            loadStateInfo(savename, simtime)
 
                     #assert(traci.getLabel() == "main")
 
@@ -2791,13 +2831,14 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         # traci.start([checkBinary('sumo'), "-c", sumoconfig,
         #                         "--additional-files", "additional_autogen.xml",
         #                         "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
-        (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases) = loadStateInfo(savename)
+        (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases) = loadStateInfo(savename, simtime)
     else:
-        saveStateInfo(startedge, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) #Saves the traffic state and traffic light timings
+        saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) #Saves the traffic state and traffic light timings
         traci.switch("test")
-        (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases) = loadStateInfo(startedge) #NOTE: This will cause problems if running code in two separate terminal tabs...
+
+        (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases) = loadStateInfo(savename, simtime)
     
-    assert(traci.vehicle.getRoadID(vehicle) == startedge)
+    #assert(traci.vehicle.getRoadID(vehicle) == startedge) #This is failing with loadStateInfoDetectors; apparently getRoadID returns an empty string. Does adding vehicles not register until the next timestep? (But loading the save the normal way does?)
 
     #Tell the vehicle to drive to the end of edge
     try:
@@ -3013,7 +3054,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                 prepGhostCars(VOIs, id, ghostcarlanes, network, False, ghostcardata, simtime) #NOTE: Since the vehicle left the network, there must be no left edge, so no need to spawn left turn cars
         
         for id in toDelete:
-            del VOIs[id]
+            del VOIs[id] #Should be equivalent to VOIs.pop(id)? 
 
         spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs)
 
@@ -3108,7 +3149,10 @@ def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, li
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
 #TODO delete the saved file after the code finishes running?
-def loadStateInfo(prevedge):
+def loadStateInfo(prevedge, simtime): #simtime is just so I can pass it into loadStateInfoDetectors...
+    if detectorRouting:
+        return loadStateInfoDetectors(prevedge, simtime)
+
     #Load traffic state
     traci.simulation.loadState("savestates/teststate_"+prevedge+".xml")
     #Load light state
@@ -3140,32 +3184,37 @@ def loadStateInfo(prevedge):
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
 #TODO delete the saved file after the code finishes running?
-def loadStateInfoDetectors(prevedge):
+def loadStateInfoDetectors(prevedge, simtime):
     global netfile
     #Load traffic state
     #traci.simulation.loadState("savestates/teststate_"+prevedge+".xml")
 
     #Purge all vehicles
     traci.load(["-n", netfile,
-                                "--additional-files", "additional_autogen.xml",
+                                "--additional-files", "additional_autogen.xml", "--no-step-log", "true",
                                 "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
-
-    #Readd vehicles according to detector model
+    #Read vehicles according to detector model
     for lane in nonExitLaneDetections: #Assuming exit lanes don't matter since they shouldn't have traffic - this saves us from extra exit detectors at their ends
-        clusters[lane] = []
         temp = nonExitLaneDetections[lane]
-        totalLoadCars += len(temp)
-        nVehicles[-1] += len(temp)
         for (vehicle, detecttime) in reversed(temp): #Reversed so we go from end of edge to start of edge - first clusters to leave are listed first
             #Process vehicle into cluster somehow
             #If nearby cluster, add to cluster in sorted order (could probably process in sorted order)
             lanepos = min(lengths[lane], speeds[lane.split("_")[0]] * (simtime - detecttime)+simdetectordist)
             #lanepos = traci.vehicle.getLanePosition(vehicle)
-            #NEXT TODO implement this
-            traci.vehicle.add(newghostcar, sampleRouteFromTurnData(vehicle, lane, turndata), departLane=lane, departPos=lanepos, departSpeed="max")
+
+            #Because apparently traci.vehicle.add needs a route stored in TraCI with a name, not just a list of edges. Why?!
+            newroute = sampleRouteFromTurnData(vehicle, lane, turndata)
+            if not vehicle in traci.route.getIDList():
+                traci.route.add(vehicle, newroute)
+
+            traci.vehicle.add(vehicle, vehicle, departLane=lane.split("_")[-1], departPos=lanepos, departSpeed="max")
             if vehicle in isSmart and isSmart[vehicle]:
-                traci.vehicle.setRoute(vehicle, currentRoutes[vehicle]) #TODO is this going to get upset if we're not starting on the correct road??
-            
+
+                startroute = currentRoutes[vehicle]
+                startedge = edgeDict[vehicle]
+                startind = startroute.index(startedge)
+                startroute = startroute[startind:]
+                traci.vehicle.setRoute(vehicle, startroute)
 
     #Load light state
     with open("savestates/lightstate_"+prevedge+".pickle", 'rb') as handle:
