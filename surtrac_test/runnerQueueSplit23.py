@@ -1921,7 +1921,7 @@ def loadClustersDetectors(net, simtime, VOI=None):
         for (vehicle, detecttime) in reversed(temp): #Reversed so we go from end of edge to start of edge - first clusters to leave are listed first
             #Process vehicle into cluster somehow
             #If nearby cluster, add to cluster in sorted order (could probably process in sorted order)
-            lanepos = min(lengths[lane], speeds[edge] * (simtime - detecttime)+simdetectordist)
+            lanepos = min(lengths[lane], speeds[edge] * (simtime - detecttime+0.5)+simdetectordist) #+0.5 because we crossed the detector, then made somewhere between 0 and 1 seconds worth of forward movement; estimate it as 0.5
             #lanepos = traci.vehicle.getLanePosition(vehicle)
 
             if len(clusters[lane]) > 0 and abs(clusters[lane][-1]["time"] - simtime) < clusterthresh and abs(clusters[lane][-1]["endpos"] - lanepos)/speeds[edge] < clusterthresh:
@@ -3199,13 +3199,13 @@ def loadStateInfoDetectors(prevedge, simtime):
         for (vehicle, detecttime) in reversed(temp): #Reversed so we go from end of edge to start of edge - first clusters to leave are listed first
             #Process vehicle into cluster somehow
             #If nearby cluster, add to cluster in sorted order (could probably process in sorted order)
-            lanepos = min(lengths[lane], speeds[lane.split("_")[0]] * (simtime - detecttime)+simdetectordist)
+            lanepos = min(lengths[lane], speeds[lane.split("_")[0]] * (simtime - detecttime + 0.5)+simdetectordist) #+0.5 because we crossed the detector, then made somewhere between 0 and 1 seconds worth of forward movement; estimate it as 0.5
             #lanepos = traci.vehicle.getLanePosition(vehicle)
 
             #Because apparently traci.vehicle.add needs a route stored in TraCI with a name, not just a list of edges. Why?!
             newroute = sampleRouteFromTurnData(vehicle, lane, turndata)
             if not vehicle in traci.route.getIDList():
-                traci.route.add(vehicle, newroute)
+                traci.route.add(vehicle, newroute) #Using vehicle as the name of the new route, to maximize confusion for future me! (Also so we're guaranteed a unique name for the route)
 
             traci.vehicle.add(vehicle, vehicle, departLane=lane.split("_")[-1], departPos=lanepos, departSpeed="max")
             if vehicle in isSmart and isSmart[vehicle]:
