@@ -225,6 +225,8 @@ if __name__ == "__main__":
         configfilename = datafile.split(".")[0]+".sumocfg"
     if len(sys.argv) > 5:
         trafficmultfactor = float(sys.argv[5])
+    if len(sys.argv) > 6:
+        smoothDemand = eval(sys.argv[6])
 
     print("smoothDemand=" + str(smoothDemand))
     parseData(datafile, netfilename, routefilename, configfilename)
