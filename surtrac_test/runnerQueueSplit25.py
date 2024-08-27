@@ -173,7 +173,7 @@ rerouterLanes = dict()
 rerouterEdges = dict()
 nonExitEdgeDetections = dict() #nonExitEdgeDetections[road] = array of sections of road, each with a detector in each lane at the start. Store (madeupname, lane, time) for all cars. If new vehicle in first road segment, look up where it came from and steal the oldest car from that lane segment, else the oldest car we can find. If non-first road segment, steal oldest from previous segment disregarding lane
 nonExitLaneDetectors = dict() #nonExitLaneDetections[lane] = [(detectorname1, detectorpos1), ...], should be same length as nonExitEdgeDetections[road]
-wasFull = dict() #We're now using this to store stats for lane transition probabilities. TODO change name
+wasFull = dict() #We're now using this to store stats for lane transition probabilities (specifically, the times we saw vehicles)
 wasFullWindow = 300
 vehiclesOnNetwork = []
 dontReroute = []
@@ -619,6 +619,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                         dur = clusters[lane][clusterind]["departure"] - ist + mingap #+mingap because next cluster can't start until mingap after current cluster finishes
                         
                         if dur < 0:
+                            #print(clusters[lane][clusterind]) #This is getting confused by the combination of tracked adopters and estimated non-adopters regarding arrival times
                             print("Warning, dur < 0???")
                             dur = 0
                         
@@ -1436,16 +1437,45 @@ def run(network, rerouters, pSmart, verbose = True):
         #Update vehicle position estimates using detector model
         #Except now it's just updating lane transition probability data
         for lane in nonExitLaneDetectors:
+            edge = lane.split("_")[0]
             for ind in range(1, len(nonExitLaneDetectors[lane])): #Skip segment 0, our fake detector code looking for road changes covers that
                 detector = nonExitLaneDetectors[lane][ind][0]
                 ids = traci.inductionloop.getLastStepVehicleIDs(detector) #All vehicles to be rerouted
                 if len(wasFull[detector]) > 0 and wasFull[detector][0] < simtime - wasFullWindow: #Remove old data
                     wasFull[detector].pop(0)
                 if len(ids) == 0:
-                    pass#wasEmpty[detector] = ids #Make sure we don't have a vehicle stopped on the detector repeatedly triggering it. Hopefully we get at least 2 seconds between vehicles, else we might miss some
+                    pass
+                    # #Consider deleting old data
+                    # if len(wasFull[detector]) > 0 and wasFull[detector][-1] < simtime - 5: #If we've not seen a vehicle for 5 seconds, start deleting vehicles that should've arrived by now
+                    #     olddataind = 0
+                    #     while olddataind < len(nonExitEdgeDetections[edge][0]):
+                    #         (testname, testlane, testtime) = nonExitEdgeDetections[edge][0][olddataind]
+                    #         if testtime > simtime - fftimes[edge] + 2: #TODO using +2 as a buffer in case travel times are slightly off somehow, test this
+                    #             break #We're up to non-old data, stop looking for stuff to delete
+                    #         if testname in isSmart and isSmart[testname]:
+                    #             #Vehicle is an adopter. Not sure what's happening, but we can track it, so presumably it's accurate?
+                    #             olddataind += 1
+                    #             continue
+                    #         if testlane != lane:
+                    #             #Not our problem as it's in another lane, skip
+                    #             olddataind += 1
+                    #             continue
+                    #         nonExitEdgeDetections[edge][0].pop(olddataind) #Else it's a non-adopter in this lane that we should've seen by now but haven't; delete. (TODO try relocating instead??)
                 else:
                     if len(wasFull[detector]) == 0 or wasFull[detector][-1] < simtime - 1: #Make sure we don't have the same car just sitting on the detector forever
-                        wasFull[detector].append(simtime)
+                        allSmart = True
+                        for testid in ids:
+                            if not testid in isSmart or not isSmart[testid]:
+                                allSmart = False
+                                break
+                        if not allSmart:
+                            wasFull[detector].append(simtime)
+                        else:
+                            #We want our stats to only count the non-adopters (assuming we can get that level of precision), as adopters might do different stuff
+                            #Don't need to update last time in wasFull - if a non-smart shows up, we're okay with detecting it immediately
+                            pass
+                    else:
+                        wasFull[detector][-1] = simtime #If someone has been sitting here forever, update the last timestamp to be now so we don't get duplicate readings
 
         surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
@@ -1513,7 +1543,6 @@ def run(network, rerouters, pSmart, verbose = True):
                 pass
 
         reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters) #Reroute cars (including simulate-ahead cars)
-        #assert(traci.getLabel() == "main")
         assert(remainingDuration == oldRemainingDuration)
         assert(mainlastswitchtimes == oldMainLastSwitchTimes)
 
@@ -1827,7 +1856,11 @@ def run(network, rerouters, pSmart, verbose = True):
     if dumpIntersectionData:
         dumpIntersectionDataFun(intersectionData, network)
 
-    os.remove("savestates/teststate_"+savename+".xml") #Delete the savestates file so we don't have random garbage building up over time
+    try:
+        os.remove("savestates/teststate_"+savename+".xml") #Delete the savestates file so we don't have random garbage building up over time
+    except FileNotFoundError:
+        print("Warning: Trying to clean up savestates file, but no file found. This is weird - did you comment out routing or something? Ignoring for now.")
+        pass
 
     return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart, nteleports, teleportdata]  
 
@@ -1969,7 +2002,7 @@ def loadClustersDetectors(net, simtime, VOI=None):
             roadsectiondata = temp[roadsectionind]
             for (vehicle, detlane, detecttime) in roadsectiondata: #Earliest time (=farthest along road) is listed first, don't reverse this
                 #Sample a lane randomly
-                if True:#not vehicle in isSmart or not isSmart[vehicle]:
+                if not vehicle in isSmart or not isSmart[vehicle]:
                     r = random.random()
                     for laneind in range(nLanes[edge]):
                         lane = edge + "_" + str(laneind)
@@ -2166,7 +2199,7 @@ def generate_additionalfile(sumoconfig, networkfile):
                 if len(net.getEdge(edge).getOutgoing()) > 0:
                     nonExitEdgeDetections[edge] = []
                     nonExitLaneDetectors[lane] = []
-                    for dist in [0, lengths[lane]]: #TODO add to this if we need more detectors, remember to update it both here and below in additionalrouting_autogen
+                    for dist in [0, lengths[lane]-2]: #TODO add to this if we need more detectors, remember to update it both here and below in additionalrouting_autogen
                         name = "ILd_" + lane + "_" + str(dist)
                         print('    <inductionLoop id="%s" freq="1" file="outputAuto.xml" lane="%s" pos="%i" friendlyPos="true" />' \
                         % (name, lane, dist), file=additional)
@@ -2187,7 +2220,7 @@ def generate_additionalfile(sumoconfig, networkfile):
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
                       % (lane, lane, detectordist), file=additional)
                 if len(net.getEdge(edge).getOutgoing()) > 0:
-                    for dist in [0, lengths[lane]]: #TODO add to this if we need more detectors, remember to update it both here and above in additional_autogen
+                    for dist in [0, lengths[lane]-2]: #TODO add to this if we need more detectors, remember to update it both here and above in additional_autogen
                         name = "ILd_" + lane + "_" + str(dist)
                         print('    <inductionLoop id="%s" freq="1" file="outputAuto.xml" lane="%s" pos="%i" friendlyPos="true" />' \
                         % (name, lane, dist), file=additional)
@@ -3373,7 +3406,8 @@ def loadStateInfoDetectors(prevedge, simtime, network):
             else:
                 try:
                     lane = adopterinfo[vehicle][0]
-                    lanepos = adopterinfo[vehicle][1]
+                    #lanepos = adopterinfo[vehicle][1]
+                    lanepos = min(lengths[lane], speeds[lane.split("_")[0]] * (simtime - detecttime + 0.5)+simdetectordist) #+0.5 because we crossed the detector, then made somewhere between 0 and 1 seconds worth of forward movement; estimate it as 0.5
                     newroute = currentRoutes[vehicle]
                 except:
                     continue #Off network, or error when grabbing adopter info or something else weird?
