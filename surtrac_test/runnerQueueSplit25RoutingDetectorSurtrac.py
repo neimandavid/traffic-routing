@@ -982,7 +982,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
         totalLoadRuns += 1
         loadStart = time.time()
         if inRoutingSim and not detectorRoutingSurtrac: #Only use the detector model for Surtrac if we're not routing
-            clustersCache = loadClusters(network, simtime)
+            clustersCache = loadClusters(network, simtime, nonExitEdgeDetections)
         else:
             if detectorSurtrac:
                 clustersCache = loadClustersDetectors(network, simtime, nonExitEdgeDetections) #This at least grabs the same vehicles as standard loadClusters, including ungrabbing them once they hit an exit road. Positions are probably slightly inaccurate, though, since this uses a detector model
@@ -1353,13 +1353,9 @@ def run(network, rerouters, pSmart, verbose = True):
                         #Make sure we don't have a duplicate of this adopter on the last edge. If we do, make it a random car instead
                         if isSmart[id]:
                             for vehicletupleind in range(len(nonExitEdgeDetections[edgeDict[id]][0])):
-                                vehicletuple = nonExitEdgeDetections[edgeDict[id]][0]
-                            #for vehicletuple in nonExitEdgeDetections[edgeDict[id]][0]:
+                                vehicletuple = nonExitEdgeDetections[edgeDict[id]][0][vehicletupleind]
                                 if vehicletuple[0] == id:
-                                    nonExitEdgeDetections[edgeDict[id]][0] = (edgeDict[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
-                            for vehicletupleind in range(len(nonExitEdgeDetections[edgeDict[id]][0])):
-                                if vehicletuple[0] == id:
-                                    bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                                    nonExitEdgeDetections[edgeDict[id]][0][vehicletupleind] = (edgeDict[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
 
                         if newloc in nonExitEdgeDetections:
                             assert(newlane.split("_")[0] == newloc)
@@ -2006,8 +2002,6 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
             roadsectiondata = temp[roadsectionind]
             for (vehicle, detlane, detecttime) in roadsectiondata: #Earliest time (=farthest along road) is listed first, don't reverse this
                 #Sample a lane randomly
-
-                #TODO: Why does treating every vehicle like a non-adopter make all the VOIs disappear??
                 if True:#not vehicle in isSmart or not isSmart[vehicle]:
                     r = random.random()
                     for laneind in range(nLanes[edge]):
@@ -3161,10 +3155,10 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             assert(newlane.split("_")[0] == newloc)
                             if id in VOIs or (id in isSmart and isSmart[id]):
                                 nonExitEdgeDetections2[newloc][0].append((id, newlane, simtime))
-                                #Make sure we don't have a duplicate of this adopter on the old edge. If we do, make it a random car instead
-                                for vehicletuple in nonExitEdgeDetections2[edgeDict[id]][0]:
+                                for vehicletupleind in range(len(nonExitEdgeDetections2[edgeDict[id]][0])):
+                                    vehicletuple = nonExitEdgeDetections2[edgeDict[id]][0][vehicletupleind]
                                     if vehicletuple[0] == id:
-                                        vehicletuple = (edgeDict[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
+                                        nonExitEdgeDetections2[edgeDict[id]][0][vehicletupleind] = (edgeDict[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
                             else:
                                 nonExitEdgeDetections2[newloc][0].append((newlane+".0routingdetect."+str(simtime), newlane, simtime))
                 
