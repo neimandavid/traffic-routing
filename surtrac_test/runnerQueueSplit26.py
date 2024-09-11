@@ -54,7 +54,7 @@ else:
 
 from sumolib import checkBinary
 
-useLibsumo = False
+useLibsumo = True
 if useLibsumo:
     import libsumo as traci
 else:
