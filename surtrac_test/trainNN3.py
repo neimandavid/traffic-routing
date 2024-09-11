@@ -18,7 +18,7 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
 #import runnerQueueSplit
-import runnerQueueSplit23 as runnerQueueSplit #KEEP THIS UP TO DATE!!!
+import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!!
 from importlib import reload
 from Net import Net
 
@@ -26,15 +26,15 @@ import openpyxl #For writing training data to .xlsx files
 import time
 
 #In case we want to pause a run and continue later, set these to false
-reset = True
+reset = False
 resetNN = reset
 resetTrainingData2 = reset
 #UPDATE: Turns out appendTrainingData (there) gets updated automatically, as does noNNInMain
-#Also, Surtrac infrastructure works for FTPs as well
+#Also, Surtrac network architecture works for FTPs as well
 #So just make sure resetTrainingData=False, testDumbtrac and FTP are correct, and surtracFreq = 1ish (all in runnerQueueSplitWhatever)
 
 
-testSurtrac = True #Surtrac architecture works on FTP - just always setting this to true seems fine
+#testSurtrac = True #Surtrac architecture works on FTP - just always setting this to true seems fine
 
 nEpochs = 10
 nDaggers = 100
@@ -115,12 +115,13 @@ def mainold(sumoconfig):
         for node in sumolib.xml.parse(netfile, ['junction']):
             if node.type == "traffic_light":
                 lights.append(node.id)
-        for light in lights:
+        for light in ["light"]:# + lights:
             try:
+                print("models/imitate_" + light + ".model")
                 os.rename("models/imitate_" + light + ".model", "models/Archive/imitate_" + light + str(datetime.now()) + ".model")
             except FileNotFoundError:
                 print("No model found for light " + light + ", this is fine")
-
+        
     if resetTrainingData2:
         try:
             print("Archiving old training data.")
@@ -151,10 +152,21 @@ def mainold(sumoconfig):
             firstIter = False
             #Do NN setup
             for light in trainingdata:
-                if testSurtrac:
-                    agents[light] = Net(182, 1, 64)
-                else:
-                    agents[light] = Net(26, 1, 32)
+                maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
+                maxnroads = 4 #And assume 4-way intersections for now
+                maxnclusters = 5 #And assume at most 10 clusters per lane
+                ndatapercluster = 3 #Arrival, departure, weight
+                maxnphases = 12 #Should be enough to handle both leading and lagging lefts
+                
+                nextra = 2 #Proportion of phase length used, current time
+                ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
+
+                agents[light] = Net(ninputs, 1, 64)
+                
+                # if testSurtrac:
+                #     agents[light] = Net(182, 1, 64)
+                # else:
+                #     agents[light] = Net(26, 1, 32)
                 optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
                 MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
                 if not resetNN:

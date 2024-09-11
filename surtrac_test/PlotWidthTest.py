@@ -48,17 +48,17 @@ if filterNonzeroTeleports:
             else:
                 i+=1
 
-for p in data:
-    print(p)
-    print("Delay")
-    print(data[p]["All"])
-    #print(data[p]["All2"])
-    if "NTeleports" in data[p]:
-        print("NTeleports")
-        print(data[p]["NTeleports"])
-    if "TeleportData" in data[p]:
-        print("TeleportData")
-        print(data[p]["TeleportData"])
+# for p in data:
+#     print(p)
+#     print("Delay")
+#     print(data[p]["All"])
+#     #print(data[p]["All2"])
+#     if "NTeleports" in data[p]:
+#         print("NTeleports")
+#         print(data[p]["NTeleports"])
+#     if "TeleportData" in data[p]:
+#         print("TeleportData")
+#         print(data[p]["TeleportData"])
 
 # with open("newlastRNGstate.pickle", 'wb') as handle:
 #     pickle.dump(data[0.25]["RNGStates"][1], handle, protocol=pickle.HIGHEST_PROTOCOL)

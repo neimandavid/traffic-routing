@@ -22,6 +22,7 @@
 #23: 21, but now using a detector model to reconstruct the traffic state at the start of each routing simulation
 #24: Detector model stops tracking specific names of non-adopters
 #25: New plan for lane changes - blindly sample which lane stuff ends up in
+#26: Detector model for Surtrac in routing as well (since the goal is to approximate what the main simulation would be doing)
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -53,7 +54,7 @@ else:
 
 from sumolib import checkBinary
 
-useLibsumo = True
+useLibsumo = False
 if useLibsumo:
     import libsumo as traci
 else:
@@ -102,7 +103,7 @@ predCutoffMain = 10 #Surtrac receives communications about clusters arriving thi
 predCutoffRouting = 10 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
-testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
+testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
 testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
@@ -325,69 +326,72 @@ def dumbtracActuated(simtime, light, clusters, lightphases, lastswitchtimes):
             out = 10#max(out, 2.5*(clusters[lane][0]["weight"]+1)) #If anyone's waiting, continue
     return out #If no one's waiting, switch
 
-def convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes):
-    maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
-    maxnroads = 4 #And assume 4-way intersections for now
-    nqueued = np.zeros(maxnroads*maxnlanes)
-    ntotal = np.zeros(maxnroads*maxnlanes)
-    phase = lightphases[light]
-    lastSwitch = lastswitchtimes[light]
+# def convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes):
+#     maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
+#     maxnroads = 4 #And assume 4-way intersections for now
+#     nqueued = np.zeros(maxnroads*maxnlanes)
+#     ntotal = np.zeros(maxnroads*maxnlanes)
+#     phase = lightphases[light]
+#     lastSwitch = lastswitchtimes[light]
 
-    maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
+#     maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
 
-    if False: #surtracdata[light][phase]["maxDur"]- maxfreq <= surtracdata[light][phase]["minDur"]:
-        #Edge case where duration range is smaller than period between updates, in which case overruns are unavoidable
-        print("Warning: minDur and maxDur for light " + light + " are too close together, we might have rounding errors. Also training data is going to be hacky here.")
-        if simtime - lastSwitch < surtracdata[light][phase]["minDur"]:
-            phaselenprop = -1
-        else:
-            phaselenprop = 2
-    else:
-        phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/(surtracdata[light][phase]["maxDur"]- maxfreq - surtracdata[light][phase]["minDur"])
+#     if False: #surtracdata[light][phase]["maxDur"]- maxfreq <= surtracdata[light][phase]["minDur"]:
+#         #Edge case where duration range is smaller than period between updates, in which case overruns are unavoidable
+#         print("Warning: minDur and maxDur for light " + light + " are too close together, we might have rounding errors. Also training data is going to be hacky here.")
+#         if simtime - lastSwitch < surtracdata[light][phase]["minDur"]:
+#             phaselenprop = -1
+#         else:
+#             phaselenprop = 2
+#     else:
+#         phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/(surtracdata[light][phase]["maxDur"]- maxfreq - surtracdata[light][phase]["minDur"])
 
-    #phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/surtracdata[light][phase]["maxDur"]
-    #phaselenprop is negative if we're less than minDur, and greater than 1 if we're greater than maxDur
+#     #phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/surtracdata[light][phase]["maxDur"]
+#     #phaselenprop is negative if we're less than minDur, and greater than 1 if we're greater than maxDur
 
-    prevRoad = None
-    roadind = -1
-    laneind = -1
+#     prevRoad = None
+#     roadind = -1
+#     laneind = -1
 
-    for lane in lightlanes[light]:
-        temp = lane.split("_")
-        road = temp[0] #Could have problems if road name has underscores, but ignoring for now...
-        if nLanes[road] > maxnlanes:
-            print("Warning: " + str(road) + " exceeds maxnlanes in convertToNNInput, ignoring some lanes")
-        lanenum = int(temp[-1])
-        if road != prevRoad or roadind < 0:
-            roadind += 1
-            laneind = -1
-            prevRoad = road
-        laneind += 1
-        #Last lane on road assumed to be left-turn only and being inserted in last slot
-        if laneind + 1 == nLanes[road] or laneind + 1 >= maxnlanes:
-            laneind = maxnlanes - 1
+#     for lane in lightlanes[light]:
+#         temp = lane.split("_")
+#         road = temp[0] #Could have problems if road name has underscores, but ignoring for now...
+#         if nLanes[road] > maxnlanes:
+#             print("Warning: " + str(road) + " exceeds maxnlanes in convertToNNInput, ignoring some lanes")
+#         lanenum = int(temp[-1])
+#         if road != prevRoad or roadind < 0:
+#             roadind += 1
+#             laneind = -1
+#             prevRoad = road
+#         laneind += 1
+#         #Last lane on road assumed to be left-turn only and being inserted in last slot
+#         if laneind + 1 == nLanes[road] or laneind + 1 >= maxnlanes:
+#             laneind = maxnlanes - 1
 
-        if len(clusters[lane]) > 0 and clusters[lane][0]["arrival"] <= simtime + mingap:
-            nqueued[roadind*maxnlanes+laneind] = clusters[lane][0]["weight"]
-        ntotaltemp = 0
-        for clusterind in range(len(clusters[lane])):
-            ntotaltemp += clusters[lane][clusterind]["weight"]
-        ntotal[roadind*maxnlanes+laneind] = ntotaltemp
+#         if len(clusters[lane]) > 0 and clusters[lane][0]["arrival"] <= simtime + mingap:
+#             nqueued[roadind*maxnlanes+laneind] = clusters[lane][0]["weight"]
+#         ntotaltemp = 0
+#         for clusterind in range(len(clusters[lane])):
+#             ntotaltemp += clusters[lane][clusterind]["weight"]
+#         ntotal[roadind*maxnlanes+laneind] = ntotaltemp
 
-    #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
-    return torch.Tensor(np.array([np.concatenate((nqueued, ntotal, [phase], [phaselenprop]))]))
+#     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
+#     return torch.Tensor(np.array([np.concatenate((nqueued, ntotal, [phase], [phaselenprop]))]))
 
 def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes):
     maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
     maxnroads = 4 #And assume 4-way intersections for now
     maxnclusters = 5 #And assume at most 10 clusters per lane
     ndatapercluster = 3 #Arrival, departure, weight
+    maxnphases = 12 #Should be enough to handle both leading and lagging lefts
+    phasevec = np.zeros(maxnphases)
+    
 
     clusterdata = np.zeros(maxnroads*maxnlanes*maxnclusters*ndatapercluster)
+    greenlanes = np.zeros(maxnphases*maxnroads*maxnlanes)
 
-    nqueued = np.zeros(maxnroads*maxnlanes)
-    ntotal = np.zeros(maxnroads*maxnlanes)
     phase = lightphases[light]
+    phasevec[phase] = 1
     lastSwitch = lastswitchtimes[light]
 
     maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
@@ -416,9 +420,11 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
         lanenum = int(temp[-1])
         if road != prevRoad or roadind < 0:
             roadind += 1
+            assert(roadind < maxnroads)
             laneind = -1
             prevRoad = road
         laneind += 1
+        assert(laneind < maxnlanes)
 
         #Not sharing weights so I'll skip this
         #Last lane on road assumed to be left-turn only and being inserted in last slot
@@ -431,8 +437,16 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
                 break
             clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [clusters[lane][clusterind]["arrival"]-simtime, clusters[lane][clusterind]["departure"]-simtime, clusters[lane][clusterind]["weight"]]
 
+
+        for i in range(len(surtracdata[light])):
+            assert(i < maxnphases)
+            if lane in surtracdata[light][i]["lanes"]:
+                greenlanes[roadind*maxnlanes*maxnphases+laneind*maxnphases+i] = 1
+                #greenlanes should look like [road1lane1greenphases, road1lane2greenphases, etc] where each of those is just a binary vector with 1s for green phases
+
+
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
-    return torch.Tensor(np.array([np.concatenate((clusterdata, [phase], [phaselenprop]))]))
+    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop], [simtime]))]))
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
@@ -487,17 +501,19 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac: #If using NN and/or dumbtrac
         if (testNN and (inRoutingSim or not noNNinMain)): #If using NN
-            if testDumbtrac: #And also dumbtrac
-                nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
-                # nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #Obsolete - Surtrac architecture works for dumbtrac too!
-            else: #NN but not dumbtrac
-                nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            # if testDumbtrac: #And also dumbtrac
+            #     nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+
+            #     # nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #Obsolete - Surtrac architecture works for dumbtrac too!
+            # else: #NN but not dumbtrac
+            #     nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
             
             surtracStartTime = time.time()
             totalSurtracRuns += 1
         
-            outputNN = agents[light](nnin) # Output from NN
+            outputNN = agents["light"](nnin) # Output from NN
 
             if debugMode:
                 totalSurtracTime += time.time() - surtracStartTime
@@ -943,9 +959,9 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
-            trainingdata[light].append((nnin, target, torch.tensor([[outputNN]])))
+            trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
-            trainingdata[light].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
@@ -1837,20 +1853,12 @@ def run(network, rerouters, pSmart, verbose = True):
                 print("\n")
 
                 for lane in arrivals:
-                    testlane = lane
-                    break
-
-                for lane in arrivals:
                     while len(arrivals[lane]) > 0 and arrivals[lane][0] < simtime - maxarrivalwindow:
                         arrivals[lane] = arrivals[lane][1:]
 
                 for lane in arrivals2:
                     while len(arrivals2[lane]) > 0 and arrivals2[lane][0] < simtime - maxarrivalwindow2:
                         arrivals2[lane] = arrivals2[lane][1:]
-
-                # timeperarrival = min(simtime, maxarrivalwindow)/len(arrivals[testlane])
-                # print(testlane)
-                # print(timeperarrival)
 
     #Dump intersection data to Excel
     if dumpIntersectionData:
@@ -2315,10 +2323,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 
     # this script has been called from the command line. It will start sumo as a
     # server, then connect and run
-    if False:
-        sumoBinary = checkBinary('sumo')
-    else:
-        sumoBinary = checkBinary('sumo-gui')
+
+    #sumoBinary = checkBinary('sumo')
+    sumoBinary = checkBinary('sumo-gui')
     #NOTE: Script name is zeroth arg
 
     (netfile, routefile) = readSumoCfg(sumoconfig)
@@ -2553,18 +2560,29 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     #Do NN setup
     testNN = testNNdefault
     print("testNN="+str(testNN))
-    for light in lights:
+    for light in ["light"]:#lights:
         if resetTrainingData:
             trainingdata[light] = []
 
         if testNNdefault:
-            if testDumbtrac:
-                # agents[light] = Net(26, 1, 32)
-                # #agents[light] = Net(2, 1, 32)
-                # if FTP:
-                agents[light] = Net(182, 1, 64)
-            else:
-                agents[light] = Net(182, 1, 64)
+            #NOTE: These are also hardcoded in the convertToNNInputSurtrac function
+            maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
+            maxnroads = 4 #And assume 4-way intersections for now
+            maxnclusters = 5 #And assume at most 10 clusters per lane
+            ndatapercluster = 3 #Arrival, departure, weight
+            maxnphases = 12 #Should be enough to handle both leading and lagging lefts
+            
+            nextra = 2 #Proportion of phase length used, current time
+            ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
+
+            agents[light] = Net(ninputs, 1, 64)
+            # if testDumbtrac:
+            #     # agents[light] = Net(26, 1, 32)
+            #     # #agents[light] = Net(2, 1, 32)
+            #     # if FTP:
+            #     agents[light] = Net(182, 1, 64)
+            # else:
+            #     agents[light] = Net(182, 1, 64)
             optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
             print("Checking if there's a learned model. Currently testNN="+str(testNN))
@@ -2580,7 +2598,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
                 trainingdata = pickle.load(handle)
         except FileNotFoundError:
             print("Training data not found, starting fresh")
-            for light in lights:
+            for light in ["light"]:#lights:
                 trainingdata[light] = []
     
     outdata = run(network, rerouters, pSmart, verbose)
