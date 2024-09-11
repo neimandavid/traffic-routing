@@ -22,7 +22,7 @@
 #23: 21, but now using a detector model to reconstruct the traffic state at the start of each routing simulation
 #24: Detector model stops tracking specific names of non-adopters
 #25: New plan for lane changes - blindly sample which lane stuff ends up in
-#26: Detector model for Surtrac in routing as well (since the goal is to approximate what the main simulation would be doing)
+#26: Detector model for Surtrac in routing as well (since the goal is to approximate what the main simulation would be doing).
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -2003,7 +2003,7 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
             roadsectiondata = temp[roadsectionind]
             for (vehicle, detlane, detecttime) in roadsectiondata: #Earliest time (=farthest along road) is listed first, don't reverse this
                 #Sample a lane randomly
-                if True:#not vehicle in isSmart or not isSmart[vehicle]:
+                if not vehicle in isSmart or not isSmart[vehicle]:
                     r = random.random()
                     for laneind in range(nLanes[edge]):
                         lane = edge + "_" + str(laneind)
