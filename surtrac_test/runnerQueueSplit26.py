@@ -3484,7 +3484,7 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     pass #We're actually tracking adopter positions, don't change the name or anything
 
             #Sample a lane randomly
-            if not vehicle in isSmart or not isSmart[vehicle]:
+            if True: #not vehicle in isSmart or not isSmart[vehicle]:
                 r = random.random()
                 for laneind in range(nLanes[edge]):
                     lane = edge + "_" + str(laneind)
@@ -3512,6 +3512,10 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     continue #Off network, or error when grabbing adopter info or something else weird?
                 if not lane.split("_")[0] in nonExitEdgeDetections:
                     continue #In intersection or exit road
+
+            if vehicle in isSmart and isSmart[vehicle]:
+                lane = adopterinfo[vehicle][0]
+                newroute = currentRoutes[vehicle]
 
             if not vehicle+"."+str(simtime) in traci.route.getIDList():
                 traci.route.add(vehicle+"."+str(simtime), newroute) #Using vehicle as the name of the new route, to maximize confusion for future me! (Also so we're guaranteed a unique name for the route)
