@@ -2032,6 +2032,7 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
                     except:
                         print("Failing to look up adopter data")
                         print(simtime)
+                        print(vehicle)
                         print(laneDict[vehicle])
 
                         #Not sure what happened; pretend it's a non-adopter?
@@ -3174,12 +3175,14 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             assert(newlane.split("_")[0] == newloc)
                             if id in VOIs or (id in isSmart and isSmart[id]):
                                 nonExitEdgeDetections2[newloc][0].append((id, newlane, simtime))
-                                for vehicletupleind in range(len(nonExitEdgeDetections2[edgeDict[id]][0])):
-                                    vehicletuple = nonExitEdgeDetections2[edgeDict[id]][0][vehicletupleind]
-                                    if vehicletuple[0] == id:
-                                        nonExitEdgeDetections2[edgeDict[id]][0][vehicletupleind] = (edgeDict[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
                             else:
                                 nonExitEdgeDetections2[newloc][0].append((newlane+".0routingdetect."+str(simtime), newlane, simtime))
+
+                        if edgeDict[id] in nonExitEdgeDetections2:
+                            for vehicletupleind in range(len(nonExitEdgeDetections2[edgeDict[id]][0])):
+                                vehicletuple = nonExitEdgeDetections2[edgeDict[id]][0][vehicletupleind]
+                                if vehicletuple[0] == id:
+                                    nonExitEdgeDetections2[edgeDict[id]][0][vehicletupleind] = (edgeDict[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
                 
                 laneDict[id] = newlane
                 edgeDict[id] = newloc
