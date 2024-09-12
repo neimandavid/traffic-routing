@@ -2004,7 +2004,7 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
             for (vehicle, detlane, detecttime) in roadsectiondata: #Earliest time (=farthest along road) is listed first, don't reverse this
                 #Sample a lane randomly
                 #NEXT TODO: Want this to use actual positions, but getting errors - need to re-enable and sort this
-                if True:#not vehicle in isSmart or not isSmart[vehicle]:
+                if not vehicle in isSmart or not isSmart[vehicle]:
                     r = random.random()
                     for laneind in range(nLanes[edge]):
                         lane = edge + "_" + str(laneind)
@@ -2033,9 +2033,26 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
                         print("Failing to look up adopter data")
                         print(simtime)
                         print(laneDict[vehicle])
-                        print("AAAAAAAAAAAAAAAAAAAAAAAAAA")
-                        #asdf
-                        continue #We left the network or something???
+
+                        #Not sure what happened; pretend it's a non-adopter?
+                        r = random.random()
+                        for laneind in range(nLanes[edge]):
+                            lane = edge + "_" + str(laneind)
+                            r -= (len(wasFull[nonExitLaneDetectors[lane][1][0]]) + 1)/totallanedata[edge]
+                            if r < 0:
+                                break #lane is now equal to a lane sampled from the lane change probabilities data from wasFull
+
+                        assert(detlane.split("_")[0] == edge)
+                        assert(lane.split("_")[0] == edge)
+
+                        #Process vehicle into cluster somehow
+                        #If nearby cluster, add to cluster in sorted order (could probably process in sorted order)
+                        startOfSegment = nonExitLaneDetectors[lane][roadsectionind][1]
+                        endOfSegment = lengths[lane]
+                        if roadsectionind < len(temp)-1:
+                            endOfSegment = nonExitLaneDetectors[lane][roadsectionind+1][1]
+                        lanepos = min(endOfSegment, speeds[edge] * (simtime - detecttime+0.5)+startOfSegment) #+0.5 because we crossed the detector, then made somewhere between 0 and 1 seconds worth of forward movement; estimate it as 0.5
+
 
                 if not lane.split("_")[0] in nonExitEdgeDetections:
                     continue #Car in intersection, not sure what to do so I'll ignore it (which I'm pretty sure is what I did with omniscient Surtrac)
@@ -3485,7 +3502,7 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     pass #We're actually tracking adopter positions, don't change the name or anything
 
             #Sample a lane randomly
-            if True: #not vehicle in isSmart or not isSmart[vehicle]:
+            if not vehicle in isSmart or not isSmart[vehicle]:
                 r = random.random()
                 for laneind in range(nLanes[edge]):
                     lane = edge + "_" + str(laneind)
