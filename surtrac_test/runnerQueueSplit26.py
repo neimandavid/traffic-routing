@@ -3137,6 +3137,9 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             if not id in isSmart:
                 try:
                     traci.vehicle.remove(id)
+                    #These vehicles then apparently get transferred to arrived list, and then we get errors for trying to delete them from edgeDict, so let's make temp entries to fix that
+                    edgeDict[id] = "Removed on entry"
+                    laneDict[id] = "Removed on entry"
                 except Exception as e:
                     print("things going wrong when removing vehicles")
                     print(id)

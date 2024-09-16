@@ -3135,6 +3135,9 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             if not id in isSmart:
                 try:
                     traci.vehicle.remove(id)
+                    #These vehicles then apparently get transferred to arrived list, and then we get errors for trying to delete them from edgeDict, so let's make temp entries to fix that
+                    edgeDict[id] = "Removed on entry"
+                    laneDict[id] = "Removed on entry"
                 except Exception as e:
                     print("things going wrong when removing vehicles")
                     print(id)
@@ -3425,46 +3428,46 @@ def loadStateInfo(prevedge, simtime, network): #simtime is just so I can pass it
         lightphases = pickle.load(handle)
     return (remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases, deepcopy(edgeDict), deepcopy(laneDict))
 
-def replaceAdopter(id, network, lane, lanepos, speed):
-    carcardist = 15 #TODO this is hardcoded in multiple places, fix
-    bestpos = -inf
-    bestveh = None
-    edge = lane.split("_")[0]
-    for vehicle in traci.lane.getLastStepVehicleIDs(lane): #This fails because we inserted the vehicles but didn't step yet, annoying
-        temppos = traci.vehicle.getLanePosition(vehicle)
-        if abs(temppos - lanepos) < abs(bestpos - lanepos) and (not vehicle in isSmart or not isSmart[vehicle]):
-            bestpos = temppos
-            bestveh = vehicle
-            if temppos > lanepos:
-                break #Should only keep increasing from here; once we passed the target, we're only getting worse
-    if abs(bestpos - lanepos) > carcardist:
-        #No car in a reasonable location in the correct lane, so we probably sampled it to somewhere else. Search other lanes for a suitable car
-        for laneind in range(nLanes[edge]):
-            testlane = edge + "_" + str(laneind)
-            for vehicle in traci.lane.getLastStepVehicleIDs(testlane):
-                temppos = traci.vehicle.getLanePosition(vehicle)
-                if abs(temppos - lanepos) < abs(bestpos - lanepos) and (not vehicle in isSmart or not isSmart[vehicle]):
-                    bestpos = temppos
-                    bestveh = vehicle
-                    if temppos > lanepos:
-                        break #Should only keep increasing from here; once we passed the target, we're only getting worse
-                        #And this should only break out of the inner loop, so we keep trying the next laneind
+# def replaceAdopter(id, network, lane, lanepos, speed):
+#     carcardist = 15 #TODO this is hardcoded in multiple places, fix
+#     bestpos = -inf
+#     bestveh = None
+#     edge = lane.split("_")[0]
+#     for vehicle in traci.lane.getLastStepVehicleIDs(lane): #This fails because we inserted the vehicles but didn't step yet, annoying
+#         temppos = traci.vehicle.getLanePosition(vehicle)
+#         if abs(temppos - lanepos) < abs(bestpos - lanepos) and (not vehicle in isSmart or not isSmart[vehicle]):
+#             bestpos = temppos
+#             bestveh = vehicle
+#             if temppos > lanepos:
+#                 break #Should only keep increasing from here; once we passed the target, we're only getting worse
+#     if abs(bestpos - lanepos) > carcardist:
+#         #No car in a reasonable location in the correct lane, so we probably sampled it to somewhere else. Search other lanes for a suitable car
+#         for laneind in range(nLanes[edge]):
+#             testlane = edge + "_" + str(laneind)
+#             for vehicle in traci.lane.getLastStepVehicleIDs(testlane):
+#                 temppos = traci.vehicle.getLanePosition(vehicle)
+#                 if abs(temppos - lanepos) < abs(bestpos - lanepos) and (not vehicle in isSmart or not isSmart[vehicle]):
+#                     bestpos = temppos
+#                     bestveh = vehicle
+#                     if temppos > lanepos:
+#                         break #Should only keep increasing from here; once we passed the target, we're only getting worse
+#                         #And this should only break out of the inner loop, so we keep trying the next laneind
 
 
-    #Replace the car
-    if not bestveh == None:
-        traci.vehicle.remove(bestveh)
-    else:
-        print("No suitable vehicle to remove, so I won't; hopefully there's space to add the new one??")
+#     #Replace the car
+#     if not bestveh == None:
+#         traci.vehicle.remove(bestveh)
+#     else:
+#         print("No suitable vehicle to remove, so I won't; hopefully there's space to add the new one??")
 
-    if id in traci.route.getIDList():
-        traci.route.remove(id)
-    traci.route.add(id, currentRoutes[id])
+#     if id in traci.route.getIDList():
+#         traci.route.remove(id)
+#     traci.route.add(id, currentRoutes[id])
 
-    traci.vehicle.add(id, id, departSpeed=max(0, max(0, min(speed, network.getEdge(edge).getSpeed()))))
-    #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departPos="5", departSpeed=min(newspeed, network.getEdge(nextedge).getSpeed()))
-    #There should be a departPos argument, but somehow it takes a string? And probably tries to insert at or behind the pos, making VOIs disappear if no space if I don't explicitly call moveTo
-    traci.vehicle.moveTo(id, lane, lanepos)
+#     traci.vehicle.add(id, id, departSpeed=max(0, max(0, min(speed, network.getEdge(edge).getSpeed()))))
+#     #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departPos="5", departSpeed=min(newspeed, network.getEdge(nextedge).getSpeed()))
+#     #There should be a departPos argument, but somehow it takes a string? And probably tries to insert at or behind the pos, making VOIs disappear if no space if I don't explicitly call moveTo
+#     traci.vehicle.moveTo(id, lane, lanepos)
         
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
@@ -3531,7 +3534,7 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     continue #In intersection or exit road
 
             if not vehicle+"."+str(simtime) in traci.route.getIDList():
-                traci.route.add(vehicle+"."+str(simtime), newroute) #Using vehicle as the name of the new route, to maximize confusion for future me! (Also so we're guaranteed a unique name for the route)
+                traci.route.add(vehicle+"."+str(simtime), newroute) #Using vehicle.time as the name of the new route, to maximize confusion for future me! (Also so we're guaranteed a unique name for the route)
 
             try:
                 traci.vehicle.add(vehicle, vehicle+"."+str(simtime), departLane=lane.split("_")[-1], departPos=lanepos, departSpeed="max")
@@ -3545,17 +3548,8 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     newEdgeDict[vehicle] = lane.split("_")[0]
                     newLaneDict[vehicle] = lane #Might not be perfect but should be close
                 except Exception as e:
-                    print("Error: Duplicate vehicle?") #NEXT TODO: This seems to happen with one adopter on consecutive edges. Not sure why, as we check for that when they move...
-                    # print(isSmart[vehicle]) #Comes back true
-                    # print(simtime)
-                    # print(e)
-                    # print(nonExitEdgeDetections)
-                    # asdf
+                    print("Error: Duplicate vehicle?")
 
-            # except Exception as e:
-            #     print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-            #     print(traci.vehicle.getLaneID(vehicle))
-            #     raise(e)
             if vehicle in isSmart and isSmart[vehicle]:
 
                 startroute = currentRoutes[vehicle]
@@ -3563,15 +3557,6 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                 startind = startroute.index(startedge)
                 startroute = startroute[startind:]
                 traci.vehicle.setRoute(vehicle, startroute)
-
-    #Replace appropriate vehicles in simulation with adopters
-    # for vehicle in adopterinfo:
-    #     try:
-    #         traci.simulationStep()
-    #         replaceAdopter(vehicle, network, adopterinfo[vehicle][0], adopterinfo[vehicle][1], adopterinfo[vehicle][2])
-    #     except:
-    #         print("replace adopter fail")
-    #         pass
 
 
     #Load light state
