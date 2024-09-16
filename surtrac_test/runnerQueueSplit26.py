@@ -2917,8 +2917,9 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict
                             break
                         else:
                             traci.vehicle.remove(tempveh) #Only need to remove one; if there was space for it, there's space for the ghost car
-                            laneDict.pop(tempveh)
-                            edgeDict.pop(tempveh)
+                            if tempveh in edgeDict: #Libsumo errors here sometimes with detectorModel off
+                                laneDict.pop(tempveh)
+                                edgeDict.pop(tempveh)
                             if nextlane.split("_")[0] in nonExitEdgeDetections and len(nonExitEdgeDetections[nextlane.split("_")[0]][0]) > 0:
                                 nonExitEdgeDetections[nextlane.split("_")[0]][0].pop(-1) #Ghost cars spawn at edge start, so eat the newest detection, then remake it
                             break
