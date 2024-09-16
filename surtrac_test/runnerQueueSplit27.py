@@ -3145,8 +3145,9 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
         #Remove arrived vehicles from dicts so we don't try to update them with a detector model
         for vehicle in traci.simulation.getArrivedIDList():
-            edgeDict.pop(vehicle)
-            laneDict.pop(vehicle)
+            if vehicle in edgeDict: #Without this check, we occasionally get errors without detector model, either with known vehicles trying to enter that we immediately remove, or apparently other stuff with libsumo???
+                edgeDict.pop(vehicle)
+                laneDict.pop(vehicle)
 
         #Update detections for existing cars
         for id in laneDict:
