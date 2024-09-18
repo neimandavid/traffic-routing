@@ -1060,7 +1060,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
                     if not(testDumbtrac and FTP):
                         traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #setPhaseDuration sets the remaining duration in the phase
                 
-                if remainingDuration[light][0] < 0: #Light needs to change
+                if remainingDuration[light][0] <= 0: #Light needs to change
                     pass
                     #Light needs to change
                     toSwitch.append(light)
@@ -2575,7 +2575,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             nextra = 2 #Proportion of phase length used, current time
             ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
-            agents[light] = Net(ninputs, 1, 64)
+            agents[light] = Net(ninputs, 1, 128)
             # if testDumbtrac:
             #     # agents[light] = Net(26, 1, 32)
             #     # #agents[light] = Net(2, 1, 32)

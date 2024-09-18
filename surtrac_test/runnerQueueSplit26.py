@@ -1045,7 +1045,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
                     if not(testDumbtrac and FTP):
                         traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0]) #setPhaseDuration sets the remaining duration in the phase
                 
-                if remainingDuration[light][0] < 0: #Light needs to change
+                if remainingDuration[light][0] <= 0: #Light needs to change
                     pass
                     #Light needs to change
                     toSwitch.append(light)

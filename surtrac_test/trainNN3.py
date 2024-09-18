@@ -142,8 +142,15 @@ def mainold(sumoconfig):
 
         #Load current dataset
         print("Loading training data")
-        with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
-            trainingdata = pickle.load(handle) #List of 2-elt tuples (in, out) = ([in1, in2, ...], out) indexed by light
+        try:
+            with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
+                trainingdata = pickle.load(handle) #List of 2-elt tuples (in, out) = ([in1, in2, ...], out) indexed by light
+        except FileNotFoundError as e:
+            #No data, so generate some, then loop back
+            print("Generating new training data")
+            reload(runnerQueueSplit)
+            runnerQueueSplit.main(sys.argv[1], 0, False, False, True)
+            continue
 
         dumpTrainingData(trainingdata)
         
@@ -161,7 +168,7 @@ def mainold(sumoconfig):
                 nextra = 2 #Proportion of phase length used, current time
                 ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
-                agents[light] = Net(ninputs, 1, 64)
+                agents[light] = Net(ninputs, 1, 128)
                 
                 # if testSurtrac:
                 #     agents[light] = Net(182, 1, 64)
