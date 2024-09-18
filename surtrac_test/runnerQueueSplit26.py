@@ -111,7 +111,7 @@ FTP = True #If false, and testDumbtrac = True, runs actuated control instead of 
 resetTrainingData = False
 appendTrainingData = False
 
-detectorModel = True
+detectorModel = False#True
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
@@ -3086,8 +3086,8 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         avgarrivalrate = len(arrivals[nextlane])/min(starttime, maxarrivalwindow)
         recentarrivalrate = len(arrivals2[nextlane])/min(starttime, maxarrivalwindow2)
 
-        if recentarrivalrate > avgarrivalrate:
-            nToAdd = math.floor((recentarrivalrate - avgarrivalrate)*maxarrivalwindow2) #Don't need fancy min(starttime, ...) here; if we're near start of sim, these should be equal so this won't trigger
+        if recentarrivalrate < avgarrivalrate:
+            nToAdd = math.floor((avgarrivalrate - recentarrivalrate)*maxarrivalwindow2) #Don't need fancy min(starttime, ...) here; if we're near start of sim, these should be equal so this won't trigger
             for i in range(nToAdd):
 
                 newvehicle = nextlane+"precar"+str(i)
