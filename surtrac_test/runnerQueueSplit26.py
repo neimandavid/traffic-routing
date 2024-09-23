@@ -115,6 +115,9 @@ detectorModel = False#True
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
+adopterComms = True
+adopterCommsSurtrac = adopterComms
+adopterCommsRouting = adopterComms
 
 testNNrolls = []
 nVehicles = []
@@ -2003,8 +2006,7 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
             roadsectiondata = temp[roadsectionind]
             for (vehicle, detlane, detecttime) in roadsectiondata: #Earliest time (=farthest along road) is listed first, don't reverse this
                 #Sample a lane randomly
-                #NEXT TODO: Want this to use actual positions, but getting errors - need to re-enable and sort this
-                if not vehicle in isSmart or not isSmart[vehicle]:
+                if not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsSurtrac:
                     r = random.random()
                     for laneind in range(nLanes[edge]):
                         lane = edge + "_" + str(laneind)
@@ -3503,14 +3505,14 @@ def loadStateInfoDetectors(prevedge, simtime, network):
             (vehicle, templane, detecttime) = vehicletuple
             edge = templane.split("_")[0]
 
-            if vehicle in isSmart and isSmart[vehicle]:
+            if vehicle in isSmart and isSmart[vehicle] and adopterCommsRouting:
                 if not vehicle in adopterinfo or superlane.split("_")[0] != adopterinfo[vehicle][0].split("_")[0]:
                     #This isn't actually the adopter's current location, replace the name with something else and continue as if it's a non-adopter
                     #vehicle = vehicle + ".notadopter." + superlane + "." + str(simtime) #TODO why do we need to replace the name???
                     pass #We're actually tracking adopter positions, don't change the name or anything
 
             #Sample a lane randomly
-            if not vehicle in isSmart or not isSmart[vehicle]:
+            if not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsRouting:
                 r = random.random()
                 for laneind in range(nLanes[edge]):
                     lane = edge + "_" + str(laneind)
@@ -3539,9 +3541,10 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                 if not lane.split("_")[0] in nonExitEdgeDetections:
                     continue #In intersection or exit road
 
-            if vehicle in isSmart and isSmart[vehicle]:
-                lane = adopterinfo[vehicle][0]
-                newroute = currentRoutes[vehicle]
+            #TODO pretty sure this was redundant
+            # if vehicle in isSmart and isSmart[vehicle] and adopterCommsRouting:
+            #     lane = adopterinfo[vehicle][0]
+            #     newroute = currentRoutes[vehicle]
 
             if not vehicle+"."+str(simtime) in traci.route.getIDList():
                 traci.route.add(vehicle+"."+str(simtime), newroute) #Using vehicle as the name of the new route, to maximize confusion for future me! (Also so we're guaranteed a unique name for the route)
@@ -3558,17 +3561,8 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     newEdgeDict[vehicle] = lane.split("_")[0]
                     newLaneDict[vehicle] = lane #Might not be perfect but should be close
                 except Exception as e:
-                    print("Error: Duplicate vehicle?") #NEXT TODO: This seems to happen with one adopter on consecutive edges. Not sure why, as we check for that when they move...
-                    # print(isSmart[vehicle]) #Comes back true
-                    # print(simtime)
-                    # print(e)
-                    # print(nonExitEdgeDetections)
-                    # asdf
+                    print("Error: Duplicate vehicle?") 
 
-            # except Exception as e:
-            #     print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-            #     print(traci.vehicle.getLaneID(vehicle))
-            #     raise(e)
             if vehicle in isSmart and isSmart[vehicle]:
 
                 startroute = currentRoutes[vehicle]
@@ -3576,16 +3570,6 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                 startind = startroute.index(startedge)
                 startroute = startroute[startind:]
                 traci.vehicle.setRoute(vehicle, startroute)
-
-    #Replace appropriate vehicles in simulation with adopters
-    # for vehicle in adopterinfo:
-    #     try:
-    #         traci.simulationStep()
-    #         replaceAdopter(vehicle, network, adopterinfo[vehicle][0], adopterinfo[vehicle][1], adopterinfo[vehicle][2])
-    #     except:
-    #         print("replace adopter fail")
-    #         pass
-
 
     #Load light state
     with open("savestates/lightstate_"+prevedge+".pickle", 'rb') as handle:
