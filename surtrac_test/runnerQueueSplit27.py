@@ -151,7 +151,6 @@ notlightlanes = dict()
 notlightoutlanes = dict()
 lights = []
 notLights = []
-edges = []
 lightlinkconflicts = dict()
 nLanes = dict()
 speeds = dict()
@@ -2164,7 +2163,12 @@ def generate_additionalfile(sumoconfig, networkfile):
                                     "--xml-validation", "never", "--quit-on-end"], label="setup")
         except:
             #Worried about re-calling this without old setup instance being removed
-            #traci.switch("setup")
+
+            #Need to reload in case we're training over multiple networks
+            traci.switch("setup")
+            traci.load(["-c", sumoconfig,
+                                    "--start", "--no-step-log", "true",
+                                    "--xml-validation", "never", "--quit-on-end"])
             pass
 
     net = sumolib.net.readNet(networkfile)
@@ -3084,8 +3088,8 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         avgarrivalrate = len(arrivals[nextlane])/min(starttime, maxarrivalwindow)
         recentarrivalrate = len(arrivals2[nextlane])/min(starttime, maxarrivalwindow2)
 
-        if recentarrivalrate > avgarrivalrate:
-            nToAdd = math.floor((recentarrivalrate - avgarrivalrate)*maxarrivalwindow2) #Don't need fancy min(starttime, ...) here; if we're near start of sim, these should be equal so this won't trigger
+        if recentarrivalrate < avgarrivalrate:
+            nToAdd = math.floor((avgarrivalrate - recentarrivalrate)*maxarrivalwindow2) #Don't need fancy min(starttime, ...) here; if we're near start of sim, these should be equal so this won't trigger
             for i in range(nToAdd):
 
                 newvehicle = nextlane+"precar"+str(i)

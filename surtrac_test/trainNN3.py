@@ -106,15 +106,16 @@ def readSumoCfg(sumocfg):
     return (netfile, roufile)
 
 #This is the current main function, tried dataloader stuff at one point but gave up
-def mainold(sumoconfig):
+def mainold(sumoconfigs):
     global daggertimes
     if resetNN:
         print("Archiving old models.")
         lights = []
-        (netfile, routefile) = readSumoCfg(sumoconfig)
-        for node in sumolib.xml.parse(netfile, ['junction']):
-            if node.type == "traffic_light":
-                lights.append(node.id)
+        for sumoconfig in sumoconfigs:
+            (netfile, routefile) = readSumoCfg(sumoconfig)
+            for node in sumolib.xml.parse(netfile, ['junction']):
+                if node.type == "traffic_light":
+                    lights.append(node.id)
         for light in ["light"]:# + lights:
             try:
                 print("models/imitate_" + light + ".model")
@@ -137,19 +138,25 @@ def mainold(sumoconfig):
         #Get new training data
         if not(firstIter and not resetTrainingData2): #If first iteration and we already have training data, start by training on what we have
             print("Generating new training data")
-            reload(runnerQueueSplit)
-            runnerQueueSplit.main(sys.argv[1], 0, False, False, True)
+            for sumoconfig in sumoconfigs:
+                # if sumoconfig == sumoconfigs[0]:
+                #     continue
+                reload(runnerQueueSplit)
+                runnerQueueSplit.main(sumoconfig, 0, False, False, True)
 
         #Load current dataset
         print("Loading training data")
         try:
-            with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
+            with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle: #TODO this isn't great, multi-config data looks like single-config data.
                 trainingdata = pickle.load(handle) #List of 2-elt tuples (in, out) = ([in1, in2, ...], out) indexed by light
         except FileNotFoundError as e:
             #No data, so generate some, then loop back
             print("Generating new training data")
-            reload(runnerQueueSplit)
-            runnerQueueSplit.main(sys.argv[1], 0, False, False, True)
+            for sumoconfig in sumoconfigs:
+                # if sumoconfig == sumoconfigs[0]:
+                #     continue
+                reload(runnerQueueSplit)
+                runnerQueueSplit.main(sumoconfig, 0, False, False, True)
             continue
 
         dumpTrainingData(trainingdata)
@@ -249,7 +256,7 @@ def trainLight(light, trainingdata):
 
 #Dumps training data to an Excel file for human readability
 def dumpTrainingData(trainingdata):
-    timeout = 60
+    timeout = 10#60
     starttime = time.time()
     print("Writing training data to spreadsheet")
     try:
@@ -286,7 +293,7 @@ def dumpTrainingData(trainingdata):
 
 # this is the main entry point of this script
 if __name__ == "__main__":
-    mainold(sys.argv[1])
+    mainold(sys.argv[1:])
 
 
 

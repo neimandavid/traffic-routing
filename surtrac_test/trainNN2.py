@@ -18,7 +18,7 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
 #import runnerQueueSplit
-import runnerQueueSplit23 as runnerQueueSplit #KEEP THIS UP TO DATE!!!
+import runnerQueueSplit26 as runnerQueueSplit #KEEP THIS UP TO DATE!!!
 from importlib import reload
 from Net import Net
 
