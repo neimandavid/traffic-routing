@@ -2009,7 +2009,7 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
             roadsectiondata = temp[roadsectionind]
             for (vehicle, detlane, detecttime) in roadsectiondata: #Earliest time (=farthest along road) is listed first, don't reverse this
                 #Sample a lane randomly
-                if True:#not vehicle in isSmart or not isSmart[vehicle]:
+                if not vehicle in isSmart or not isSmart[vehicle]:
                     r = random.random()
                     for laneind in range(nLanes[edge]):
                         lane = edge + "_" + str(laneind)
@@ -2037,10 +2037,28 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
                     except:
                         print("Failing to look up adopter data")
                         print(simtime)
+                        print(vehicle)
                         print(laneDict[vehicle])
-                        print("AAAAAAAAAAAAAAAAAAAAAAAAAA")
-                        #asdf
-                        continue #We left the network or something???
+
+                        #Not sure what happened; pretend it's a non-adopter?
+                        r = random.random()
+                        for laneind in range(nLanes[edge]):
+                            lane = edge + "_" + str(laneind)
+                            r -= (len(wasFull[nonExitLaneDetectors[lane][1][0]]) + 1)/totallanedata[edge]
+                            if r < 0:
+                                break #lane is now equal to a lane sampled from the lane change probabilities data from wasFull
+
+                        assert(detlane.split("_")[0] == edge)
+                        assert(lane.split("_")[0] == edge)
+
+                        #Process vehicle into cluster somehow
+                        #If nearby cluster, add to cluster in sorted order (could probably process in sorted order)
+                        startOfSegment = nonExitLaneDetectors[lane][roadsectionind][1]
+                        endOfSegment = lengths[lane]
+                        if roadsectionind < len(temp)-1:
+                            endOfSegment = nonExitLaneDetectors[lane][roadsectionind+1][1]
+                        lanepos = min(endOfSegment, speeds[edge] * (simtime - detecttime+0.5)+startOfSegment) #+0.5 because we crossed the detector, then made somewhere between 0 and 1 seconds worth of forward movement; estimate it as 0.5
+
 
                 if not lane.split("_")[0] in nonExitEdgeDetections:
                     continue #Car in intersection, not sure what to do so I'll ignore it (which I'm pretty sure is what I did with omniscient Surtrac)
@@ -3182,12 +3200,14 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             assert(newlane.split("_")[0] == newloc)
                             if id in VOIs or (id in isSmart and isSmart[id]):
                                 nonExitEdgeDetections2[newloc][0].append((id, newlane, simtime))
-                                for vehicletupleind in range(len(nonExitEdgeDetections2[edgeDict[id]][0])):
-                                    vehicletuple = nonExitEdgeDetections2[edgeDict[id]][0][vehicletupleind]
-                                    if vehicletuple[0] == id:
-                                        nonExitEdgeDetections2[edgeDict[id]][0][vehicletupleind] = (edgeDict[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
                             else:
                                 nonExitEdgeDetections2[newloc][0].append((newlane+".0routingdetect."+str(simtime), newlane, simtime))
+
+                        if edgeDict[id] in nonExitEdgeDetections2:
+                            for vehicletupleind in range(len(nonExitEdgeDetections2[edgeDict[id]][0])):
+                                vehicletuple = nonExitEdgeDetections2[edgeDict[id]][0][vehicletupleind]
+                                if vehicletuple[0] == id:
+                                    nonExitEdgeDetections2[edgeDict[id]][0][vehicletupleind] = (edgeDict[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
                 
                 laneDict[id] = newlane
                 edgeDict[id] = newloc
@@ -3563,7 +3583,6 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                 startind = startroute.index(startedge)
                 startroute = startroute[startind:]
                 traci.vehicle.setRoute(vehicle, startroute)
-
 
     #Load light state
     with open("savestates/lightstate_"+prevedge+".pickle", 'rb') as handle:
