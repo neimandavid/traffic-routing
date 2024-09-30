@@ -82,7 +82,7 @@ useLastRNGState = False #To rerun the last simulation without changing the seed 
 
 clusterthresh = 5 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars
-timestep = 0.5 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
+timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
 simdetectordist = 0 #How far after the start of a road the detectors for reconstructing initial routing sim traffic state are. TODO I'm not actually using this when making detectors, I just assume they're at start of lane. But then they miss all the cars, so I'm just faking those detectors anyway
 
@@ -406,6 +406,8 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
     #phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/surtracdata[light][phase]["maxDur"]
     #phaselenprop is negative if we're less than minDur, and greater than 1 if we're greater than maxDur
+
+        phaselenprop = (surtracdata[light][phase]["maxDur"] - (simtime - lastSwitch)) #Time until we hit max dur
 
     prevRoad = None
     roadind = -1

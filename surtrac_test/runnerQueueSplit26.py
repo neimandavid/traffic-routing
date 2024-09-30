@@ -82,7 +82,7 @@ useLastRNGState = False #To rerun the last simulation without changing the seed 
 
 clusterthresh = 5 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars
-timestep = 0.5 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
+timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this #NOTE: I'm pretty sure this used to be the temestep length in routing simulations, but I've since just started using SUMO with the default timestep of 1. timestep clearly is still in the code, but I'm not sure what it does anymore
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
 simdetectordist = 0 #How far after the start of a road the detectors for reconstructing initial routing sim traffic state are. TODO I'm not actually using this when making detectors, I just assume they're at start of lane. But then they miss all the cars, so I'm just faking those detectors anyway
 
@@ -154,7 +154,6 @@ notlightlanes = dict()
 notlightoutlanes = dict()
 lights = []
 notLights = []
-edges = []
 lightlinkconflicts = dict()
 nLanes = dict()
 speeds = dict()
@@ -1841,20 +1840,12 @@ def run(network, rerouters, pSmart, verbose = True):
                 print("\n")
 
                 for lane in arrivals:
-                    testlane = lane
-                    break
-
-                for lane in arrivals:
                     while len(arrivals[lane]) > 0 and arrivals[lane][0] < simtime - maxarrivalwindow:
                         arrivals[lane] = arrivals[lane][1:]
 
                 for lane in arrivals2:
                     while len(arrivals2[lane]) > 0 and arrivals2[lane][0] < simtime - maxarrivalwindow2:
                         arrivals2[lane] = arrivals2[lane][1:]
-
-                # timeperarrival = min(simtime, maxarrivalwindow)/len(arrivals[testlane])
-                # print(testlane)
-                # print(timeperarrival)
 
     #Dump intersection data to Excel
     if dumpIntersectionData:
@@ -2337,10 +2328,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 
     # this script has been called from the command line. It will start sumo as a
     # server, then connect and run
-    if False:
-        sumoBinary = checkBinary('sumo')
-    else:
-        sumoBinary = checkBinary('sumo-gui')
+
+    #sumoBinary = checkBinary('sumo')
+    sumoBinary = checkBinary('sumo-gui')
     #NOTE: Script name is zeroth arg
 
     (netfile, routefile) = readSumoCfg(sumoconfig)
@@ -3561,7 +3551,7 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     newEdgeDict[vehicle] = lane.split("_")[0]
                     newLaneDict[vehicle] = lane #Might not be perfect but should be close
                 except Exception as e:
-                    print("Error: Duplicate vehicle?") 
+                    print("Error: Duplicate vehicle?")
 
             if vehicle in isSmart and isSmart[vehicle]:
 
