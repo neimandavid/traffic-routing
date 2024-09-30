@@ -111,7 +111,7 @@ FTP = True #If false, and testDumbtrac = True, runs actuated control instead of 
 resetTrainingData = False
 appendTrainingData = False
 
-detectorModel = False#True
+detectorModel = True
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
