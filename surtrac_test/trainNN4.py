@@ -262,7 +262,7 @@ def trainLight(light, dataset):
         outputNN = agents[light](databatch['input']).flatten(1) # Output from NN
         target = databatch['target'].clone().detach() # Target from expert
         if crossEntropyLoss:
-            target.flatten()
+            target = target.flatten()
         loss = loss_fn(outputNN, target) # calculate loss between network action and expert action (Surtrac action)
 
         avgloss += float(loss.item()) # record loss for printing. Pretty sure this is an average over the minibatch
