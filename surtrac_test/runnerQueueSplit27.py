@@ -117,6 +117,8 @@ detectorModel = False
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
+adopterComms = True
+adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
 
 testNNrolls = []
