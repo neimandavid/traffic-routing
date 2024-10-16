@@ -256,7 +256,9 @@ def trainLight(light, dataset):
 
     dataloader = DataLoader(dataset, batch_size = batch_size, shuffle=True, num_workers=0)
     for i, databatch in enumerate(dataloader):
-        databatch.to('cuda')
+        if torch.cuda.is_available():
+            databatch['input'].to('cuda')
+            databatch['target'].to('cuda')
         outputNN = agents[light](databatch['input']).flatten(1) # Output from NN
         target = databatch['target'].clone().detach().flatten() # Target from expert
         loss = loss_fn(outputNN, target) # calculate loss between network action and expert action (Surtrac action)
