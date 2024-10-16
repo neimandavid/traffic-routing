@@ -244,8 +244,6 @@ ndumbtracerr = 0
 
 teleportdata = []
 
-#loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 50]))
-
 #Non-NN stuff
 def mergePredictions(clusters, predClusters):
     mergedClusters = pickle.loads(pickle.dumps(clusters)) #Because pass-by-value stuff

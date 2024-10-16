@@ -23,6 +23,7 @@
 #24: Detector model stops tracking specific names of non-adopters
 #25: New plan for lane changes - blindly sample which lane stuff ends up in
 #26: Detector model for Surtrac in routing as well (since the goal is to approximate what the main simulation would be doing)
+#27: Support new SurtracNet (single network for all intersections, takes in intersection geometry and light phase info). MIGHT BE OUT OF DATE ON DETECTOR MODEL STUFF, TODO add that back in from RQS26
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -82,7 +83,7 @@ useLastRNGState = False #To rerun the last simulation without changing the seed 
 
 clusterthresh = 5 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars
-timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this
+timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this #NOTE: I'm pretty sure this used to be the temestep length in routing simulations, but I've since just started using SUMO with the default timestep of 1. timestep clearly is still in the code, but I'm not sure what it does anymore
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
 simdetectordist = 0 #How far after the start of a road the detectors for reconstructing initial routing sim traffic state are. TODO I'm not actually using this when making detectors, I just assume they're at start of lane. But then they miss all the cars, so I'm just faking those detectors anyway
 
@@ -116,6 +117,7 @@ detectorModel = False
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
+adopterCommsRouting = adopterComms
 
 testNNrolls = []
 nVehicles = []
@@ -183,7 +185,6 @@ surtracDict = dict()
 adopterinfo = dict()
 
 #Predict traffic entering network
-#TODO re-enable these at some point now that I'm fairly sure they work on Pittsburgh non-historical routing?
 arrivals = dict()
 maxarrivalwindow = 300 #Use negative number to not predict new incoming cars during routing
 arrivals2 = dict()
@@ -505,19 +506,11 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         if (testNN and (inRoutingSim or not noNNinMain)): #If using NN
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
-            # if testDumbtrac: #And also dumbtrac
-            #     nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-
-            #     # nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #Obsolete - Surtrac architecture works for dumbtrac too!
-            # else: #NN but not dumbtrac
-            #     nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
             
             surtracStartTime = time.time()
             totalSurtracRuns += 1
         
             temp = agents["light"](nnin).detach().cpu().numpy() # Output from NN
-            # print(temp)
-            # asdf
             if crossEntropyLoss:
                 outputNN = temp[0][1] - temp[0][0] #Stick - switch; should be <0 if switching, >0 if sticking
             else:
@@ -1015,9 +1008,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
 
     surtracThreads = dict()
 
-    #inRoutingSim = True
     if realclusters == None or lightphases == None:
-        #inRoutingSim = False
         #if clustersCache == None: #This scares me, let's not cache for now. Probably not the slow part here anyway
         totalLoadRuns += 1
         loadStart = time.time()
@@ -2034,7 +2025,7 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
             roadsectiondata = temp[roadsectionind]
             for (vehicle, detlane, detecttime) in roadsectiondata: #Earliest time (=farthest along road) is listed first, don't reverse this
                 #Sample a lane randomly
-                if not vehicle in isSmart or not isSmart[vehicle]:
+                if not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsSurtrac:
                     r = random.random()
                     for laneind in range(nLanes[edge]):
                         lane = edge + "_" + str(laneind)
@@ -2623,7 +2614,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
             if crossEntropyLoss:
-                agents[light] = Net(ninputs, 2, 512)
+                agents[light] = Net(ninputs, 2, 1024)
             else:
                 agents[light] = Net(ninputs, 1, 128)
             # if testDumbtrac:
@@ -3170,7 +3161,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             print("Routing timeout: Edge " + startedge + ", time: " + str(starttime))
             routeStats[startvehicle]["nTimeouts"] += 1
             
-            #nToReroute -= 1
             if not useLibsumo:
                 traci.switch("main")
             routingTime += time.time() - routestartwctime
@@ -3351,11 +3341,11 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     return reroutedata[startvehicle]
 
                 toDelete.append(id)
+                #TODO: Why are we prepping new ghost cars? I'd think there's just nothing to spawn? (Might've been from back when we said the leftmost road had to actually be on the left)
                 prepGhostCars(VOIs, id, ghostcarlanes, network, False, ghostcardata, simtime) #NOTE: Since the vehicle left the network, there must be no left edge, so no need to spawn left turn cars
         
         for id in toDelete:
             VOIs.pop(id)
-            #del VOIs[id] #Should be equivalent to VOIs.pop(id)? 
 
         spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict, edgeDict, nonExitEdgeDetections2)
 
@@ -3551,14 +3541,14 @@ def loadStateInfoDetectors(prevedge, simtime, network):
             (vehicle, templane, detecttime) = vehicletuple
             edge = templane.split("_")[0]
 
-            if vehicle in isSmart and isSmart[vehicle]:
+            if vehicle in isSmart and isSmart[vehicle] and adopterCommsRouting:
                 if not vehicle in adopterinfo or superlane.split("_")[0] != adopterinfo[vehicle][0].split("_")[0]:
                     #This isn't actually the adopter's current location, replace the name with something else and continue as if it's a non-adopter
                     #vehicle = vehicle + ".notadopter." + superlane + "." + str(simtime) #TODO why do we need to replace the name???
                     pass #We're actually tracking adopter positions, don't change the name or anything
 
             #Sample a lane randomly
-            if not vehicle in isSmart or not isSmart[vehicle]:
+            if not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsRouting:
                 r = random.random()
                 for laneind in range(nLanes[edge]):
                     lane = edge + "_" + str(laneind)

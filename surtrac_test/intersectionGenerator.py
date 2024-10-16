@@ -773,14 +773,10 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             if crossEntropyLoss:
                 if (outputDumbtrac-0.25) < 0:
                     target = torch.LongTensor([0])
-                    #target = torch.tensor(([[float(1), float(0)]]))
                 else:
                     target = torch.LongTensor([1])
-                    #target = torch.tensor(([[float(0), float(1)]]))
-                #target = torch.tensor([[(bestschedule[7][0]-0.25) < 0, (bestschedule[7][0]-0.25) >= 0]]) # Target from expert
             else:
-                target = torch.tensor([[float(outputDumbtrac-0.25)]]) # Target from expert
-            #nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #Obsolete - use Surtrac architecture anyway
+                target = torch.FloatTensor([outputDumbtrac-0.25]) # Target from expert
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
             if crossEntropyLoss:
@@ -788,9 +784,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                     target = torch.LongTensor([0])
                 else:
                     target = torch.LongTensor([1])
-                #target = torch.tensor([[(bestschedule[7][0]-0.25) < 0, (bestschedule[7][0]-0.25) >= 0]]) # Target from expert
             else:
-                target = torch.tensor([[float(bestschedule[7][0]-0.25)]]) # Target from expert
+                target = torch.FloatTensor([bestschedule[7][0]-0.25]) # Target from expert
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
