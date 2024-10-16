@@ -185,7 +185,6 @@ surtracDict = dict()
 adopterinfo = dict()
 
 #Predict traffic entering network
-#TODO re-enable these at some point now that I'm fairly sure they work on Pittsburgh non-historical routing?
 arrivals = dict()
 maxarrivalwindow = 300 #Use negative number to not predict new incoming cars during routing
 arrivals2 = dict()
@@ -584,7 +583,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
         phase = lightphases[light]
         lastSwitch = lastswitchtimes[light]
-        schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
+        schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime+mingap, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
 
         for _ in range(nClusters): #Keep adding a cluster until #clusters added = #clusters to be added
             scheduleHashDict = dict()
@@ -978,9 +977,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
 
     surtracThreads = dict()
 
-    #inRoutingSim = True
     if realclusters == None or lightphases == None:
-        #inRoutingSim = False
         #if clustersCache == None: #This scares me, let's not cache for now. Probably not the slow part here anyway
         totalLoadRuns += 1
         loadStart = time.time()
@@ -3099,11 +3096,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     raise(e)
 
                 #Pretend to be a detector at the start of the input lane
-                #NEXT TODO: Not convinced we need this - hopefully these spawn off the network and we'll catch them as they enter
-                # if edge in nonExitEdgeDetections2: #If it's an exit lane we hopefully don't care
-                #     nonExitEdgeDetections2[edge][0].append((newvehicle+"."+str(simtime), nextlane, simtime))
-                #TODO: Want these to get caught by the fake entrance detectors as they enter, but not before; also these supposedly don't get eaten by the getArrivedIDList stuff below (since queue prediction seems to help), which is cool if true
-                #Hopefully this'll update laneDict and edgeDict once they enter, as desired
+                #Hopefully these spawn off the network and we'll catch them as they enter
                 laneDict[newvehicle] = "off network"
                 edgeDict[newvehicle] = "off network"
 
@@ -3114,7 +3107,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             print("Routing timeout: Edge " + startedge + ", time: " + str(starttime))
             routeStats[startvehicle]["nTimeouts"] += 1
             
-            #nToReroute -= 1
             if not useLibsumo:
                 traci.switch("main")
             routingTime += time.time() - routestartwctime
@@ -3295,11 +3287,11 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     return reroutedata[startvehicle]
 
                 toDelete.append(id)
+                #TODO: Why are we prepping new ghost cars? I'd think there's just nothing to spawn? (Might've been from back when we said the leftmost road had to actually be on the left)
                 prepGhostCars(VOIs, id, ghostcarlanes, network, False, ghostcardata, simtime) #NOTE: Since the vehicle left the network, there must be no left edge, so no need to spawn left turn cars
         
         for id in toDelete:
             VOIs.pop(id)
-            #del VOIs[id] #Should be equivalent to VOIs.pop(id)? 
 
         spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict, edgeDict, nonExitEdgeDetections2)
 
@@ -3530,11 +3522,6 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     continue #Off network, or error when grabbing adopter info or something else weird?
                 if not lane.split("_")[0] in nonExitEdgeDetections:
                     continue #In intersection or exit road
-
-            #TODO pretty sure this was redundant
-            # if vehicle in isSmart and isSmart[vehicle] and adopterCommsRouting:
-            #     lane = adopterinfo[vehicle][0]
-            #     newroute = currentRoutes[vehicle]
 
             if not vehicle+"."+str(simtime) in traci.route.getIDList():
                 traci.route.add(vehicle+"."+str(simtime), newroute) #Using vehicle as the name of the new route, to maximize confusion for future me! (Also so we're guaranteed a unique name for the route)

@@ -104,14 +104,15 @@ predCutoffRouting = 10 #Surtrac receives communications about clusters arriving 
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
-noNNinMain = True
+noNNinMain = False
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
 testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
 FTP = True #If false, and testDumbtrac = True, runs actuated control instead of fixed timing plans. If true, runs fixed timing plans (should now be same as SUMO defaults)
 resetTrainingData = False
 appendTrainingData = False
+crossEntropyLoss = True
 
-detectorModel = True
+detectorModel = False
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
@@ -514,7 +515,13 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             surtracStartTime = time.time()
             totalSurtracRuns += 1
         
-            outputNN = agents["light"](nnin) # Output from NN
+            temp = agents["light"](nnin).detach().cpu().numpy() # Output from NN
+            # print(temp)
+            # asdf
+            if crossEntropyLoss:
+                outputNN = temp[0][1] - temp[0][0] #Stick - switch; should be <0 if switching, >0 if sticking
+            else:
+                outputNN = temp#temp[0][1] - temp[0][0]
 
             if debugMode:
                 totalSurtracTime += time.time() - surtracStartTime
@@ -598,7 +605,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
         phase = lightphases[light]
         lastSwitch = lastswitchtimes[light]
-        schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
+        schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime+mingap, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
 
         for _ in range(nClusters): #Keep adding a cluster until #clusters added = #clusters to be added
             scheduleHashDict = dict()
@@ -952,11 +959,27 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     if appendTrainingData:
         if testDumbtrac:
             outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-            target = torch.tensor([[outputDumbtrac-0.25]]) # Target from expert
+            if crossEntropyLoss:
+                if (outputDumbtrac-0.25) < 0:
+                    target = torch.LongTensor([0])
+                    #target = torch.tensor(([[float(1), float(0)]]))
+                else:
+                    target = torch.LongTensor([1])
+                    #target = torch.tensor(([[float(0), float(1)]]))
+                #target = torch.tensor([[(bestschedule[7][0]-0.25) < 0, (bestschedule[7][0]-0.25) >= 0]]) # Target from expert
+            else:
+                target = torch.tensor([[float(outputDumbtrac-0.25)]]) # Target from expert
             #nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #Obsolete - use Surtrac architecture anyway
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
-            target = torch.tensor([[bestschedule[7][0]-0.25]]) # Target from expert
+            if crossEntropyLoss:
+                if (bestschedule[7][0]-0.25) < 0:
+                    target = torch.LongTensor([0])
+                else:
+                    target = torch.LongTensor([1])
+                #target = torch.tensor([[(bestschedule[7][0]-0.25) < 0, (bestschedule[7][0]-0.25) >= 0]]) # Target from expert
+            else:
+                target = torch.tensor([[float(bestschedule[7][0]-0.25)]]) # Target from expert
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
@@ -2599,7 +2622,10 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             nextra = 2 #Proportion of phase length used, current time
             ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
-            agents[light] = Net(ninputs, 1, 128)
+            if crossEntropyLoss:
+                agents[light] = Net(ninputs, 2, 512)
+            else:
+                agents[light] = Net(ninputs, 1, 128)
             # if testDumbtrac:
             #     # agents[light] = Net(26, 1, 32)
             #     # #agents[light] = Net(2, 1, 32)

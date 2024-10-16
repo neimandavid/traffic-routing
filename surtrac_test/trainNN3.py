@@ -19,11 +19,21 @@ from torch.utils.data import Dataset, DataLoader
 
 #import runnerQueueSplit
 import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!!
+import intersectionGenerator
 from importlib import reload
 from Net import Net
 
 import openpyxl #For writing training data to .xlsx files
 import time
+
+#From: https://www.geeksforgeeks.org/how-to-use-gpu-acceleration-in-pytorch/
+if torch.cuda.is_available():
+    print(f"GPU: {torch.cuda.get_device_name(0)} is available.")
+else:
+    print("No GPU available. Training will run on CPU.")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 
 #In case we want to pause a run and continue later, set these to false
 reset = False
@@ -33,6 +43,7 @@ resetTrainingData2 = reset
 #Also, Surtrac network architecture works for FTPs as well
 #So just make sure resetTrainingData=False, testDumbtrac and FTP are correct, and surtracFreq = 1ish (all in runnerQueueSplitWhatever)
 
+crossEntropyLoss = True
 
 #testSurtrac = True #Surtrac architecture works on FTP - just always setting this to true seems fine
 
@@ -43,15 +54,32 @@ agents = dict()
 optimizers = dict()
 
 actions = [0, 1]
-learning_rate = 0.0005
+learning_rate = 0.00005
 batch_size = 1
 
-nLossesBeforeReset = 1000
+nLossesBeforeReset = 10000
 losses = dict()
 epochlosses = dict()    
 daggertimes = dict()
 
-loss_fn = torch.nn.MSELoss() #torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 100]))
+#Modified from: https://discuss.pytorch.org/t/hinge-loss-in-pytorch/86220
+class HingeLoss(torch.nn.Module):
+
+    def __init__(self):
+        super(HingeLoss, self).__init__()
+        self.relu = nn.ReLU()
+
+    def forward(self, output, target):
+        all_ones = torch.ones_like(target)
+        #labels = 2 * target - all_ones #Turns 0 or 1 into -1 or 1
+        losses = all_ones - torch.mul(output.squeeze(1), target)
+
+        return torch.norm(self.relu(losses))
+
+if crossEntropyLoss:
+    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([100, 1])) #HingeLoss()#torch.nn.MSELoss()
+else:
+    loss_fn = torch.nn.MSELoss()#torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 100])) #HingeLoss()#torch.nn.MSELoss() # #
 
 
 #Neural net things
@@ -110,12 +138,12 @@ def mainold(sumoconfigs):
     global daggertimes
     if resetNN:
         print("Archiving old models.")
-        lights = []
-        for sumoconfig in sumoconfigs:
-            (netfile, routefile) = readSumoCfg(sumoconfig)
-            for node in sumolib.xml.parse(netfile, ['junction']):
-                if node.type == "traffic_light":
-                    lights.append(node.id)
+        # lights = []
+        # for sumoconfig in sumoconfigs:
+        #     (netfile, routefile) = readSumoCfg(sumoconfig)
+        #     for node in sumolib.xml.parse(netfile, ['junction']):
+        #         if node.type == "traffic_light":
+        #             lights.append(node.id)
         for light in ["light"]:# + lights:
             try:
                 print("models/imitate_" + light + ".model")
@@ -139,27 +167,33 @@ def mainold(sumoconfigs):
         if not(firstIter and not resetTrainingData2): #If first iteration and we already have training data, start by training on what we have
             print("Generating new training data")
             for sumoconfig in sumoconfigs:
-                # if sumoconfig == sumoconfigs[0]:
-                #     continue
-                reload(runnerQueueSplit)
-                runnerQueueSplit.main(sumoconfig, 0, False, False, True)
+                if sumoconfig == "IG":
+                    reload(intersectionGenerator)
+                    intersectionGenerator.main()
+                else:
+                    reload(runnerQueueSplit)
+                    runnerQueueSplit.main(sumoconfig, 0, False, False, True)
+                    dumpTrainingData(trainingdata)
 
         #Load current dataset
         print("Loading training data")
         try:
             with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle: #TODO this isn't great, multi-config data looks like single-config data.
-                trainingdata = pickle.load(handle) #List of 2-elt tuples (in, out) = ([in1, in2, ...], out) indexed by light
+                trainingdata = pickle.load(handle).to('cuda') #List of 2-elt tuples (in, out) = ([in1, in2, ...], out) indexed by light
         except FileNotFoundError as e:
             #No data, so generate some, then loop back
             print("Generating new training data")
             for sumoconfig in sumoconfigs:
-                # if sumoconfig == sumoconfigs[0]:
-                #     continue
-                reload(runnerQueueSplit)
-                runnerQueueSplit.main(sumoconfig, 0, False, False, True)
+                if sumoconfig == "IG":
+                    reload(intersectionGenerator)
+                    intersectionGenerator.main()
+                else:
+                    reload(runnerQueueSplit)
+                    runnerQueueSplit.main(sumoconfig, 0, False, False, True)
+                    dumpTrainingData(trainingdata)
             continue
 
-        dumpTrainingData(trainingdata)
+        
         
         #Set up and train initial neural nets on first iteration
         if firstIter:
@@ -175,7 +209,10 @@ def mainold(sumoconfigs):
                 nextra = 2 #Proportion of phase length used, current time
                 ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
-                agents[light] = Net(ninputs, 1, 128)
+                if crossEntropyLoss:
+                    agents[light] = Net(ninputs, 2, 1024)
+                else:
+                    agents[light] = Net(ninputs, 1, 128)
                 
                 # if testSurtrac:
                 #     agents[light] = Net(182, 1, 64)
@@ -185,7 +222,7 @@ def mainold(sumoconfigs):
                 MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
                 if not resetNN:
                     try:
-                        agents[light].load(MODEL_FILES[light])
+                        agents[light].load(MODEL_FILES[light]).to('cuda')
                     except:
                         print("Warning: Model " + light + " not found, starting fresh")
                 losses[light] = []
@@ -224,8 +261,12 @@ def trainLight(light, trainingdata):
 
     for data in trainingdata[light]:
         
-        outputNN = agents[light](data[0]) # Output from NN
-        target = torch.tensor([[float(data[1])]]) #torch.tensor([float(data[1])]) # Target from expert
+        if crossEntropyLoss:
+            outputNN = agents[light](data[0]) # Output from NN
+            target = data[1]#torch.tensor(float(data[1])) # Target from expert
+        else:
+            outputNN = agents[light](data[0]) # Output from NN
+            target = data[1]#torch.tensor([[float(data[1])]]) # Target from expert
         loss = loss_fn(outputNN, target) # calculate loss between network action and expert action (Surtrac action)
 
         avgloss += float(loss.item()) # record loss for printing
