@@ -179,7 +179,7 @@ def mainold(sumoconfigs):
         print("Loading training data")
         try:
             with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle: #TODO this isn't great, multi-config data looks like single-config data.
-                trainingdata = pickle.load(handle).to('cuda') #List of 2-elt tuples (in, out) = ([in1, in2, ...], out) indexed by light
+                trainingdata = pickle.load(handle) #List of 2-elt tuples (in, out) = ([in1, in2, ...], out) indexed by light
         except FileNotFoundError as e:
             #No data, so generate some, then loop back
             print("Generating new training data")
