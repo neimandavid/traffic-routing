@@ -14,8 +14,8 @@ class Net(torch.nn.Module):
             nn.LeakyReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.LeakyReLU(),
-            # nn.Linear(hidden_size, hidden_size),
-            # nn.LeakyReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.LeakyReLU(),
             nn.Linear(hidden_size, out_size)
         )
         
