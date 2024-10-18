@@ -54,7 +54,7 @@ optimizers = dict()
 dataloader = dict()
 
 actions = [0, 1]
-learning_rate = 0.00005
+learning_rate = 0.0005
 batch_size = 100
 
 nLossesBeforeReset = 10000/batch_size
@@ -77,7 +77,7 @@ class HingeLoss(torch.nn.Module):
         return torch.norm(self.relu(losses))
 
 if crossEntropyLoss:
-    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([100, 1])) #HingeLoss()#torch.nn.MSELoss()
+    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 1])) #If training on IG, there'll be a reasonable number of "switch" scenarios
 else:
     loss_fn = torch.nn.MSELoss()
 
@@ -103,7 +103,7 @@ class TrafficDataset(Dataset):
                 on a sample.
         """
         with open(datafile, 'rb') as handle:
-            temp = pickle.load(handle) #TODO: This is going to reload the pickle file for each light - this is slow
+            temp = pickle.load(handle)
         self.dataset = temp["light"]
 
     def __len__(self):
@@ -285,7 +285,10 @@ def trainLight(light, dataset):
     for daggertime in daggertimes[light]:
         plt.axvline(x=daggertime, color='k', linestyle='--')
     plt.xlabel("Sets of " + str(nLossesBeforeReset*batch_size) + " Points")
-    plt.ylabel("Average Loss")
+    if crossEntropyLoss:
+        plt.ylabel("Average Loss (CrossEntropy)")
+    else:
+        plt.ylabel("Average Loss (MeanSquaredError)")
     plt.title("Losses, light=" + str(light))
     #plt.show() #NOTE: Blocks code execution until you close the plot
     plt.savefig("Plots/Losses, light=" + str(light)+".png")
