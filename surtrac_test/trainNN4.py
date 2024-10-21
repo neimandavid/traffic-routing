@@ -37,7 +37,7 @@ print(device)
 #In case we want to pause a run and continue later, set these to false
 reset = False
 resetNN = reset
-resetTrainingData2 = reset
+resetTrainingData2 = False#reset
 #UPDATE: Turns out appendTrainingData (there) gets updated automatically, as does noNNInMain
 #Also, Surtrac network architecture works for FTPs as well
 #So just make sure resetTrainingData=False, testDumbtrac and FTP are correct, and surtracFreq = 1ish (all in runnerQueueSplitWhatever)
@@ -105,6 +105,16 @@ class TrafficDataset(Dataset):
         with open(datafile, 'rb') as handle:
             temp = pickle.load(handle)
         self.dataset = temp["light"]
+
+        nstick = 0
+        ntotal = 0
+        for item in self.dataset:
+            nstick += item[1]
+            ntotal += 1
+        self.stickweight = (nstick+1)/(ntotal-nstick+1) #Ratio of stick to switch, adding a pseudocount to each to avoid errors
+        print(self.stickweight)
+        if crossEntropyLoss:
+            loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, self.stickweight]))
 
     def __len__(self):
         return len(self.dataset)
@@ -206,7 +216,7 @@ def main(sumoconfigs):
                 ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
                 if crossEntropyLoss:
-                    agents[light] = Net(ninputs, 2, 1024)
+                    agents[light] = Net(ninputs, 2, 4096)
                 else:
                     agents[light] = Net(ninputs, 1, 128)
                 

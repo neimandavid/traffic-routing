@@ -246,8 +246,6 @@ ndumbtracerr = 0
 
 teleportdata = []
 
-#loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 50]))
-
 #Non-NN stuff
 def mergePredictions(clusters, predClusters):
     mergedClusters = pickle.loads(pickle.dumps(clusters)) #Because pass-by-value stuff
@@ -516,7 +514,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             if crossEntropyLoss:
                 outputNN = temp[0][1] - temp[0][0] #Stick - switch; should be <0 if switching, >0 if sticking
             else:
-                outputNN = temp#temp[0][1] - temp[0][0]
+                outputNN = temp
 
             if debugMode:
                 totalSurtracTime += time.time() - surtracStartTime
@@ -2616,7 +2614,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
             if crossEntropyLoss:
-                agents[light] = Net(ninputs, 2, 1024)
+                agents[light] = Net(ninputs, 2, 4096)
             else:
                 agents[light] = Net(ninputs, 1, 128)
             # if testDumbtrac:
