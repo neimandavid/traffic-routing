@@ -54,7 +54,7 @@ optimizers = dict()
 dataloader = dict()
 
 actions = [0, 1]
-learning_rate = 0.0005
+learning_rate = 0.00005
 batch_size = 100
 
 nLossesBeforeReset = 10000/batch_size
@@ -77,7 +77,7 @@ class HingeLoss(torch.nn.Module):
         return torch.norm(self.relu(losses))
 
 if crossEntropyLoss:
-    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 1])) #If training on IG, there'll be a reasonable number of "switch" scenarios
+    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 1.5])) #If training on IG, there'll be a reasonable number of "switch" scenarios
 else:
     loss_fn = torch.nn.MSELoss()
 
@@ -112,9 +112,9 @@ class TrafficDataset(Dataset):
             nstick += item[1]
             ntotal += 1
         self.stickweight = (nstick+1)/(ntotal-nstick+1) #Ratio of stick to switch, adding a pseudocount to each to avoid errors
-        print(self.stickweight)
-        if crossEntropyLoss:
-            loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, self.stickweight]))
+        # print(self.stickweight)
+        # if crossEntropyLoss:
+        #     loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, self.stickweight]))
 
     def __len__(self):
         return len(self.dataset)
