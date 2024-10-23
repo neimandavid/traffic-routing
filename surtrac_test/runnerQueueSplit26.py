@@ -953,8 +953,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         
 
 #@profile
-def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True, nonExitEdgeDetections = nonExitEdgeDetections):
-
+def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True, nonExitEdgeDetections4 = nonExitEdgeDetections): #deepcopy breaks main Surtrac somehow?!
     global clustersCache
     global totalLoadRuns
     global totalLoadTime
@@ -980,12 +979,12 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
         totalLoadRuns += 1
         loadStart = time.time()
         if inRoutingSim and not detectorRoutingSurtrac: #Only use the detector model for Surtrac if we're not routing
-            clustersCache = loadClusters(network, simtime, nonExitEdgeDetections)
+            clustersCache = loadClusters(network, simtime, nonExitEdgeDetections4)
         else:
             if detectorSurtrac:
-                clustersCache = loadClustersDetectors(network, simtime, nonExitEdgeDetections) #This at least grabs the same vehicles as standard loadClusters, including ungrabbing them once they hit an exit road. Positions are probably slightly inaccurate, though, since this uses a detector model
+                clustersCache = loadClustersDetectors(network, simtime, nonExitEdgeDetections4) #This at least grabs the same vehicles as standard loadClusters, including ungrabbing them once they hit an exit road. Positions are probably slightly inaccurate, though, since this uses a detector model
             else:
-                clustersCache = loadClusters(network, simtime, nonExitEdgeDetections)
+                clustersCache = loadClusters(network, simtime, nonExitEdgeDetections4)
             
         runTime = time.time() - loadStart
         totalLoadTime += runTime
@@ -1324,6 +1323,22 @@ def run(network, rerouters, pSmart, verbose = True):
                 # print("Percent error : %f" % ( ((timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2]) / (timedata[vehicle][1]-timedata[vehicle][0]) * 100))
                 # print("Route from " + timedata[vehicle][3] + " to " + timedata[vehicle][4])
             endDict[vehicle] = simtime
+
+            #In case the target was a non-exit road, delete from old road detections
+            if edgeDict[vehicle] in nonExitEdgeDetections:
+                oldEdgeStuff = nonExitEdgeDetections[edgeDict[vehicle]][0] #Since we're only storing stuff in index 0 anyway
+                if len(oldEdgeStuff) > 0:
+                    oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane. Might not actually be the adopter in question
+                else:
+                    print("Warning: Ran out of cars to remove on edge " + edgeDict[vehicle] + "!!!!!!!!!!!!!!!!!")
+
+                #Make sure we don't have a duplicate of this adopter on the last edge. If we do, make it a random car instead
+                if isSmart[vehicle]:
+                    for vehicletupleind in range(len(nonExitEdgeDetections[edgeDict[vehicle]][0])):
+                        vehicletuple = nonExitEdgeDetections[edgeDict[vehicle]][0][vehicletupleind]
+                        if vehicletuple[0] == vehicle:
+                            nonExitEdgeDetections[edgeDict[vehicle]][0][vehicletupleind] = (edgeDict[vehicle]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
+
             edgeDict.pop(vehicle)
             laneDict.pop(vehicle)
             dontReroute.append(vehicle) #Vehicle has left network and does not need to be rerouted
@@ -1341,6 +1356,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
                 #Pretend to be detectors at the start of each road (need to know where we came from so we can steal from the correct previous lane)
                 if newloc != edgeDict[id]: #Moved to a new road
+                    #Delete from old road detections
                     if edgeDict[id] in nonExitEdgeDetections:
                         oldEdgeStuff = nonExitEdgeDetections[edgeDict[id]][0] #Since we're only storing stuff in index 0 anyway
                         if len(oldEdgeStuff) > 0:
@@ -1355,12 +1371,13 @@ def run(network, rerouters, pSmart, verbose = True):
                                 if vehicletuple[0] == id:
                                     nonExitEdgeDetections[edgeDict[id]][0][vehicletupleind] = (edgeDict[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
 
-                        if newloc in nonExitEdgeDetections:
-                            assert(newlane.split("_")[0] == newloc)
-                            if isSmart[id]:
-                                nonExitEdgeDetections[newloc][0].append((id, newlane, simtime))
-                            else:
-                                nonExitEdgeDetections[newloc][0].append((newlane+".0maindetect."+str(simtime), newlane, simtime))
+                    #Add to new road detections
+                    if newloc in nonExitEdgeDetections:
+                        assert(newlane.split("_")[0] == newloc)
+                        if isSmart[id]:
+                            nonExitEdgeDetections[newloc][0].append((id, newlane, simtime))
+                        else:
+                            nonExitEdgeDetections[newloc][0].append((newlane+".0maindetect."+str(simtime), newlane, simtime))
 
                 c0 = network.getEdge(edgeDict[id]).getFromNode().getCoord()
                 c1 = network.getEdge(edgeDict[id]).getToNode().getCoord()
@@ -1474,7 +1491,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
         surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False)
+            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False, deepcopy(nonExitEdgeDetections))
             #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
             sumoPredClusters = temp[1]
             remainingDuration.update(temp[2])
@@ -1967,7 +1984,7 @@ def loadClusters(net, simtime, VOI=None):
     return (clusters, lightphases)
 
 #This is currently only used for Surtrac; should be another function that handles starting routing sims
-def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
+def loadClustersDetectors(net, simtime, nonExitEdgeDetections3, VOI=None):
     global totalLoadCars
     global nVehicles
     #Load locations of cars and current traffic light states into custom data structures
@@ -1978,14 +1995,14 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
 
     #Cluster data structures
     totallanedata = dict()
-    for edge in nonExitEdgeDetections: #Assuming exit lanes don't matter since they shouldn't have traffic - this saves us from extra exit detectors at their ends
+    for edge in nonExitEdgeDetections3: #Assuming exit lanes don't matter since they shouldn't have traffic - this saves us from extra exit detectors at their ends
         totallanedata[edge] = 0
         for laneind in range(nLanes[edge]):
             lane = edge + "_" + str(laneind)
             clusters[lane] = []
             totallanedata[edge] += len(wasFull[nonExitLaneDetectors[lane][1][0]]) + 1 #[lane][1][0] because 1 is the index of the exit detector and 0 is the index of its name. +1 as a permanent psuedocount on all detectors, mostly in case we have no data whatsoever
-    for edge in nonExitEdgeDetections: #Assuming exit lanes don't matter since they shouldn't have traffic - this saves us from extra exit detectors at their ends
-        temp = nonExitEdgeDetections[edge]
+    for edge in nonExitEdgeDetections3: #Assuming exit lanes don't matter since they shouldn't have traffic - this saves us from extra exit detectors at their ends
+        temp = nonExitEdgeDetections3[edge]
         totalLoadCars += len(temp)
         nVehicles[-1] += len(temp)
         for roadsectionind in reversed(range(len(temp))): #First road section (=closest to start) is listed first, and we want to go backwards from the end, so reverse this
@@ -2043,7 +2060,7 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections, VOI=None):
                         lanepos = min(endOfSegment, speeds[edge] * (simtime - detecttime+0.5)+startOfSegment) #+0.5 because we crossed the detector, then made somewhere between 0 and 1 seconds worth of forward movement; estimate it as 0.5
 
 
-                if not lane.split("_")[0] in nonExitEdgeDetections:
+                if not lane.split("_")[0] in nonExitEdgeDetections3:
                     continue #Car in intersection, not sure what to do so I'll ignore it (which I'm pretty sure is what I did with omniscient Surtrac)
                     #Or it's on an exit lane, but we don't care
 
@@ -3098,6 +3115,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                 laneDict3[newvehicle] = "off network"
                 edgeDict3[newvehicle] = "off network"
 
+    #START ROUTING SIM MAIN LOOP
     #Run simulation, track time to completion
     while(True):
         #Timeout if things have gone wrong somehow
@@ -3133,6 +3151,22 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         #Remove arrived vehicles from dicts so we don't try to update them with a detector model
         for vehicle in traci.simulation.getArrivedIDList():
             if vehicle in edgeDict3: #Without this check, we occasionally get errors without detector model, either with known vehicles trying to enter that we immediately remove, or apparently other stuff with libsumo???
+                #In case the target was a non-exit edge, make sure to remove these from detector readings
+                if edgeDict3[vehicle] in nonExitEdgeDetections2:
+                    #Delete from old edge detector readings
+                    oldEdgeStuff = nonExitEdgeDetections2[edgeDict3[vehicle]][0] #Since we're only storing stuff in index 0 anyway
+                    if len(oldEdgeStuff) > 0:
+                        oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane
+                    else:
+                        print("Warning: Ran out of cars to remove on edge " + edgeDict3[vehicle] + "!!!!!!!!!!!!!!!!!")
+
+                    #If we deleted the wrong car, rename the "correct" version of the thing we just deleted
+                    if edgeDict3[vehicle] in nonExitEdgeDetections2:
+                        for vehicletupleind in range(len(nonExitEdgeDetections2[edgeDict3[vehicle]][0])):
+                            vehicletuple = nonExitEdgeDetections2[edgeDict3[vehicle]][0][vehicletupleind]
+                            if vehicletuple[0] == vehicle:
+                                nonExitEdgeDetections2[edgeDict3[vehicle]][0][vehicletupleind] = (edgeDict3[vehicle]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
+                
                 edgeDict3.pop(vehicle)
                 laneDict3.pop(vehicle)
 
@@ -3275,6 +3309,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     VOIs[id][1] = traci.vehicle.getLanePosition(id)
                     VOIs[id][2] = traci.vehicle.getSpeed(id)
 
+        #TODO: We handle removing arrived vehicles from edgeDict3 and laneDict3 above, should maybe group this with that. But make sure we don't break stuff first
         for id in temp: #temp is the getArrivedList, so anything that left the network
             if id in VOIs:
                 #If we've successfully exited the goal edge, we're done
@@ -3288,7 +3323,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
                 toDelete.append(id)
                 #TODO: Why are we prepping new ghost cars? I'd think there's just nothing to spawn? (Might've been from back when we said the leftmost road had to actually be on the left)
-                prepGhostCars(VOIs, id, ghostcarlanes, network, False, ghostcardata, simtime) #NOTE: Since the vehicle left the network, there must be no left edge, so no need to spawn left turn cars
+                #prepGhostCars(VOIs, id, ghostcarlanes, network, False, ghostcardata, simtime) #NOTE: Since the vehicle left the network, there must be no left edge, so no need to spawn left turn cars
         
         for id in toDelete:
             VOIs.pop(id)
@@ -3492,6 +3527,7 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     #This isn't actually the adopter's current location, replace the name with something else and continue as if it's a non-adopter
                     print("Warning: Adopter " + vehicle + " detections think it's in the wrong spot, replacing this adopter with a non-adopter")
                     vehicle = vehicle + ".notadopter." + superedge + "." + str(simtime) #Need to replace the name so we don't try to grab an invalid lane number or something later.
+                    assert(vehicletuple[0] != vehicle)
                     pass #We're actually tracking adopter positions, don't change the name or anything
 
             #Sample a lane randomly
@@ -3516,8 +3552,7 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                 try:
                     lane = adopterinfo[vehicle][0]
                     if not lane.split("_")[0] == superedge:
-                        print("Adopter is apparently on the wrong road, but this should've been fixed earlier")
-                        asdf
+                        print("Error: Adopter is apparently on the wrong road, but this should've been fixed earlier")
                     lanepos = adopterinfo[vehicle][1] #Use actual position - apparently bad when combined with non-adopters
                     #lanepos = min(lengths[lane], speeds[lane.split("_")[0]] * (simtime - detecttime + 0.5)+simdetectordist) #+0.5 because we crossed the detector, then made somewhere between 0 and 1 seconds worth of forward movement; estimate it as 0.5
                     newroute = routeFromHere(vehicle)#currentRoutes[vehicle]
@@ -3536,12 +3571,6 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                 newLaneDict[vehicle] = lane
             except Exception as e:
                 print("Warning: Invalid departLane for no apparent reason?")
-                print(vehicle)
-                print(lane)
-                print(lanepos)
-                print(nLanes[superedge])
-                print(currentRoutes[vehicle])
-                print(superedge)
                 if not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsRouting:
                     print("Not using adopter comms on this vehicle")
                 else:
