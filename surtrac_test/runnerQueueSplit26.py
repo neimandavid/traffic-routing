@@ -3104,7 +3104,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     #START ROUTING SIM MAIN LOOP
     #Run simulation, track time to completion
     while(True):
-        
         #Timeout if things have gone wrong somehow
         if time.time()-routestartwctime > timeout:
             print("Routing timeout: Edge " + startedge + ", time: " + str(starttime))
@@ -3122,7 +3121,8 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
         #Remove all future vehicles since we aren't supposed to know about them
         for id in traci.simulation.getDepartedIDList():
-            if not id in isSmart: #We don't know if they're smart since they haven't shown up in main sim yet and aren't supposed to be here
+            if not id in edgeDict3:#isSmart: #We don't know if they're smart since they haven't shown up in main sim yet and aren't supposed to be here
+                #NEXT TODO: isSmart check is super bad and deleting the vehicles I started with!
                 try:
                     traci.vehicle.remove(id)
                     #These vehicles then apparently get transferred to arrived list, and then we get errors for trying to delete them from edgeDict3, so let's make temp entries to fix that
@@ -3443,47 +3443,6 @@ def loadStateInfo(prevedge, simtime, network): #simtime is just so I can pass it
         lightphases = pickle.load(handle)
     return (remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases, deepcopy(edgeDict), deepcopy(laneDict))
 
-# def replaceAdopter(id, network, lane, lanepos, speed):
-#     carcardist = 15 #TODO this is hardcoded in multiple places, fix
-#     bestpos = -inf
-#     bestveh = None
-#     edge = lane.split("_")[0]
-#     for vehicle in traci.lane.getLastStepVehicleIDs(lane): #This fails because we inserted the vehicles but didn't step yet, annoying
-#         temppos = traci.vehicle.getLanePosition(vehicle)
-#         if abs(temppos - lanepos) < abs(bestpos - lanepos) and (not vehicle in isSmart or not isSmart[vehicle]):
-#             bestpos = temppos
-#             bestveh = vehicle
-#             if temppos > lanepos:
-#                 break #Should only keep increasing from here; once we passed the target, we're only getting worse
-#     if abs(bestpos - lanepos) > carcardist:
-#         #No car in a reasonable location in the correct lane, so we probably sampled it to somewhere else. Search other lanes for a suitable car
-#         for laneind in range(nLanes[edge]):
-#             testlane = edge + "_" + str(laneind)
-#             for vehicle in traci.lane.getLastStepVehicleIDs(testlane):
-#                 temppos = traci.vehicle.getLanePosition(vehicle)
-#                 if abs(temppos - lanepos) < abs(bestpos - lanepos) and (not vehicle in isSmart or not isSmart[vehicle]):
-#                     bestpos = temppos
-#                     bestveh = vehicle
-#                     if temppos > lanepos:
-#                         break #Should only keep increasing from here; once we passed the target, we're only getting worse
-#                         #And this should only break out of the inner loop, so we keep trying the next laneind
-
-
-#     #Replace the car
-#     if not bestveh == None:
-#         traci.vehicle.remove(bestveh)
-#     else:
-#         print("No suitable vehicle to remove, so I won't; hopefully there's space to add the new one??")
-
-#     if not id in traci.route.getIDList():
-#         traci.route.add(id, routeFromHere(id))
-
-#     traci.vehicle.add(id, id, departSpeed=max(0, max(0, min(speed, network.getEdge(edge).getSpeed()))))
-#     #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departPos="5", departSpeed=min(newspeed, network.getEdge(nextedge).getSpeed()))
-#     #There should be a departPos argument, but somehow it takes a string? And probably tries to insert at or behind the pos, making VOIs disappear if no space if I don't explicitly call moveTo
-#     traci.vehicle.moveTo(id, lane, lanepos)
-        
-
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
 def loadStateInfoDetectors(prevedge, simtime, network):
     global netfile
@@ -3571,11 +3530,6 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     newLaneDict[vehicle] = lane #Might not be perfect but should be close
                 except Exception as e:
                     print("Error: Duplicate vehicle?")
-                    # print(vehicle)
-                    # print(newLaneDict[vehicle])
-                    # print(traci.vehicle.getLaneID(vehicle))
-                    # print(traci.vehicle.getLanePosition(vehicle))
-                    # exit(0)
 
             if vehicle in isSmart and isSmart[vehicle]:
 
@@ -3602,7 +3556,6 @@ def loadStateInfoDetectors(prevedge, simtime, network):
     for light in traci.trafficlight.getIDList():
         traci.trafficlight.setPhase(light, lightStates[light][0])
         traci.trafficlight.setPhaseDuration(light, lightStates[light][1])
-        #print(lightStates[light][1])
     with open("savestates/lightstate_"+prevedge+"_remainingDuration.pickle", 'rb') as handle:
         remainingDuration = pickle.load(handle)
     with open("savestates/lightstate_"+prevedge+"_lastSwitchTimes.pickle", 'rb') as handle:
