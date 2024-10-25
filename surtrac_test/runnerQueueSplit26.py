@@ -2709,7 +2709,6 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                         else:
                             #(remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) = loadStateInfo("MAIN", simtime)
                             loadStateInfo(savename, simtime, network)
-
                     #assert(traci.getLabel() == "main")
 
                 except traci.exceptions.TraCIException as e:
@@ -2862,36 +2861,18 @@ def prepGhostCars(VOIs, id, ghostcarlanes, network, spawnLeft, ghostcardata, sim
                             ghostcardata[simtime+leftdelay] = []
                         newspeed = min(13, oldspeed)
                         ghostcardata[simtime+leftdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
-                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed=min(9, oldspeed))
                     elif abs(getDTheta(lane.split("_")[0], nextlane.split("_")[0], network)) < 0.1: #Straight
                         straightdelay = 3
                         if not simtime + straightdelay in ghostcardata:
                             ghostcardata[simtime+straightdelay] = []
                         newspeed = min(13, oldspeed)
                         ghostcardata[simtime+straightdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
-                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed=min(13, oldspeed))
-                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed="max")
                     else: #Right turn or weird intersection
                         rightdelay = 5
                         if not simtime + rightdelay in ghostcardata:
                             ghostcardata[simtime+rightdelay] = []
                         newspeed = min(10, oldspeed)
                         ghostcardata[simtime+rightdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
-                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed=min(6, oldspeed))
-                        #traci.vehicle.add(newghostcar, nextlane, departLane=nextlanenum, departSpeed="max")
-
-                    
-                    # if abs(getDTheta(lane.split("_")[0], nextedge, network)) < 0.1:
-                    #     ghostcarpos = 5
-                    #traci.vehicle.moveTo(newghostcar, nextlane, ghostcarpos) #Why does removing this cause departSpeed errors?
-                    #traci.vehicle.setSpeed(newghostcar, oldspeed) #I think this is being set to 0 for some left-turning cars, and apparently once set cars refuse to change speed??
-                # traci.vehicle.setColor(newghostcar, [0, 255, 255, 255]) #Make the ghost car white for debug purposes
-                # #Tell new ghost car to turn left
-                # leftedge = getLeftEdge(nextlane, network)
-                # traci.vehicle.setRoute(newghostcar, [nextedge])
-                # if not leftedge == None:
-                #     traci.vehicle.setRoute(newghostcar, [nextedge, leftedge])
-                # VOIs[newghostcar] = [nextlane, oldspeed, ghostcarpos, oldroute+[nextedge], leftedge, True]
 
 def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict2, edgeDict2, nonExitEdgeDetections):
     carcardist = 15 #TODO: Don't hard-code this in two different places in code!!! (Actually, maybe fine, other one might need a gap on both sides?)
@@ -2926,6 +2907,11 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict
                                 edgeDict2.pop(tempveh)
                             if nextlane.split("_")[0] in nonExitEdgeDetections and len(nonExitEdgeDetections[nextlane.split("_")[0]][0]) > 0:
                                 nonExitEdgeDetections[nextlane.split("_")[0]][0].pop(-1) #Ghost cars spawn at edge start, so eat the newest detection, then remake it
+                                #If we deleted the wrong car, rename the "correct" version of the thing we just deleted
+                                for vehicletupleind in range(len(nonExitEdgeDetections[nextlane.split("_")[0]][0])):
+                                    vehicletuple = nonExitEdgeDetections[nextlane.split("_")[0]][0][vehicletupleind]
+                                    if vehicletuple[0] == tempveh:
+                                        nonExitEdgeDetections[nextlane.split("_")[0]][0][vehicletupleind] = (nextlane.split("_")[0]+".0oldsmartcarghostcarreplace."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
                             break
                     if lanepos > ghostcarpos+carcardist:
                         #Passed the insertion point, no need to keep checking cars
@@ -2935,8 +2921,8 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict
             if not nextlane in traci.route.getIDList():
                 traci.route.add(nextlane, [nextedge])
             if not replacedCar:
-                traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[-1]), departSpeed=max(0, min(newspeed, network.getEdge(nextedge).getSpeed())))
-                #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departPos="5", departSpeed=min(newspeed, network.getEdge(nextedge).getSpeed()))
+                traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[-1]), departSpeed="max")
+                #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[-1]), departSpeed=max(0, min(newspeed, 0.99*network.getEdge(nextedge).getSpeed())))
                 #There should be a departPos argument, but somehow it takes a string? And probably tries to insert at or behind the pos, making VOIs disappear if no space if I don't explicitly call moveTo
                 if not touchNothing:
                     traci.vehicle.moveTo(newghostcar, nextlane, ghostcarpos)
@@ -3062,7 +3048,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             newspeed = VOIs[startvehicle][1]
             if not nextlane in traci.route.getIDList():
                 traci.route.add(nextlane, [nextlane.split("_")[0]])
-            traci.vehicle.add(newghostcar, nextlane, departLane=lanenum, departSpeed=min(newspeed, network.getEdge(startedge).getSpeed()))
+            traci.vehicle.add(newghostcar, nextlane, departLane=lanenum, departSpeed="max")#min(newspeed, 0.99*network.getEdge(startedge).getSpeed()))
             edgeDict3[newghostcar] = nextlane.split("_")[0]
             laneDict3[newghostcar] = nextlane
             #Not going to insert a detector reading for these, hopefully it's fine
@@ -3118,6 +3104,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     #START ROUTING SIM MAIN LOOP
     #Run simulation, track time to completion
     while(True):
+        
         #Timeout if things have gone wrong somehow
         if time.time()-routestartwctime > timeout:
             print("Routing timeout: Edge " + startedge + ", time: " + str(starttime))
@@ -3139,10 +3126,10 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                 try:
                     traci.vehicle.remove(id)
                     #These vehicles then apparently get transferred to arrived list, and then we get errors for trying to delete them from edgeDict3, so let's make temp entries to fix that
-                    edgeDict3[id] = "Removed on entry"
-                    laneDict3[id] = "Removed on entry"
-                    edgeDict3.pop(id)
-                    laneDict3.pop(id)
+                    # edgeDict3[id] = "Removed on entry"
+                    # laneDict3[id] = "Removed on entry"
+                    # edgeDict3.pop(id)
+                    # laneDict3.pop(id)
                 except Exception as e:
                     print("things going wrong when removing vehicles")
                     print(id)
@@ -3190,23 +3177,25 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         oldEdgeStuff = nonExitEdgeDetections2[edgeDict3[id]][0] #Since we're only storing stuff in index 0 anyway
                         if len(oldEdgeStuff) > 0:
                             oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane
+                            #TODO what if this deletes an adopter? Actual adopter shows up later and fixes itself?
                         else:
                             print("Warning: Ran out of cars to remove on edge " + edgeDict3[id] + "!!!!!!!!!!!!!!!!!")
 
-                        #Add to new edge detector readings
-                        if newloc in nonExitEdgeDetections2:
-                            assert(newlane.split("_")[0] == newloc)
-                            if id in VOIs or (id in isSmart and isSmart[id]):
-                                nonExitEdgeDetections2[newloc][0].append((id, newlane, simtime))
-                            else:
-                                nonExitEdgeDetections2[newloc][0].append((newlane+".0routingdetect."+str(simtime), newlane, simtime))
-
+                        #If we didn't delete the "correct" vehicle, rename the non-deleted copy to some generic non-adopter
                         if edgeDict3[id] in nonExitEdgeDetections2:
                             for vehicletupleind in range(len(nonExitEdgeDetections2[edgeDict3[id]][0])):
                                 vehicletuple = nonExitEdgeDetections2[edgeDict3[id]][0][vehicletupleind]
                                 if vehicletuple[0] == id:
                                     nonExitEdgeDetections2[edgeDict3[id]][0][vehicletupleind] = (edgeDict3[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
                 
+                    #Add to new edge detector readings
+                    if newloc in nonExitEdgeDetections2:
+                        assert(newlane.split("_")[0] == newloc)
+                        if id in VOIs or (id in isSmart and isSmart[id]):
+                            nonExitEdgeDetections2[newloc][0].append((id, newlane, simtime))
+                        else:
+                            nonExitEdgeDetections2[newloc][0].append((newlane+".0routingdetect."+str(simtime), newlane, simtime))
+
                 laneDict3[id] = newlane
                 edgeDict3[id] = newloc
                 #TODO main run() function clears Surtrac predictions at this point; I'll need to do that if I get this thing to share routes
@@ -3292,6 +3281,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         
                         #Remove it from detections
                         #Consider doing the delete-and-rename thing from before? But we're in a routing sim, we can assume perfect information. So this might be better
+                        #Pretty sure this isn't redundant - we moved from old edge to new edge during standard car stuff, but now need to delete from new edge
                         if edgeDict3[id] in nonExitEdgeDetections2:
                             vehicletupleind = 0
                             oldEdgeStuff = nonExitEdgeDetections2[edgeDict3[id]][0] #Since we're only storing stuff in index 0 anyway
@@ -3453,46 +3443,45 @@ def loadStateInfo(prevedge, simtime, network): #simtime is just so I can pass it
         lightphases = pickle.load(handle)
     return (remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases, deepcopy(edgeDict), deepcopy(laneDict))
 
-def replaceAdopter(id, network, lane, lanepos, speed):
-    carcardist = 15 #TODO this is hardcoded in multiple places, fix
-    bestpos = -inf
-    bestveh = None
-    edge = lane.split("_")[0]
-    for vehicle in traci.lane.getLastStepVehicleIDs(lane): #This fails because we inserted the vehicles but didn't step yet, annoying
-        temppos = traci.vehicle.getLanePosition(vehicle)
-        if abs(temppos - lanepos) < abs(bestpos - lanepos) and (not vehicle in isSmart or not isSmart[vehicle]):
-            bestpos = temppos
-            bestveh = vehicle
-            if temppos > lanepos:
-                break #Should only keep increasing from here; once we passed the target, we're only getting worse
-    if abs(bestpos - lanepos) > carcardist:
-        #No car in a reasonable location in the correct lane, so we probably sampled it to somewhere else. Search other lanes for a suitable car
-        for laneind in range(nLanes[edge]):
-            testlane = edge + "_" + str(laneind)
-            for vehicle in traci.lane.getLastStepVehicleIDs(testlane):
-                temppos = traci.vehicle.getLanePosition(vehicle)
-                if abs(temppos - lanepos) < abs(bestpos - lanepos) and (not vehicle in isSmart or not isSmart[vehicle]):
-                    bestpos = temppos
-                    bestveh = vehicle
-                    if temppos > lanepos:
-                        break #Should only keep increasing from here; once we passed the target, we're only getting worse
-                        #And this should only break out of the inner loop, so we keep trying the next laneind
+# def replaceAdopter(id, network, lane, lanepos, speed):
+#     carcardist = 15 #TODO this is hardcoded in multiple places, fix
+#     bestpos = -inf
+#     bestveh = None
+#     edge = lane.split("_")[0]
+#     for vehicle in traci.lane.getLastStepVehicleIDs(lane): #This fails because we inserted the vehicles but didn't step yet, annoying
+#         temppos = traci.vehicle.getLanePosition(vehicle)
+#         if abs(temppos - lanepos) < abs(bestpos - lanepos) and (not vehicle in isSmart or not isSmart[vehicle]):
+#             bestpos = temppos
+#             bestveh = vehicle
+#             if temppos > lanepos:
+#                 break #Should only keep increasing from here; once we passed the target, we're only getting worse
+#     if abs(bestpos - lanepos) > carcardist:
+#         #No car in a reasonable location in the correct lane, so we probably sampled it to somewhere else. Search other lanes for a suitable car
+#         for laneind in range(nLanes[edge]):
+#             testlane = edge + "_" + str(laneind)
+#             for vehicle in traci.lane.getLastStepVehicleIDs(testlane):
+#                 temppos = traci.vehicle.getLanePosition(vehicle)
+#                 if abs(temppos - lanepos) < abs(bestpos - lanepos) and (not vehicle in isSmart or not isSmart[vehicle]):
+#                     bestpos = temppos
+#                     bestveh = vehicle
+#                     if temppos > lanepos:
+#                         break #Should only keep increasing from here; once we passed the target, we're only getting worse
+#                         #And this should only break out of the inner loop, so we keep trying the next laneind
 
 
-    #Replace the car
-    if not bestveh == None:
-        traci.vehicle.remove(bestveh)
-    else:
-        print("No suitable vehicle to remove, so I won't; hopefully there's space to add the new one??")
+#     #Replace the car
+#     if not bestveh == None:
+#         traci.vehicle.remove(bestveh)
+#     else:
+#         print("No suitable vehicle to remove, so I won't; hopefully there's space to add the new one??")
 
-    if id in traci.route.getIDList():
-        traci.route.remove(id)
-    traci.route.add(id, routeFromHere(id))
+#     if not id in traci.route.getIDList():
+#         traci.route.add(id, routeFromHere(id))
 
-    traci.vehicle.add(id, id, departSpeed=max(0, max(0, min(speed, network.getEdge(edge).getSpeed()))))
-    #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departPos="5", departSpeed=min(newspeed, network.getEdge(nextedge).getSpeed()))
-    #There should be a departPos argument, but somehow it takes a string? And probably tries to insert at or behind the pos, making VOIs disappear if no space if I don't explicitly call moveTo
-    traci.vehicle.moveTo(id, lane, lanepos)
+#     traci.vehicle.add(id, id, departSpeed=max(0, max(0, min(speed, network.getEdge(edge).getSpeed()))))
+#     #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[1]), departPos="5", departSpeed=min(newspeed, network.getEdge(nextedge).getSpeed()))
+#     #There should be a departPos argument, but somehow it takes a string? And probably tries to insert at or behind the pos, making VOIs disappear if no space if I don't explicitly call moveTo
+#     traci.vehicle.moveTo(id, lane, lanepos)
         
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
@@ -3582,6 +3571,11 @@ def loadStateInfoDetectors(prevedge, simtime, network):
                     newLaneDict[vehicle] = lane #Might not be perfect but should be close
                 except Exception as e:
                     print("Error: Duplicate vehicle?")
+                    # print(vehicle)
+                    # print(newLaneDict[vehicle])
+                    # print(traci.vehicle.getLaneID(vehicle))
+                    # print(traci.vehicle.getLanePosition(vehicle))
+                    # exit(0)
 
             if vehicle in isSmart and isSmart[vehicle]:
 
@@ -3596,6 +3590,7 @@ def loadStateInfoDetectors(prevedge, simtime, network):
         lightStates = pickle.load(handle)
 
     #Randomize non-adopter routes
+    #TODO thought I did this when inserting them?
     for lane in lanes:
         if len(lane) == 0 or lane[0] == ":":
             continue
