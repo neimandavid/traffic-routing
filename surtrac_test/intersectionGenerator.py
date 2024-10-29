@@ -25,8 +25,8 @@ lightoutlanes = dict()
 lanephases = dict()
 trainingdata = dict()
 
-crossEntropyLoss = True #If false, mean-squared error on time before switch
-nruns = 10000
+crossEntropyLoss = True#False #If false, mean-squared error on time before switch
+nruns = 100
 
 mingap = 2.5 #Seconds between cars
 

@@ -54,7 +54,7 @@ else:
 
 from sumolib import checkBinary
 
-useLibsumo = True
+useLibsumo = False
 if useLibsumo:
     import libsumo as traci
 else:
@@ -114,7 +114,7 @@ appendTrainingData = False
 detectorModel = True
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
-detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
+detectorRoutingSurtrac = False#detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
 adopterComms = True
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
