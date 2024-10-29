@@ -54,7 +54,7 @@ else:
 
 from sumolib import checkBinary
 
-useLibsumo = False
+useLibsumo = True
 if useLibsumo:
     import libsumo as traci
 else:
@@ -114,7 +114,7 @@ appendTrainingData = False
 detectorModel = True
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
-detectorRoutingSurtrac = False#detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
+detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
 adopterComms = True
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
@@ -581,7 +581,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
         phase = lightphases[light]
         lastSwitch = lastswitchtimes[light]
-        schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime+mingap, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
+        schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
 
         for _ in range(nClusters): #Keep adding a cluster until #clusters added = #clusters to be added
             scheduleHashDict = dict()
