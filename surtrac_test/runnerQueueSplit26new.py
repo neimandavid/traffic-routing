@@ -581,7 +581,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
         phase = lightphases[light]
         lastSwitch = lastswitchtimes[light]
-        schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime+mingap, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
+        schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
 
         for _ in range(nClusters): #Keep adding a cluster until #clusters added = #clusters to be added
             scheduleHashDict = dict()
