@@ -18,7 +18,7 @@ from torch.utils.data import Dataset, DataLoader
 
 #import runnerQueueSplit
 import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!!
-import intersectionGenerator
+import intersectionGeneratorBlocks as intersectionGenerator
 from importlib import reload
 from Net import Net
 
@@ -35,7 +35,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 #In case we want to pause a run and continue later, set these to false
-reset = False
+reset = True
 resetNN = reset
 resetTrainingData2 = False#reset
 #UPDATE: Turns out appendTrainingData (there) gets updated automatically, as does noNNInMain
@@ -251,6 +251,8 @@ def main(sumoconfigs):
             #If worst light didn't improve, break and get more data
             if epochlosses[worstlight][-1] >= epochlosses[worstlight][-2]:
                 break #And get new data
+            if epochlosses[worstlight][-1] < 1e-5:
+                break #Probably good enough, get new data rather than continuously overfitting
 
         #Loop back to start the next DAgger loop, store when we did this for plotting purposes
         for light in ["light"]:#trainingdata:
