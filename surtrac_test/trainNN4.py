@@ -44,7 +44,6 @@ resetTrainingData2 = False#reset
 
 crossEntropyLoss = True
 
-#testSurtrac = True #Surtrac architecture works on FTP - just always setting this to true seems fine
 
 nEpochs = 10
 nDaggers = 100
@@ -220,10 +219,6 @@ def main(sumoconfigs):
                 else:
                     agents[light] = Net(ninputs, 1, 128)
                 
-                # if testSurtrac:
-                #     agents[light] = Net(182, 1, 64)
-                # else:
-                #     agents[light] = Net(26, 1, 32)
                 optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
                 MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
                 if not resetNN:

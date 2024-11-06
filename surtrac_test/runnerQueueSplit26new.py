@@ -3184,9 +3184,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         # print("dontReRemove")
         # print(dontReRemove)
         for vehicle in traci.simulation.getArrivedIDList():
-            if vehicle in dontReRemove:
-                print("Found it!!!!!!!!!!!!!!")
-                continue
             if vehicle in edgeDict3: #Without this check, we occasionally get errors without detector model, either with known vehicles trying to enter that we immediately remove, or apparently other stuff with libsumo???
                 # #In case the target was a non-exit edge, make sure to remove these from detector readings
                 # if edgeDict3[vehicle] in nonExitEdgeDetections2:

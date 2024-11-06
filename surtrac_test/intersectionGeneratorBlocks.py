@@ -60,7 +60,7 @@ def intersectionGenerator():
     nPhases = nGreenPhases*2
     lightseqs = []
     clusters = dict()
-    maxNClusters = 5
+    maxNClusters = 2#5
     minClusterGap = 5
     maxClusterGap = 20
     maxClusterWeight = 20
