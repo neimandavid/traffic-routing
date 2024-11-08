@@ -82,7 +82,7 @@ useLastRNGState = False #To rerun the last simulation without changing the seed 
 
 clusterthresh = 5 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars
-timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this #NOTE: I'm pretty sure this used to be the temestep length in routing simulations, but I've since just started using SUMO with the default timestep of 1. timestep clearly is still in the code, but I'm not sure what it does anymore
+timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this #NOTE: I'm pretty sure this used to be the timestep length in routing simulations, but I've since just started using SUMO with the default timestep of 1. timestep clearly is still in the code, but I'm not sure what it does anymore
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
 simdetectordist = 0 #How far after the start of a road the detectors for reconstructing initial routing sim traffic state are. TODO I'm not actually using this when making detectors, I just assume they're at start of lane. But then they miss all the cars, so I'm just faking those detectors anyway
 
@@ -118,6 +118,13 @@ detectorRoutingSurtrac = False#detectorModel #If false, uses omniscient Surtrac 
 adopterComms = True
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
+
+clusterStats = True #If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
+clusterNumsStats = []
+clusterWeights = []
+clusterLens = []
+clusterGaps = []
+firstClusterGaps = []
 
 testNNrolls = []
 nVehicles = []
@@ -526,6 +533,17 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     if (not (testNN and (inRoutingSim or not noNNinMain)) and not testDumbtrac) or (appendTrainingData and not testDumbtrac): #(No NN or append training data) and no dumbtrac - get the actual Surtrac result
         #print("Running surtrac, double-check that this is intended.")
         #We're actually running Surtrac
+
+        if clusterStats:
+            for lane in lightlanes[light]:
+                clusterNumsStats.append(len(clusters[lane]))
+                if len(clusters[lane]) > 0:
+                    firstClusterGaps.append(clusters[lane][0]["arrival"] - simtime)
+                for i in range(len(clusters[lane])):
+                    clusterWeights.append(clusters[lane][i]["weight"])
+                    clusterLens.append(clusters[lane][i]["departure"]-clusters[lane][i]["arrival"])
+                    if i+1 < len(clusters[lane]):
+                        clusterGaps.append(clusters[lane][i+1]["arrival"] - clusters[lane][i]["departure"])
 
         surtracStartTime = time.time()
         totalSurtracRuns += 1
@@ -1780,6 +1798,18 @@ def run(network, rerouters, pSmart, verbose = True):
                 print("Best delay: %f" % bestTimeSmart)
                 print("Worst delay: %f" % worstTimeSmart)
                 print("Average number of lefts: %f" % avgLeftsSmart)
+                if clusterStats:
+                    if len(clusterNumsStats) > 1:
+                        print("Cluster numbers: %f +/- %f", np.mean(clusterNumsStats), np.std(clusterNumsStats))
+                    if len(clusterLens) > 1:
+                        print("Cluster lengths: %f +/- %f", np.mean(clusterLens), np.std(clusterLens))
+                    if len(clusterGaps) > 1:
+                        print("Cluster gaps: %f +/- %f", np.mean(clusterGaps), np.std(clusterGaps))
+                    if len(firstClusterGaps) > 1:
+                        print("First cluster gaps: %f +/- %f", np.mean(firstClusterGaps), np.std(firstClusterGaps))
+                    if len(clusterWeights) > 1:
+                        print("Cluster weights: %f +/- %f", np.mean(clusterWeights), np.std(clusterWeights))
+
                 if nSmart > 0:
                     print("Average error (actual minus expected) in predicted travel time: %f" % (avgerror))
                     print("Average absolute error in predicted travel time: %f" % (avgabserror))

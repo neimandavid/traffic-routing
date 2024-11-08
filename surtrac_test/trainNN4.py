@@ -37,7 +37,8 @@ print(device)
 #In case we want to pause a run and continue later, set these to false
 reset = True
 resetNN = reset
-resetTrainingData2 = False#reset
+resetTrainingData2 = reset
+superResetTrainingData = True
 #UPDATE: Turns out appendTrainingData (there) gets updated automatically, as does noNNInMain
 #Also, Surtrac network architecture works for FTPs as well
 #So just make sure resetTrainingData=False, testDumbtrac and FTP are correct, and surtracFreq = 1ish (all in runnerQueueSplitWhatever)
@@ -169,6 +170,12 @@ def main(sumoconfigs):
     #DAgger loop
     while True: #for daggernum in range(nDaggers):
 
+        if superResetTrainingData and not firstIter:
+            try:
+                os.remove("trainingdata/trainingdata_" + sys.argv[1] + ".pickle")
+            except FileNotFoundError:
+                print("Super reset failed, this is probably fine")
+
         #Get new training data
         if not(firstIter and not resetTrainingData2): #If first iteration and we already have training data, start by training on what we have
             print("Generating new training data")
@@ -235,7 +242,7 @@ def main(sumoconfigs):
             trainLight(light, trafficdataset)
 
         #New plan: Instead of training for a set number of epochs, we'll train the worst light until it stops improving, then run DAgger again
-        while True:
+        while True and not superResetTrainingData:
             worstlight = None
             worstloss = -inf
             for light in ["light"]:#trainingdata:
