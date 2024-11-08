@@ -25,7 +25,7 @@ lightoutlanes = dict()
 lanephases = dict()
 trainingdata = dict()
 
-crossEntropyLoss = True#'False #If false, mean-squared error on time before switch
+crossEntropyLoss = False#False #If false, mean-squared error on time before switch
 nruns = 10000
 
 mingap = 2.5 #Seconds between cars
@@ -62,8 +62,8 @@ def intersectionGenerator():
     clusters = dict()
     maxNClusters = 2#5
     minClusterGap = 5
-    maxClusterGap = 20
-    maxClusterWeight = 20
+    maxClusterGap = 10
+    maxClusterWeight = 10
 
     lightlanes["light"] = []
 
@@ -108,6 +108,8 @@ def intersectionGenerator():
             for k in range(nClusters):
                 tempcluster = dict()
                 tempcluster["arrival"] = lastdepart + RIR(minClusterGap, maxClusterGap)
+                if k == 0:
+                    tempcluster["arrival"] = lastdepart + RIR(0, maxClusterGap)
                 tempcluster["weight"] = RIR(1, maxClusterWeight) #TODO consider making this log-uniform rather than straight uniform?
                 assert(tempcluster["weight"] > 0)
                 tempdur = (tempcluster["weight"]-1)*mingap
