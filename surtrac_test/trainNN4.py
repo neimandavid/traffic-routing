@@ -37,7 +37,7 @@ print(device)
 #In case we want to pause a run and continue later, set these to false
 reset = True
 resetNN = reset
-resetTrainingData2 = reset
+resetTrainingData2 = True
 superResetTrainingData = True
 #UPDATE: Turns out appendTrainingData (there) gets updated automatically, as does noNNInMain
 #Also, Surtrac network architecture works for FTPs as well
@@ -46,7 +46,6 @@ superResetTrainingData = True
 crossEntropyLoss = True
 
 
-nEpochs = 10
 nDaggers = 100
 
 agents = dict()
@@ -57,7 +56,7 @@ actions = [0, 1]
 learning_rate = 0.00005
 batch_size = 100
 
-nLossesBeforeReset = 10000/batch_size
+nLossesBeforeReset = 100/batch_size
 losses = dict()
 epochlosses = dict()    
 daggertimes = dict()
@@ -77,7 +76,7 @@ class HingeLoss(torch.nn.Module):
         return torch.norm(self.relu(losses))
 
 if crossEntropyLoss:
-    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 1.5])) #If training on IG, there'll be a reasonable number of "switch" scenarios
+    loss_fn = torch.nn.CrossEntropyLoss()#(weight=torch.Tensor([1, 1.5])) #If training on IG, there'll be a reasonable number of "switch" scenarios
 else:
     loss_fn = torch.nn.MSELoss()
 
@@ -106,12 +105,14 @@ class TrafficDataset(Dataset):
             temp = pickle.load(handle)
         self.dataset = temp["light"]
 
-        nstick = 0
-        ntotal = 0
-        for item in self.dataset:
-            nstick += item[1]
-            ntotal += 1
-        self.stickweight = (nstick+1)/(ntotal-nstick+1) #Ratio of stick to switch, adding a pseudocount to each to avoid errors
+        #Apparently this breaks on Drogon??? Something about item[1] being a float not a long (maybe I threw too much data at it, or CE loss is bad?) Commenting since I don't need it anymore, but weird.
+        # nstick = 0
+        # ntotal = 0
+        # for item in self.dataset:
+        #     nstick += item[1]
+        #     ntotal += 1
+        # self.stickweight = (nstick+1)/(ntotal-nstick+1) #Ratio of stick to switch, adding a pseudocount to each to avoid errors
+
         # print(self.stickweight)
         # if crossEntropyLoss:
         #     loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, self.stickweight]))
@@ -224,7 +225,8 @@ def main(sumoconfigs):
                 if crossEntropyLoss:
                     agents[light] = Net(ninputs, 2, 4096)
                 else:
-                    agents[light] = Net(ninputs, 1, 128)
+                    #agents[light] = Net(ninputs, 1, 128)
+                    agents[light] = Net(ninputs, 1, 4096)
                 
                 optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
                 MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
