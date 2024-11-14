@@ -7,8 +7,12 @@ import pickle #To save/load traffic light states
 import time
 from copy import deepcopy, copy
 
-from multiprocessing import Process
-import multiprocessing
+multithreadSurtrac = False
+
+if multithreadSurtrac:
+    from multiprocessing import Process
+    import multiprocessing
+    manager = multiprocessing.Manager()
 
 import itertools
 
@@ -16,7 +20,6 @@ import itertools
 #     multiprocessing.set_start_method("spawn")
 # except:
 #     pass
-manager = multiprocessing.Manager()
 
 lightlanes = dict()
 nLanes = dict()#[0, 0, 0, 0]
@@ -851,9 +854,11 @@ def main():
     except FileNotFoundError:
         print("Training data not found, starting fresh")
         for light in ["light"]:#lights:
-            trainingdata[light] = manager.list()#[]
+            if multithreadSurtrac:
+                trainingdata[light] = manager.list()#[]
+            else:
+                trainingdata[light] = []
 
-    multithreadSurtrac = False#True
     surtracThreads = dict()
     if multithreadSurtrac:
         nProcesses = multiprocessing.cpu_count()
