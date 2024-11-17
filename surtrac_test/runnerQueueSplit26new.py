@@ -494,12 +494,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac: #If using NN and/or dumbtrac
         if (testNN and (inRoutingSim or not noNNinMain)): #If using NN
-            if testDumbtrac: #And also dumbtrac
-                nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
-                # nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #Obsolete - Surtrac architecture works for dumbtrac too!
-            else: #NN but not dumbtrac
-                nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
             
             surtracStartTime = time.time()
             totalSurtracRuns += 1
@@ -2211,7 +2207,12 @@ def generate_additionalfile(sumoconfig, networkfile):
                                     "--xml-validation", "never", "--quit-on-end"], label="setup")
         except:
             #Worried about re-calling this without old setup instance being removed
-            #traci.switch("setup")
+
+            #Need to reload in case we're training over multiple networks
+            traci.switch("setup")
+            traci.load(["-c", sumoconfig,
+                                    "--start", "--no-step-log", "true",
+                                    "--xml-validation", "never", "--quit-on-end"])
             pass
 
     net = sumolib.net.readNet(networkfile)
@@ -3623,13 +3624,6 @@ def loadStateInfoDetectors(prevedge, simtime, network):
         lightStates = pickle.load(handle)
 
     #Randomize non-adopter routes
-    #TODO thought I did this when inserting them?
-    # for lane in lanes:
-    #     if len(lane) == 0 or lane[0] == ":":
-    #         continue
-    #     for vehicle in traci.lane.getLastStepVehicleIDs(lane):
-    #         if not vehicle in isSmart or isSmart[vehicle] == False:
-    #             traci.vehicle.setRoute(vehicle, sampleRouteFromTurnData(lane, turndata))
 
     #Copy traffic light timings
     for light in traci.trafficlight.getIDList():
