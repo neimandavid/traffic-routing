@@ -845,7 +845,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             
             #Add a random point from the data augmentation to try to learn robustness to lane permutations
             alldataaugment = dataAugmenter(lightlanes["light"])
-            permlightlanes = random.random()*len(alldataaugment)
+            permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]
             templightlanes = dict()
             templightlanes["light"] = permlightlanes
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
