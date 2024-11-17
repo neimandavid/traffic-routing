@@ -44,7 +44,7 @@ def intersectionGenerator():
     nLanes = dict()#[0, 0, 0, 0]
 
     simtime = 0#RIR(0, 5000) #nninputsurtrac already subtracts off simtime from the arrival and departure time, which is how this had any hope of working back in the thesis proposal. Should either not use time at all or just hardcode 0
-    isT = False#random.random() < 0.5
+    isT = random.random() < 0.5
 
     for i in range(nRoads):
         nLanes[str(i)] = 2#RIR(0, maxNLanes) #n = somewhere between 0 and maxNLanes lanes on each road
@@ -833,14 +833,23 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
             trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
-            trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
-            #This is the thing we actually use
+            #nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
+            #trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            
+            #Add all lanes from data augmentation - bad, overfits
             # for permlightlanes in dataAugmenter(lightlanes["light"]):
             #     templightlanes = dict()
             #     templightlanes["light"] = permlightlanes
             #     nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
             #     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            
+            #Add a random point from the data augmentation to try to learn robustness to lane permutations
+            alldataaugment = dataAugmenter(lightlanes["light"])
+            permlightlanes = random.random()*len(alldataaugment)
+            templightlanes = dict()
+            templightlanes["light"] = permlightlanes
+            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
+            trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
