@@ -43,7 +43,7 @@ def intersectionGenerator():
     maxNLanes = 3
     nLanes = dict()#[0, 0, 0, 0]
 
-    simtime = 0#RIR(0, 5000)
+    simtime = 0#RIR(0, 5000) #nninputsurtrac already subtracts off simtime from the arrival and departure time, which is how this had any hope of working back in the thesis proposal. Should either not use time at all or just hardcode 0
     isT = False#random.random() < 0.5
 
     for i in range(nRoads):
@@ -77,20 +77,20 @@ def intersectionGenerator():
         for j in range(nLanes[str(i)]):
             lightseqs[i].append([])
     if not isT:
-        #Standard leading left stuff
-        lightseqs[0][0] = addYellows([0, 1, 0, 0])
-        lightseqs[0][1] = addYellows([1, 1, 0, 0])
-        lightseqs[1][0] = addYellows([0, 0, 0, 1])
-        lightseqs[1][1] = addYellows([0, 0, 1, 1])
+        #Standard lagging left stuff
+        lightseqs[0][0] = addYellows([1, 0, 0, 0])
+        lightseqs[0][1] = addYellows([0.1, 1, 0, 0]) #Left lane: [g, G, r, r]
+        lightseqs[1][0] = addYellows([0, 0, 1, 0])
+        lightseqs[1][1] = addYellows([0, 0, 0.1, 1]) #Left lane: [r, r, g, G]
         lightseqs[2] = lightseqs[0]
         lightseqs[3] = lightseqs[1]
     else:
         #Road 3 doesn't exist, road 1 thus doesn't need a protected left
         #Road 2 can't turn left and road 1 can't go straight, thus in protected left phase road 1's right lane can still go
-        lightseqs[0][0] = addYellows([0, 1, 0])
-        lightseqs[0][1] = addYellows([1, 1, 0])
-        lightseqs[2][0] = lightseqs[0][1] #Road 2 can't turn left, so treat its left turn lane as a straight lane instead
-        lightseqs[2][1] = lightseqs[0][1]
+        lightseqs[0][0] = addYellows([1, 0, 0])
+        lightseqs[0][1] = addYellows([0.1, 1, 0]) #Left lane: [g, G, r]
+        lightseqs[2][0] = lightseqs[0][0] #Road 2 can't turn left, so treat its left turn lane as a straight lane instead
+        lightseqs[2][1] = lightseqs[0][0]
         lightseqs[1][0] = addYellows([1, 0, 1]) #Road 1 right lane can go during the protected left
         lightseqs[1][1] = addYellows([0, 0, 1])
     assert(len(lightseqs[0][0]) == nPhases)
@@ -203,8 +203,8 @@ def addYellows(v):
     l = len(v)
     w = []
     for i in range(l):
-        w.append(v[i])
-        w.append(v[i] & v[(i+1)%l])
+        w.append(int(v[i]))
+        w.append(int(np.ceil(v[i])) & int(np.ceil(v[(i+1)%l])) & (int(v[i]) | int(v[(i+1)%l])))
     return w
 
 

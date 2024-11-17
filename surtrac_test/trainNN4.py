@@ -56,7 +56,7 @@ actions = [0, 1]
 learning_rate = 0.00005
 batch_size = 100
 
-nLossesBeforeReset = 100/batch_size
+nLossesBeforeReset = 1000/batch_size
 losses = dict()
 epochlosses = dict()    
 daggertimes = dict()
@@ -167,11 +167,39 @@ def main(sumoconfigs):
             print("Nothing to archive, this is fine")
             pass
 
+    #Do NN setup
+    for light in ["light"]:#trainingdata:
+        maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
+        maxnroads = 4 #And assume 4-way intersections for now
+        maxnclusters = 5 #And assume at most 10 clusters per lane
+        ndatapercluster = 3 #Arrival, departure, weight
+        maxnphases = 12 #Should be enough to handle both leading and lagging lefts
+        
+        nextra = 2 #Proportion of phase length used, current time
+        ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
+
+        if crossEntropyLoss:
+            agents[light] = Net(ninputs, 2, 4096)
+        else:
+            #agents[light] = Net(ninputs, 1, 128)
+            agents[light] = Net(ninputs, 1, 4096)
+        
+        optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
+        MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
+        if not resetNN:
+            try:
+                agents[light].load(MODEL_FILES[light]).to('cuda')
+            except:
+                print("Warning: Model " + light + " not found, starting fresh")
+        losses[light] = []
+        epochlosses[light] = []
+        daggertimes[light] = []
+
     firstIter = True
     #DAgger loop
     while True: #for daggernum in range(nDaggers):
 
-        if superResetTrainingData and not firstIter:
+        if superResetTrainingData:
             try:
                 os.remove("trainingdata/trainingdata_" + sys.argv[1] + ".pickle")
             except FileNotFoundError:
@@ -187,7 +215,9 @@ def main(sumoconfigs):
                 else:
                     reload(runnerQueueSplit)
                     runnerQueueSplit.main(sumoconfig, 0, False, False, True)
-                    dumpTrainingData(trainingdata)
+                with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
+                    trainingdata = pickle.load(handle)
+            dumpTrainingData(trainingdata)
 
         #Load current dataset
         print("Loading training data")
@@ -196,48 +226,8 @@ def main(sumoconfigs):
 
         except FileNotFoundError as e:
             #No data, so generate some, then loop back
-            print("Generating new training data")
-            for sumoconfig in sumoconfigs:
-                if sumoconfig == "IG":
-                    #reload(intersectionGenerator)
-                    intersectionGenerator.main()
-                else:
-                    reload(runnerQueueSplit)
-                    runnerQueueSplit.main(sumoconfig, 0, False, False, True)
-                    dumpTrainingData(trainingdata)
-            continue
-        
-        
-        #Set up and train initial neural nets on first iteration
-        if firstIter:
             firstIter = False
-            #Do NN setup
-            for light in ["light"]:#trainingdata:
-                maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
-                maxnroads = 4 #And assume 4-way intersections for now
-                maxnclusters = 5 #And assume at most 10 clusters per lane
-                ndatapercluster = 3 #Arrival, departure, weight
-                maxnphases = 12 #Should be enough to handle both leading and lagging lefts
-                
-                nextra = 2 #Proportion of phase length used, current time
-                ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
-
-                if crossEntropyLoss:
-                    agents[light] = Net(ninputs, 2, 4096)
-                else:
-                    #agents[light] = Net(ninputs, 1, 128)
-                    agents[light] = Net(ninputs, 1, 4096)
-                
-                optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
-                MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
-                if not resetNN:
-                    try:
-                        agents[light].load(MODEL_FILES[light]).to('cuda')
-                    except:
-                        print("Warning: Model " + light + " not found, starting fresh")
-                losses[light] = []
-                epochlosses[light] = []
-                daggertimes[light] = []
+            continue
         
         #Train everything once - note that all losses are likely to spike after new training data comes in
         for light in ["light"]:#trainingdata:
@@ -312,7 +302,7 @@ def trainLight(light, dataset):
 
 #Dumps training data to an Excel file for human readability
 def dumpTrainingData(trainingdata):
-    timeout = 10#60
+    timeout = 5#60
     starttime = time.time()
     print("Writing training data to spreadsheet")
     try:
@@ -339,7 +329,7 @@ def dumpTrainingData(trainingdata):
                     if row == 2:
                         sheets[light].cell(1, col, "NN Output")
                     if len(batch) > 2:
-                        sheets[light].cell(row, col, float(batch[2][linenum]))
+                        sheets[light].cell(row, col, float(batch[2][linenum])) #TODO this is wrong for cross-entropy loss
                     row += 1
     except Exception as e:
         print(e)

@@ -55,7 +55,7 @@ else:
 
 from sumolib import checkBinary
 
-useLibsumo = False
+useLibsumo = True
 if useLibsumo:
     import libsumo as traci
 else:
@@ -449,7 +449,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
 
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
-    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop], [simtime]))]))
+    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop], [simtime-simtime]))]))
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
@@ -2633,7 +2633,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             if crossEntropyLoss:
                 agents[light] = Net(ninputs, 2, 4096)
             else:
-                agents[light] = Net(ninputs, 1, 128)
+                agents[light] = Net(ninputs, 1, 4096)
             # if testDumbtrac:
             #     # agents[light] = Net(26, 1, 32)
             #     # #agents[light] = Net(2, 1, 32)
