@@ -10,12 +10,12 @@ class Net(torch.nn.Module):
 
             nn.Linear(in_size, hidden_size), #Blindly copying an architecture
             nn.LeakyReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LeakyReLU(),
+            # nn.Linear(hidden_size, hidden_size),
+            # nn.LeakyReLU(),
+            # nn.Linear(hidden_size, hidden_size),
+            # nn.LeakyReLU(),
+            # nn.Linear(hidden_size, hidden_size),
+            # nn.LeakyReLU(),
             # nn.Linear(hidden_size, hidden_size),
             # nn.LeakyReLU(),
             # nn.Linear(hidden_size, hidden_size),
