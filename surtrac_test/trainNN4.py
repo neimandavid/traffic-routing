@@ -17,7 +17,7 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
 #import runnerQueueSplit
-import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!!
+#import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!!
 import intersectionGeneratorBlocks as intersectionGenerator
 from importlib import reload
 from Net import Net
@@ -215,8 +215,8 @@ def main(sumoconfigs):
                     #reload(intersectionGenerator)
                     intersectionGenerator.main()
                 else:
-                    reload(runnerQueueSplit)
-                    runnerQueueSplit.main(sumoconfig, 0, False, False, True)
+                    # reload(runnerQueueSplit)
+                    # runnerQueueSplit.main(sumoconfig, 0, False, False, True)
                 with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
                     trainingdata = pickle.load(handle)
             dumpTrainingData(trainingdata)
