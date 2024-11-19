@@ -215,6 +215,7 @@ def main(sumoconfigs):
                     #reload(intersectionGenerator)
                     intersectionGenerator.main()
                 else:
+                    pass
                     # reload(runnerQueueSplit)
                     # runnerQueueSplit.main(sumoconfig, 0, False, False, True)
                 with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
