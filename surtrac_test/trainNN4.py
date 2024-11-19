@@ -181,7 +181,7 @@ def main(sumoconfigs):
         ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
         if crossEntropyLoss:
-            agents[light] = Net(ninputs, 2, 128)
+            agents[light] = Net(ninputs, 2, 4096)
         else:
             #agents[light] = Net(ninputs, 1, 128)
             agents[light] = Net(ninputs, 1, 4096)
