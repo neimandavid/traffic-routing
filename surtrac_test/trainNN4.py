@@ -39,6 +39,8 @@ reset = True
 resetNN = reset
 resetTrainingData2 = True
 superResetTrainingData = True
+if superResetTrainingData:
+    resetTrainingData2 = True
 #UPDATE: Turns out appendTrainingData (there) gets updated automatically, as does noNNInMain
 #Also, Surtrac network architecture works for FTPs as well
 #So just make sure resetTrainingData=False, testDumbtrac and FTP are correct, and surtracFreq = 1ish (all in runnerQueueSplitWhatever)

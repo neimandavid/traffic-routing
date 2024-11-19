@@ -119,7 +119,7 @@ adopterComms = True
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
 
-clusterStats = True #If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
+clusterStats = False #If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
 clusterNumsStats = []
 clusterWeights = []
 clusterLens = []
