@@ -517,7 +517,9 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             surtracStartTime = time.time()
             totalSurtracRuns += 1
         
+            print("Starting NN call")
             temp = agents["light"](nnin).detach().cpu().numpy() # Output from NN
+            print("Ending NN call")
             if crossEntropyLoss:
                 outputNN = temp[0][1] - temp[0][0] #Stick - switch; should be <0 if switching, >0 if sticking
             else:
