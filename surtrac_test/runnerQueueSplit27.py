@@ -517,6 +517,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             surtracStartTime = time.time()
             totalSurtracRuns += 1
         
+            print(agents["light"])
+            print(nnin)
             print("Starting NN call")
             temp = agents["light"](nnin) # Output from NN
             print(temp)
