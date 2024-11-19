@@ -833,8 +833,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
             trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
-            #nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
-            #trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
+            trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add all lanes from data augmentation - bad, overfits
             # for permlightlanes in dataAugmenter(lightlanes["light"]):
