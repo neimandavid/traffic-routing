@@ -7,15 +7,19 @@ import pickle #To save/load traffic light states
 import time
 from copy import deepcopy, copy
 
-from multiprocessing import Process
-import multiprocessing
+multithreadSurtrac = True
+
+if multithreadSurtrac:
+    from multiprocessing import Process
+    import multiprocessing
+    manager = multiprocessing.Manager()
 
 import itertools
 
-try:
-    multiprocessing.set_start_method("fork")
-except:
-    pass
+# try:
+#     multiprocessing.set_start_method("spawn")
+# except:
+#     pass
 
 lightlanes = dict()
 nLanes = dict()#[0, 0, 0, 0]
@@ -26,7 +30,7 @@ lanephases = dict()
 trainingdata = dict()
 
 crossEntropyLoss = True#False #If false, mean-squared error on time before switch
-nruns = 100
+nruns = 100000
 
 mingap = 2.5 #Seconds between cars
 
@@ -39,7 +43,7 @@ def intersectionGenerator():
     maxNLanes = 3
     nLanes = dict()#[0, 0, 0, 0]
 
-    simtime = RIR(0, 5000)
+    simtime = 0
 
     for i in range(nRoads):
         nLanes[str(i)] = RIR(0, maxNLanes) #n = somewhere between 0 and maxNLanes lanes on each road
@@ -52,8 +56,8 @@ def intersectionGenerator():
     clusters = dict()
     maxNClusters = 5
     minClusterGap = 5
-    maxClusterGap = 20
-    maxClusterWeight = 20
+    maxClusterGap = 10
+    maxClusterWeight = 10
 
     lightlanes["light"] = []
 
@@ -74,6 +78,8 @@ def intersectionGenerator():
             for k in range(nClusters):
                 tempcluster = dict()
                 tempcluster["arrival"] = lastdepart + RIR(minClusterGap, maxClusterGap)
+                if k == 0:
+                    tempcluster["arrival"] = lastdepart + RIR(0, maxClusterGap)
                 tempcluster["weight"] = RIR(1, maxClusterWeight) #TODO consider making this log-uniform rather than straight uniform?
                 assert(tempcluster["weight"] > 0)
                 tempdur = (tempcluster["weight"]-1)*mingap
@@ -81,7 +87,7 @@ def intersectionGenerator():
                 lastdepart = tempcluster["departure"]
                 clusters[lane].append(tempcluster)
 
-    phase = RIR(0, (nGreenPhases-1)*2) #Current light phase - forced to be even, thus green. -1 because RIR is inclusive
+    phase = RIR(0, (nGreenPhases-1))*2 #Current light phase - forced to be even, thus green. -1 because RIR is inclusive
     mindur = 5
     maxdur = 120 #Max duration of a green phase
 
@@ -102,7 +108,9 @@ def intersectionGenerator():
         if i % 2 == 0: #Green phase
             surtracdata["light"][i]["maxDur"] = maxdur
         else:
-            surtracdata["light"][i]["maxDur"] = mindur #Because yellow phases
+            surtracdata["light"][i]["maxDur"] = 7#mindur #Because yellow phases
+            surtracdata["light"][i]["minDur"] = 7#mindur #Because yellow phases
+            
         surtracdata["light"][i]["lanes"] = []
         for j in range(nRoads):
             for k in range(nLanes[str(j)]):
@@ -161,8 +169,8 @@ def addYellows(v):
     l = len(v)
     w = []
     for i in range(l):
-        w.append(v[i])
-        w.append(v[i] & v[(i+1)%l])
+        w.append(int(v[i]))
+        w.append(int(np.ceil(v[i])) & int(np.ceil(v[(i+1)%l])) & (int(v[i]) | int(v[(i+1)%l])))
     return w
 
 
@@ -407,7 +415,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         lastSwitch = lastswitchtimes[light]
         schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime+mingap, 0, lastSwitch, [simtime-lastSwitch], [], emptyPrePreds)]
 
-        print("nClusters: " + str(nClusters))
+        #print("nClusters: " + str(nClusters))
         for _ in range(nClusters): #Keep adding a cluster until #clusters added = #clusters to be added
             scheduleHashDict = dict()
             for schedule in schedules:
@@ -425,7 +433,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                     #Now loop over all phases where we can clear this cluster
                     try:
                         assert(len(lanephases[lane]) > 0)
-                    except e as Exception:
+                    except Exception as e:
                         print(lane)
                         print("ERROR: Can't clear this lane ever?")
                         raise(e)
@@ -565,7 +573,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                         newschedule = (schedule[0]+[(i, j)], newScheduleStatus, i, directionalMakespans, newMakespan, delay, newLastSwitch, newDurations, [], newPrePredict)
                         try:
                             assert(newschedule[7][0] >= simtime-lastSwitch)
-                        except e as Exception:
+                        except Exception as e:
                             print(newschedule)
                             print(simtime-lastSwitch)
                             raise(e)
@@ -791,12 +799,23 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
             trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
-            #This is the thing we actually use
-            for permlightlanes in dataAugmenter(lightlanes["light"]):
-                templightlanes = dict()
-                templightlanes["light"] = permlightlanes
-                nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
-                trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
+            trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            
+            #Add all lanes from data augmentation - bad, overfits
+            # for permlightlanes in dataAugmenter(lightlanes["light"]):
+            #     templightlanes = dict()
+            #     templightlanes["light"] = permlightlanes
+            #     nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
+            #     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            
+            #Add a random point from the data augmentation to try to learn robustness to lane permutations
+            # alldataaugment = dataAugmenter(lightlanes["light"])
+            # permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]
+            # templightlanes = dict()
+            # templightlanes["light"] = permlightlanes
+            # nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
+            # trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
@@ -810,24 +829,30 @@ def main():
     except FileNotFoundError:
         print("Training data not found, starting fresh")
         for light in ["light"]:#lights:
-            trainingdata[light] = []
+            if multithreadSurtrac:
+                trainingdata[light] = manager.list()#[]
+            else:
+                trainingdata[light] = []
 
-    multithreadSurtrac = False
     surtracThreads = dict()
+    if multithreadSurtrac:
+        nProcesses = multiprocessing.cpu_count()
+    else:
+        nProcesses = 1
 
     #print(multiprocessing.cpu_count())
             
-    for i in range(nruns):
-        print("Starting run " + str(i))
+    for i in range(nProcesses):
+        print("Starting thread " + str(i))
         if multithreadSurtrac:
             #print("Starting vehicle routing thread")
-            surtracThreads[i] = Process(target=intersectionGenerator())
+            surtracThreads[i] = Process(target=loopIntersectionGenerator, args=(int(nruns/nProcesses),)) #Need the comma so args is a tuple not a single int
             surtracThreads[i].start()
         else:
-            intersectionGenerator()
+            loopIntersectionGenerator(int(nruns/nProcesses))
 
     if multithreadSurtrac:
-        for i in range(nruns):
+        for i in range(len(surtracThreads)):
             surtracThreads[i].join()
         #print(trainingdata)
 
@@ -835,7 +860,12 @@ def main():
     with open("trainingdata/trainingdata_" + "IG" + ".pickle", 'wb') as handle:
         pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+def loopIntersectionGenerator(nLoops = 1):
+    for i in range(nLoops):
+        intersectionGenerator()
+
 #lanelist = lightlanes["light"]
+#Data augmentation: Permute lanes within each road, and order of roads
 def dataAugmenter(lanelist):
     #Given a list of "road_lane" strings, want all reorderings, where we can change the order the roads appear and change the order within each road that the lanes appear
     #First, split to sublists by road

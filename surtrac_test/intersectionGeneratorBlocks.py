@@ -7,7 +7,7 @@ import pickle #To save/load traffic light states
 import time
 from copy import deepcopy, copy
 
-multithreadSurtrac = False
+multithreadSurtrac = True
 
 if multithreadSurtrac:
     from multiprocessing import Process
@@ -30,7 +30,7 @@ lanephases = dict()
 trainingdata = dict()
 
 crossEntropyLoss = True#False #If false, mean-squared error on time before switch
-nruns = 10000
+nruns = 100000
 
 mingap = 2.5 #Seconds between cars
 
@@ -844,12 +844,12 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             #     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add a random point from the data augmentation to try to learn robustness to lane permutations
-            alldataaugment = dataAugmenter(lightlanes["light"])
-            permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]
-            templightlanes = dict()
-            templightlanes["light"] = permlightlanes
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
-            trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            # alldataaugment = dataAugmenter(lightlanes["light"])
+            # permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]
+            # templightlanes = dict()
+            # templightlanes["light"] = permlightlanes
+            # nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
+            # trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
