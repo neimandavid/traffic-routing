@@ -67,7 +67,7 @@ def intersectionGenerator():
     maxNClusters = 1#2#5
     minClusterGap = 5
     maxClusterGap = 10
-    maxClusterWeight = 10
+    maxClusterWeight = 20
 
     lightlanes["light"] = []
 
@@ -78,21 +78,23 @@ def intersectionGenerator():
             lightseqs[i].append([])
     if not isT:
         #Standard lagging left stuff
-        lightseqs[0][0] = addYellows([1, 0, 0, 0])
-        lightseqs[0][1] = addYellows([0.1, 1, 0, 0]) #Left lane: [g, G, r, r]
-        lightseqs[1][0] = addYellows([0, 0, 1, 0])
-        lightseqs[1][1] = addYellows([0, 0, 0.1, 1]) #Left lane: [r, r, g, G]
+        cycleBy = RIR(0, 3)
+        lightseqs[0][0] = addYellows(cycleArray([1, 0, 0, 0], cycleBy))
+        lightseqs[0][1] = addYellows(cycleArray([0.1, 1, 0, 0], cycleBy)) #Left lane: [g, G, r, r]
+        lightseqs[1][0] = addYellows(cycleArray([0, 0, 1, 0], cycleBy))
+        lightseqs[1][1] = addYellows(cycleArray([0, 0, 0.1, 1], cycleBy)) #Left lane: [r, r, g, G]
         lightseqs[2] = lightseqs[0]
         lightseqs[3] = lightseqs[1]
     else:
         #Road 3 doesn't exist, road 1 thus doesn't need a protected left
         #Road 2 can't turn left and road 1 can't go straight, thus in protected left phase road 1's right lane can still go
-        lightseqs[0][0] = addYellows([1, 0, 0])
-        lightseqs[0][1] = addYellows([0.1, 1, 0]) #Left lane: [g, G, r]
+        cycleBy = RIR(0, 2)
+        lightseqs[0][0] = addYellows(cycleArray([1, 0, 0], cycleBy))
+        lightseqs[0][1] = addYellows(cycleArray([0.1, 1, 0], cycleBy)) #Left lane: [g, G, r]
         lightseqs[2][0] = lightseqs[0][0] #Road 2 can't turn left, so treat its left turn lane as a straight lane instead
         lightseqs[2][1] = lightseqs[0][0]
-        lightseqs[1][0] = addYellows([1, 0, 1]) #Road 1 right lane can go during the protected left
-        lightseqs[1][1] = addYellows([0, 0, 1])
+        lightseqs[1][0] = addYellows(cycleArray([1, 0, 1], cycleBy)) #Road 1 right lane can go during the protected left
+        lightseqs[1][1] = addYellows(cycleArray([0, 0, 1], cycleBy))
     assert(len(lightseqs[0][0]) == nPhases)
 
     for i in range(nRoads):
@@ -834,7 +836,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
-            trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            #trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add all lanes from data augmentation - bad, overfits
             # for permlightlanes in dataAugmenter(lightlanes["light"]):
@@ -844,12 +846,12 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             #     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add a random point from the data augmentation to try to learn robustness to lane permutations
-            # alldataaugment = dataAugmenter(lightlanes["light"])
-            # permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]
-            # templightlanes = dict()
-            # templightlanes["light"] = permlightlanes
-            # nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
-            # trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            alldataaugment = dataAugmenter2(lightlanes["light"])
+            permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]
+            templightlanes = dict()
+            templightlanes["light"] = permlightlanes
+            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
+            trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
@@ -922,6 +924,27 @@ def dataAugmenter(lanelist):
             l3new.append(catlist)
     return l3new
 
+#For not permuting lanes within roads
+def dataAugmenter2(lanelist):
+    #Given a list of "road_lane" strings, want all reorderings, where we can change the order the roads appear and change the order within each road that the lanes appear
+    #First, split to sublists by road
+    listlist = []
+    curRoad = None
+    for lane in lanelist:
+        if lane.split("_")[0] == curRoad:
+            listlist[-1].append(lane)
+        else:
+            curRoad = lane.split("_")[0]
+            listlist.append([lane])
+    l3new = []
+    perms = itertools.permutations(listlist)
+    for perm in perms:
+        catlist = []
+        for sublist in perm:
+            catlist += sublist
+        l3new.append(catlist)
+    return l3new
+
 def makeListListList(listlist):
     if len(listlist) == 0:
         return [[]] #TODO Check format here
@@ -947,6 +970,13 @@ def makeListListList(listlist):
                 for utation in makeListListList(listlist[1:]):
                     listlistlist.append([list(perm)]+utation)
         return listlistlist
+
+def cycleArray(arr, n):
+    #return arr
+    newarr = copy(arr)
+    for i in range(len(arr)):
+        newarr[i] = arr[(i+n)%len(arr)]
+    return newarr
 
 # this is the main entry point of this script
 if __name__ == "__main__":
