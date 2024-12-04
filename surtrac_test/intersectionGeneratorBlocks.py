@@ -7,7 +7,7 @@ import pickle #To save/load traffic light states
 import time
 from copy import deepcopy, copy
 
-multithreadSurtrac = True
+multithreadSurtrac = False#True
 
 if multithreadSurtrac:
     from multiprocessing import Process
