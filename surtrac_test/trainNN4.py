@@ -47,9 +47,6 @@ if superResetTrainingData:
 
 crossEntropyLoss = True
 
-
-nDaggers = 100
-
 agents = dict()
 optimizers = dict()
 dataloader = dict()
@@ -96,13 +93,6 @@ def log(*args, **kwargs):
 #Based on https://pytorch.org/tutorials/beginner/data_loading_tutorial.html
 class TrafficDataset(Dataset):
     def __init__(self, datafile):
-        """
-        Arguments:
-            csv_file (string): Path to the csv file with annotations.
-            root_dir (string): Directory with all the images.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
-        """
         with open(datafile, 'rb') as handle:
             temp = pickle.load(handle)
         self.dataset = temp["light"]
@@ -177,8 +167,8 @@ def main(sumoconfigs):
         ndatapercluster = 3 #Arrival, departure, weight
         maxnphases = 12 #Should be enough to handle both leading and lagging lefts
         
-        nextra = 2 #Proportion of phase length used, current time
-        ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
+        nextra = 1 #Remaining time in current lane, current time (garbage, set to 0)
+        ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra #180+144+12+1=337
 
         if crossEntropyLoss:
             agents[light] = Net(ninputs, 2, 4096)
@@ -192,14 +182,18 @@ def main(sumoconfigs):
             try:
                 agents[light].load(MODEL_FILES[light]).to('cuda')
             except:
-                print("Warning: Model " + light + " not found, starting fresh")
+                try:
+                    agents[light].load(MODEL_FILES[light])
+                except FileNotFoundError as e:
+                    print(e)
+                    print("Warning: Model " + light + " not found? Starting fresh")
         losses[light] = []
         epochlosses[light] = []
         daggertimes[light] = []
 
     firstIter = True
     #DAgger loop
-    while True: #for daggernum in range(nDaggers):
+    while True:
 
         if superResetTrainingData:
             try:
@@ -290,8 +284,9 @@ def trainLight(light, dataset):
     agents[light].save(MODEL_FILES[light])
     plt.figure()
     plt.plot(losses[light])
-    for daggertime in daggertimes[light]:
-        plt.axvline(x=daggertime, color='k', linestyle='--')
+    #Vertical lines each time we get new data - annoying since we don't reuse data now
+    # for daggertime in daggertimes[light]:
+    #     plt.axvline(x=daggertime, color='k', linestyle='--')
     plt.xlabel("Sets of " + str(nLossesBeforeReset*batch_size) + " Points")
     if crossEntropyLoss:
         plt.ylabel("Average Loss (CrossEntropy)")

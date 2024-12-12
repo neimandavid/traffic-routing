@@ -121,7 +121,7 @@ adopterComms = True
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
 
-clusterStats = False #If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
+clusterStats = False #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
 clusterNumsStats = []
 clusterWeights = []
 clusterLens = []
@@ -456,7 +456,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
 
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
-    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop], [simtime-simtime]))]))
+    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop]))]))
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
@@ -2657,7 +2657,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             ndatapercluster = 3 #Arrival, departure, weight
             maxnphases = 12 #Should be enough to handle both leading and lagging lefts
             
-            nextra = 2 #Proportion of phase length used, current time
+            nextra = 1 #Proportion of phase length used
             ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
             if crossEntropyLoss:

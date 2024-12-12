@@ -7,7 +7,7 @@ import pickle #To save/load traffic light states
 import time
 from copy import deepcopy, copy
 
-multithreadSurtrac = False#True
+multithreadSurtrac = True
 
 if multithreadSurtrac:
     from multiprocessing import Process
@@ -22,7 +22,6 @@ import itertools
 #     pass
 
 lightlanes = dict()
-nLanes = dict()#[0, 0, 0, 0]
 surtracdata = dict()
 lightphasedata = dict()
 lightoutlanes = dict()
@@ -34,6 +33,8 @@ nruns = 100000
 
 mingap = 2.5 #Seconds between cars
 
+allowT = True
+
 #@profile
 def intersectionGenerator():
     global nLanes
@@ -44,15 +45,17 @@ def intersectionGenerator():
     nLanes = dict()#[0, 0, 0, 0]
 
     simtime = 0#RIR(0, 5000) #nninputsurtrac already subtracts off simtime from the arrival and departure time, which is how this had any hope of working back in the thesis proposal. Should either not use time at all or just hardcode 0
-    isT = random.random() < 0.5
+    if allowT:
+        isT = random.random() < 0.5
+    else:
+        isT = random.random() < 0
 
     for i in range(nRoads):
         nLanes[str(i)] = 2#RIR(0, maxNLanes) #n = somewhere between 0 and maxNLanes lanes on each road
-        if i == 3:
-            if not isT:
-                nLanes[str(i)] = 2
-            else:
-                nLanes[str(i)] = 0
+        if i == 3 and isT:
+            nLanes[str(i)] = 0
+        if i == 2 and isT:
+            nLanes[str(i)] = 1 #We're assuming left lane is left turn only. Left turn would go to road 3, which doesn't exist, so pretend the lane doesn't exist (else Surtrac gets confused and throws assertion errors; RQS fixes this by checking intersection connections thus not seeing the road either)
 
     #Literally just make up random nonsense for red-green phases
     maxNGreenPhases = 6
@@ -64,7 +67,10 @@ def intersectionGenerator():
     nPhases = nGreenPhases*2
     lightseqs = []
     clusters = dict()
-    maxNClusters = 1#2#5
+    if not allowT:
+        maxNClusters = 2#1
+    else:
+        maxNClusters = 2#5
     minClusterGap = 5
     maxClusterGap = 10
     maxClusterWeight = 20
@@ -89,12 +95,13 @@ def intersectionGenerator():
         #Road 3 doesn't exist, road 1 thus doesn't need a protected left
         #Road 2 can't turn left and road 1 can't go straight, thus in protected left phase road 1's right lane can still go
         cycleBy = RIR(0, 2)
-        lightseqs[0][0] = addYellows(cycleArray([1, 0, 0], cycleBy))
+        lightseqs[0][0] = addYellows(cycleArray([1, 1, 0], cycleBy)) #Right lane just goes on green, there's no opposing left to worry about
         lightseqs[0][1] = addYellows(cycleArray([0.1, 1, 0], cycleBy)) #Left lane: [g, G, r]
-        lightseqs[2][0] = lightseqs[0][0] #Road 2 can't turn left, so treat its left turn lane as a straight lane instead
-        lightseqs[2][1] = lightseqs[0][0]
-        lightseqs[1][0] = addYellows(cycleArray([1, 0, 1], cycleBy)) #Road 1 right lane can go during the protected left
+        lightseqs[2][0] = addYellows(cycleArray([1, 0, 0], cycleBy)) #Have to stop during opposing left turn arrow
+        #lightseqs[2][1] = addYellows(cycleArray([0, 0, 0], cycleBy)) #Road 2 can't turn left. Treat its left lane as always red? #, so treat its left turn lane as a straight lane instead
+        lightseqs[1][0] = addYellows(cycleArray([0, 1, 1], cycleBy)) #Road 1 right lane can go during the protected left
         lightseqs[1][1] = addYellows(cycleArray([0, 0, 1], cycleBy))
+        #NOTE: We're padding unused phases with 0s, but this looks weird if things cycle around s.t. something like lightseqs[1][0] gets to go on the first and last phases. Maybe the NN can figure this out, but ideally we'd have a better input format here...
     assert(len(lightseqs[0][0]) == nPhases)
 
     for i in range(nRoads):
@@ -113,15 +120,23 @@ def intersectionGenerator():
             lastdepart = simtime
             for k in range(nClusters):
                 tempcluster = dict()
-                tempcluster["arrival"] = lastdepart + RIR(minClusterGap, maxClusterGap)
+                tempcluster["arrival"] = lastdepart + RIR(minClusterGap, maxClusterGap, True)
                 if k == 0:
-                    tempcluster["arrival"] = lastdepart + RIR(0, maxClusterGap)
+                    tempcluster["arrival"] = lastdepart + RIR(0, maxClusterGap, True)
                 tempcluster["weight"] = RIR(1, maxClusterWeight) #TODO consider making this log-uniform rather than straight uniform?
                 assert(tempcluster["weight"] > 0)
                 tempdur = (tempcluster["weight"]-1)*mingap
-                tempcluster["departure"] = tempcluster["arrival"] + RIR(tempdur, 2*tempdur)
+                tempcluster["departure"] = tempcluster["arrival"] + RIR(tempdur, 2*tempdur, True)
                 lastdepart = tempcluster["departure"]
                 clusters[lane].append(tempcluster)
+
+            #Learn to uncompress detector model estimates
+            #This requires us to generate overly-compressed clusters
+            if allowT and nClusters>0 and random.random() < 0.5:
+                tempcluster = clusters[lane][0]
+                tempdur = (tempcluster["weight"]-1)*mingap
+                tempcluster["departure"] = tempcluster["arrival"] + RIR(0, tempdur, True)
+                assert(clusters[lane][0]["departure"] == tempcluster["departure"]) #Confirm aliasing works the way I expect
 
     phase = RIR(0, (nGreenPhases-1))*2 #Current light phase - forced to be even, thus green. -1 because RIR is inclusive
     mindur = 5
@@ -178,11 +193,15 @@ def intersectionGenerator():
     #print(bestschedules["light"])
     #print("done")
 
-def RIR(min, max):
+def RIR(min, max, cont=False):
     #Returns a random int between min and max, inclusive
+    #Or if cont is true, a random float in that range (probably exclusive above)
     if min > max:
         print("min > max, things are probably wrong") #Though RIR itself probably still returns decent stuff. The +1 is probably the wrong direction, though
-    return math.floor(random.random()*(max-min+1)) + min #floor cancels the +1. Ex: RIR(1, 6) = rand*6+1 = [0, 5] + 1
+    if not cont:
+        return math.floor(random.random()*(max-min+1)) + min #floor cancels the +1. Ex: RIR(1, 6) = rand*6+1 = [0, 5] + 1
+    else:
+        return random.random()*(max-min) + min
 
 def nonZeroVector(length):
     if length == 0:
@@ -283,7 +302,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
 
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
-    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop], [simtime]))]))
+    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop]))]))
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
@@ -836,7 +855,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
-            #trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            if not allowT:
+                trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add all lanes from data augmentation - bad, overfits
             # for permlightlanes in dataAugmenter(lightlanes["light"]):
@@ -846,12 +866,13 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             #     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add a random point from the data augmentation to try to learn robustness to lane permutations
-            alldataaugment = dataAugmenter2(lightlanes["light"])
-            permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]
-            templightlanes = dict()
-            templightlanes["light"] = permlightlanes
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
-            trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            else:
+                alldataaugment = dataAugmenter2(lightlanes["light"])
+                permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]
+                templightlanes = dict()
+                templightlanes["light"] = permlightlanes
+                nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
+                trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
@@ -872,7 +893,7 @@ def main():
 
     surtracThreads = dict()
     if multithreadSurtrac:
-        nProcesses = multiprocessing.cpu_count()
+        nProcesses = multiprocessing.cpu_count() #Cores used
     else:
         nProcesses = 1
 
@@ -971,8 +992,11 @@ def makeListListList(listlist):
                     listlistlist.append([list(perm)]+utation)
         return listlistlist
 
+#For changing which phase is phase 0 in light cycles
 def cycleArray(arr, n):
-    #return arr
+    return arr
+    if not allowT:
+        return arr
     newarr = copy(arr)
     for i in range(len(arr)):
         newarr[i] = arr[(i+n)%len(arr)]
