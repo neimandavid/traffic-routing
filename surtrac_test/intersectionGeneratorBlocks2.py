@@ -42,7 +42,7 @@ if multithreadSurtrac:
 import itertools
 
 try:
-    multiprocessing.set_start_method("spawn")
+    multiprocessing.set_start_method("fork")
 except:
     pass
 
@@ -1037,7 +1037,7 @@ def main():
 
     surtracThreads = dict()
     if multithreadSurtrac:
-        nProcesses = 4#multiprocessing.cpu_count() #Cores used
+        nProcesses = multiprocessing.cpu_count() #Cores used
     else:
         nProcesses = 1
             
