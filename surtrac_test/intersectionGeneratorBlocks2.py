@@ -7,7 +7,32 @@ import pickle #To save/load traffic light states
 import time
 from copy import deepcopy, copy
 
-multithreadSurtrac = True
+#New plan: We're going to try to enumerate all reasonable intersection logics
+
+# On a straight phase:
+# Straight and right can go, obviously
+# Left can't go if opposing straight, and can maybe go if opposing right. And if no left phase, can go without right of way, which Surtrac reads as going but is sad about
+
+# On a left phase:
+# Lefts obviously go
+# Straight goes iff no opposing left
+# Right goes if no opposing left, maybe goes if opposing left
+
+# On opposing phases:
+# Opposing straight can't go if any straights, or if right side has a left that can go; can maybe go if left side has a left or right side has a right
+# Opposing left can't go if left side has a straight or either side has a left that can go, can maybe go if right side has a straight that can go
+# Opposing right can always go, except maybe if left side has a straight that can go
+
+# We might be able to logic some stuff about number of exit lanes in each direction, but that seems hard and probably doesn't gain us much. So:
+
+# For each road, random #left, #straight, #right. Each >=0. Allow any combinations I guess? (Some would be weird, namely if certain input directions can't go in certain output directions ("No left turn between 7AM and 7PM"?), but theoretically could be fine.)
+# For each pair, random leading left, lagging left, or no left.
+
+# If no left phase, everything goes on green, random opposing direction as necessary
+# If left phase, might want to make sure something goes on left that can't go on green (otherwise left phase would be unnecessary), but maybe we don't care
+# We have yellow phase fill-in logic, should be able to just order these however we want
+
+multithreadSurtrac = True#False
 
 if multithreadSurtrac:
     from multiprocessing import Process
@@ -42,67 +67,104 @@ def intersectionGenerator():
 
     nRoads = 4
     maxNLanes = 3
+    maxNClusters = 2#5
+
     nLanes = dict()#[0, 0, 0, 0]
+    nLefts = dict()
+    nStraights = dict()
+    nRights = dict()
 
-    simtime = 0 #NOTE: nninputsurtrac already subtracts off simtime from the arrival and departure time, which is how this had any hope of working back in the thesis proposal; this shouldn't be part of the NN input
-    if allowT:
-        isT = random.random() < 0.5
-    else:
-        isT = random.random() < 0
-
+    simtime = 0 #NOTE: nninputsurtrac already subtracts off simtime from the arrival and departure time, which is how this had any hope of working back in the thesis proposal; this shouldn't be part of the NN input and is just used as input for Surtrac, etc.
+    
     for i in range(nRoads):
-        nLanes[str(i)] = 2#RIR(0, maxNLanes) #n = somewhere between 0 and maxNLanes lanes on each road
-        if i == 3 and isT:
-            nLanes[str(i)] = 0
-        if i == 2 and isT:
-            nLanes[str(i)] = 1 #We're assuming left lane is left turn only. Left turn would go to road 3, which doesn't exist, so pretend the lane doesn't exist (else Surtrac gets confused and throws assertion errors; RQS fixes this by checking intersection connections thus not seeing the road either)
+        nLanes[str(i)] = maxNLanes+1
+        while nLanes[str(i)] > maxNLanes:
+            nLefts[str(i)] = RIR(0, maxNLanes)
+            nRights[str(i)] = RIR(0, maxNLanes)
+            nStraights[str(i)] = RIR(0, maxNLanes)
+            nLanes[str(i)] = nLefts[str(i)] + nRights[str(i)] + nStraights[str(i)]
+        #We now have a valid set of lanes for road i
+    #We now have a valid set of lanes for all roads
+    
+    left13 = RIR(-1, 1) #Do roads 1+3 have a left turn phase? -1 for leading, +1 for lagging, 0 for none
+    left24 = RIR(-1, 1) #Same for roads 2+4
+    #We only need a left turn arrow if one road has a left and its opposing road has either a straight or right that might block it
+    if not((nLefts[str(0)]>0 and (nRights[str(2)]+nStraights[str(2)] > 0)) or (nLefts[str(2)]>0 and (nRights[str(0)]+nStraights[str(0)] > 0))):
+        left13 = 0
+    if not((nLefts[str(1)]>0 and (nRights[str(3)]+nStraights[str(3)] > 0)) or (nLefts[str(3)]>0 and (nRights[str(1)]+nStraights[str(1)] > 0))):
+        left24 = 0
 
-    #Literally just make up random nonsense for red-green phases
-    maxNGreenPhases = 6
-    nGreenPhases = RIR(1, maxNGreenPhases)
-    if not isT:
-        nGreenPhases = 4
-    else:
-        nGreenPhases = 3
+    nGreenPhases = 2 + abs(left13) + abs(left24)
     nPhases = nGreenPhases*2
     lightseqs = []
+    templightseqs = []
     clusters = dict()
-    if not allowT:
-        maxNClusters = 2#1
-    else:
-        maxNClusters = 2#5
+    
     minClusterGap = 5
     maxClusterGap = 10
     maxClusterWeight = 20
 
     lightlanes["light"] = []
 
-    #Pretty sure 0th lane is right lane, but won't matter anyway unless we disable data augmentation
+    #Lane ordering is right, then straight, then left
     for i in range(nRoads):
         lightseqs.append([])
+        templightseqs.append([])
         for j in range(nLanes[str(i)]):
             lightseqs[i].append([])
-    if not isT:
-        #Standard lagging left stuff
-        cycleBy = RIR(0, 3)
-        lightseqs[0][0] = addYellows(cycleArray([1, 0, 0, 0], cycleBy))
-        lightseqs[0][1] = addYellows(cycleArray([0.1, 1, 0, 0], cycleBy)) #Left lane: [g, G, r, r]
-        lightseqs[1][0] = addYellows(cycleArray([0, 0, 1, 0], cycleBy))
-        lightseqs[1][1] = addYellows(cycleArray([0, 0, 0.1, 1], cycleBy)) #Left lane: [r, r, g, G]
-        lightseqs[2] = lightseqs[0]
-        lightseqs[3] = lightseqs[1]
-    else:
-        #Road 3 doesn't exist, road 1 thus doesn't need a protected left
-        #Road 2 can't turn left and road 1 can't go straight, thus in protected left phase road 1's right lane can still go
-        cycleBy = RIR(0, 2)
-        lightseqs[0][0] = addYellows(cycleArray([1, 1, 0], cycleBy)) #Right lane just goes on green, there's no opposing left to worry about
-        lightseqs[0][1] = addYellows(cycleArray([0.1, 1, 0], cycleBy)) #Left lane: [g, G, r]
-        lightseqs[2][0] = addYellows(cycleArray([1, 0, 0], cycleBy)) #Have to stop during opposing left turn arrow
-        #lightseqs[2][1] = addYellows(cycleArray([0, 0, 0], cycleBy)) #Road 2 can't turn left. Treat its left lane as always red? #, so treat its left turn lane as a straight lane instead
-        lightseqs[1][0] = addYellows(cycleArray([0, 1, 1], cycleBy)) #Road 1 right lane can go during the protected left
-        lightseqs[1][1] = addYellows(cycleArray([0, 0, 1], cycleBy))
-        #NOTE: We're padding unused phases with 0s, but this looks weird if things cycle around s.t. something like lightseqs[1][0] gets to go on the first and last phases. Maybe the NN can figure this out, but ideally we'd have a better input format here...
-    assert(len(lightseqs[0][0]) == nPhases)
+            templightseqs[i].append([0]*nGreenPhases) #NOTE: Don't be too clever and do this over multiple dimensions; be aware of https://stackoverflow.com/questions/240178/list-of-lists-changes-reflected-across-sublists-unexpectedly
+
+    #Now we need to map from index to phase
+    left13phaseind = -1
+    straight13phaseind = 0
+    left24phaseind = -1
+    straight24phaseind = 1
+    if left13 == -1:
+        #Insert left13phaseind before straight13phaseind
+        left13phaseind = straight13phaseind
+        straight13phaseind = straight13phaseind + 1
+        straight24phaseind = straight24phaseind + 1
+    if left13 == 1:
+        #Insert left13phaseind after straight13phaseind
+        left13phaseind = straight13phaseind+1
+        straight24phaseind = straight24phaseind + 1
+    if left24 == -1:
+        #Insert left24phaseind before straight24phaseind
+        left24phaseind = straight24phaseind
+        straight24phaseind = straight24phaseind + 1
+    if left24 == 1:
+        #Insert left24phaseind after straight24phaseind
+        left24phaseind = straight24phaseind+1
+
+    populateLeftPhase(templightseqs, left13phaseind, [0, 2], nRights, nStraights, nLefts, nLanes)
+    populateStraightPhase(templightseqs, straight13phaseind, left13phaseind>=0, [0, 2], nRights, nStraights, nLefts, nLanes)
+    populateLeftPhase(templightseqs, left24phaseind, [1, 3], nRights, nStraights, nLefts, nLanes)
+    populateStraightPhase(templightseqs, straight24phaseind, left24phaseind>=0, [1, 3], nRights, nStraights, nLefts, nLanes)
+
+    #Standard lagging left stuff
+    cycleBy = RIR(0, nGreenPhases)
+    for i in range(nRoads):
+        for j in range(nLanes[str(i)]):
+            lightseqs[i][j] = addYellows(cycleArray(templightseqs[i][j], cycleBy))
+            assert(len(lightseqs[i][j]) == nPhases)
+    #NOTE: We're padding unused phases with 0s, but this looks weird if things cycle around s.t. something like lightseqs[1][0] gets to go on the first and last phases. Maybe the NN can figure this out, but ideally we'd have a better input format here...
+
+
+    # print("nLefts:")
+    # print(nLefts)
+    # print("nStraights:")
+    # print(nStraights)
+    # print("nRights:")
+    # print(nRights)
+    # print(left13)
+    # print(left24)
+    # print(left13phaseind)
+    # print(straight13phaseind)
+    # print(left24phaseind)
+    # print(straight24phaseind)
+    # print(templightseqs)
+    # print(lightseqs)
+    # asdf
 
     for i in range(nRoads):
         #lightseqs.append([])
@@ -234,6 +296,81 @@ def addYellows(v):
         w.append(int(np.ceil(v[i])) & int(np.ceil(v[(i+1)%l])) & (int(v[i]) | int(v[(i+1)%l])))
     return w
 
+def populateLeftPhase(templightseqs, left13phaseind, ivec, nRights, nStraights, nLefts, nLanes):
+    if left13phaseind == -1:
+        return
+
+    #What gets to go on left 13?
+    #templightseqs[i][j][left13phaseind] = 1 if road i, lane j can go
+
+    for i in ivec:
+        #Left can go, obviously:
+        for j in range(nRights[str(i)] + nStraights[str(i)], nLanes[str(i)]):
+            templightseqs[i][j][left13phaseind] = 1
+        #Straight can go iff no opposing left:
+        if nLefts[str((i+2)%4)] == 0:
+            for j in range(nRights[str(i)], nRights[str(i)] + nStraights[str(i)]):
+                templightseqs[i][j][left13phaseind] = 1
+        #Right can go if no opposing left, and can maybe go anyway (if enough lanes in destination road, which I'm not modeling). Unless left+right turn arrows aren't a thing ever for some reason?
+        if nLefts[str((i+2)%4)] == 0 or random.random() < 0.5: #Do I need to random these separately? Also, no good justification for 0.5, just making something up
+            for j in range(0, nRights[str(i)]):
+                templightseqs[i][j][left13phaseind] = 1
+
+    #Opposing roads:
+    for itemp in ivec:
+        i = (itemp+1)%4 #Get the opposing road indices
+        #I'm going to simplify this:
+        #Opposing straight and left shouldn't be able to go unless there's some super-weird intersection with one pair of roads being one-way in, meaning you basically have a weird mergy thing that makes no sense as a traffic light
+
+        #Can't imagine opposing right gets to go if left side can go left - just not enough space in the intersection for all that?
+        #If left side can't go left, we have a T street, at which point it's reasonable to allow the right to go, but you still might not maybe?
+        #(I'm assuming it can't go if left side can go straight either, but in that case right side also couldn't go left, so why does this phase even exist???)
+        if nLefts[str((i+1)%4)] == 0 and random.random() < 0.5:
+            for j in range(0, nRights[str(i)]):
+                templightseqs[i][j][left13phaseind] = 1
+
+
+def populateStraightPhase(templightseqs, straight13phaseind, hasLeftTurnArrow, ivec, nRights, nStraights, nLefts, nLanes):
+    assert(straight13phaseind >= 0)
+
+    #What gets to go on straight 13?
+    #templightseqs[i][j][left13phaseind] = 1 if road i, lane j can go
+
+    for i in ivec:
+        #Straight and right can go, obviously:
+        for j in range(0, nRights[str(i)] + nStraights[str(i)]):
+            templightseqs[i][j][straight13phaseind] = 1
+
+        #Left can probably go without right of way:
+        for j in range(nRights[str(i)] + nStraights[str(i)], nLanes[str(i)]):
+            if random.random() < 0.9:
+                templightseqs[i][j][straight13phaseind] = 0.1
+
+            #If no left turn arrow, fake right of way; Surtrac needs to schedule clusters here anyway. (I believe this is a Surtrac problem, not a me problem.)
+            #TODO: This is technically wrong (it'll translate to going with right of way), but Surtrac needs to know to schedule clusters in this phase, so it's the best I've got right now. 0.1 gets converted to R by addYellows() later
+            if not hasLeftTurnArrow:
+                templightseqs[i][j][straight13phaseind] = 1
+
+            #Left can only go with right of way if nStraights[str((i+2)%4)] == 0 (no opposing straight)
+            #and can only maybe go if nRights[str((i+2)%4)] > 0 (there's an opposing right)
+            #This is a weird case corresponding to you being on a one-way road, but opposing road being two-way, hence why there's no opposing straight
+            #Or you're the single road on a T street, which is reasonable.
+            if nStraights[str((i+2)%4)] == 0 and (nRights[str((i+2)%4)] == 0 or random.random() < 0.5):
+                templightseqs[i][j][straight13phaseind] = 1
+
+    #Opposing roads:
+    for itemp in ivec:
+        i = (itemp+1)%4 #Get the opposing road indices
+        #I'm going to simplify this:
+        #Opposing straight and left shouldn't be able to go unless there's some super-weird intersection with one pair of roads being one-way in, meaning you basically have a weird mergy thing that makes no sense as a traffic light
+
+        #Can't imagine opposing right gets to go if left side can go left - just not enough space in the intersection for all that?
+        #If left side can't go left, we have a T street, at which point it's reasonable to allow the right to go, but you still might not maybe?
+        #Assuming it can't go if left side can go straight either. We're now on the perpendicular of that one-way-into-two-way scenario...
+        #So left side can only go right. Don't care about right side. We're the single road on a one-way+two-way T street. Unusual, but possible I guess
+        if nLefts[str((i+1)%4)] == 0 and nStraights[str((i+1)%4)] == 0 and random.random() < 0.5:
+            for j in range(0, nRights[str(i)]):
+                templightseqs[i][j][straight13phaseind] = 1
 
 #Blind copy-paste from RQS27:
 #@profile
@@ -821,9 +958,10 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 bestschedule[7][0] -= (simtime - lastswitchtimes[light])
             bestschedules[light] = bestschedule
         else:
-            print(light)
-            print("No schedules anywhere? That shouldn't happen...")
-
+            #NEXT TODO this happens, why?? Skipping for now
+            # print(light)
+            # print("No schedules anywhere? That shouldn't happen...")
+            return
 
             
         #nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #If stuff breaks, make sure none of this gets changed as we go. (Tested when I first wrote this.)
@@ -899,7 +1037,7 @@ def main():
 
     surtracThreads = dict()
     if multithreadSurtrac:
-        nProcesses = multiprocessing.cpu_count() #Cores used
+        nProcesses = 4#multiprocessing.cpu_count() #Cores used
     else:
         nProcesses = 1
             

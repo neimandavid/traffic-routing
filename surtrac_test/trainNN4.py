@@ -18,7 +18,7 @@ from torch.utils.data import Dataset, DataLoader
 
 #import runnerQueueSplit
 import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!!
-import intersectionGeneratorBlocks as intersectionGenerator
+import intersectionGeneratorBlocks2 as intersectionGenerator
 from importlib import reload
 from Net import Net
 
@@ -171,7 +171,7 @@ def main(sumoconfigs):
         ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra #180+144+12+1=337
 
         if crossEntropyLoss:
-            agents[light] = Net(ninputs, 2, 4096)
+            agents[light] = Net(ninputs, 2, 16384)
         else:
             #agents[light] = Net(ninputs, 1, 128)
             agents[light] = Net(ninputs, 1, 4096)
