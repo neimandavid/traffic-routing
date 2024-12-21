@@ -158,7 +158,8 @@ def main(sumoconfigs):
     if resetTrainingData2:
         try:
             print("Archiving old training data.")
-            os.rename("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", "trainingdata/Archive/trainingdata_" + sys.argv[1] + str(datetime.now()) + ".pickle")
+            now = datetime.now()
+            os.rename("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", "trainingdata/Archive/trainingdata_" + sys.argv[1] + datetime.strftime(now, '%m-%d-%Y-%H-%M-%S') + ".pickle")
         except FileNotFoundError:
             print("Nothing to archive, this is fine")
             pass
@@ -231,7 +232,8 @@ def main(sumoconfigs):
             #     print("Super reset failed, this is probably fine")
             try:
                 print("Archiving old training data.")
-                os.rename("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", "trainingdata/Archive/trainingdata_" + sys.argv[1] + str(datetime.now()) + ".pickle")
+                now = datetime.now()
+                os.rename("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", "trainingdata/Archive/trainingdata_" + sys.argv[1] + datetime.strftime(now, '%m-%d-%Y-%H-%M-%S') + ".pickle")
             except FileNotFoundError:
                 print("Nothing to archive, this is fine")
                 pass
