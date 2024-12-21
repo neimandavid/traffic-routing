@@ -930,6 +930,7 @@ def main():
 
     print("Saving training data")
     with open("trainingdata/trainingdata_" + "IG" + ".pickle", 'wb') as handle:
+        trainingdata["light"] = list(trainingdata["light"]) #Can't save and load multiprocessing manager objects, so convert to a normal list first
         pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def loopIntersectionGenerator(nLoops = 1):
