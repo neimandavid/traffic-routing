@@ -15,10 +15,12 @@ import pickle #To save/load training data
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy("file_system")
 
 #import runnerQueueSplit
-import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!!
-import intersectionGeneratorBlocks2 as intersectionGenerator
+import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!! (If training from a network, not just IG)
+import intersectionGeneratorBlocks15 as intersectionGenerator
 from importlib import reload
 from Net import Net
 
@@ -171,7 +173,7 @@ def main(sumoconfigs):
         ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra #180+144+12+1=337
 
         if crossEntropyLoss:
-            agents[light] = Net(ninputs, 2, 16384)
+            agents[light] = Net(ninputs, 2, 8192)
         else:
             #agents[light] = Net(ninputs, 1, 128)
             agents[light] = Net(ninputs, 1, 4096)
@@ -179,14 +181,21 @@ def main(sumoconfigs):
         optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
         MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
         if not resetNN:
+            # try:
+            #     agents[light].load(MODEL_FILES[light]).to('cuda')
+            # except:
             try:
-                agents[light].load(MODEL_FILES[light]).to('cuda')
-            except:
-                try:
-                    agents[light].load(MODEL_FILES[light])
-                except FileNotFoundError as e:
-                    print(e)
-                    print("Warning: Model " + light + " not found? Starting fresh")
+                agents[light].load(MODEL_FILES[light])
+            except FileNotFoundError as e:
+                print(e)
+                print("Warning: Model " + light + " not found? Starting fresh")
+
+        try:
+            agents[light].to(device)
+        except:
+            print("Error sending model to " + device)
+            pass
+
         losses[light] = []
         epochlosses[light] = []
         daggertimes[light] = []

@@ -1,4 +1,4 @@
-#Randomly generates 3-4 way intersections, 2 lanes per road, lagging lefts on light cycles
+#Randomly generates 3-4 way intersections, 2-3 lanes per road, lagging lefts on light cycles
 
 import numpy as np
 import random
@@ -53,11 +53,11 @@ def intersectionGenerator():
         isT = random.random() < 0
 
     for i in range(nRoads):
-        nLanes[str(i)] = 2#RIR(0, maxNLanes) #n = somewhere between 0 and maxNLanes lanes on each road
+        nLanes[str(i)] = RIR(2, 3)#RIR(0, maxNLanes) #n = somewhere between 0 and maxNLanes lanes on each road
         if i == 3 and isT:
             nLanes[str(i)] = 0
         if i == 2 and isT:
-            nLanes[str(i)] = 1 #We're assuming left lane is left turn only. Left turn would go to road 3, which doesn't exist, so pretend the lane doesn't exist (else Surtrac gets confused and throws assertion errors; RQS fixes this by checking intersection connections thus not seeing the road either)
+            nLanes[str(i)] = RIR(1, 2) #We're assuming left lane is left turn only. Left turn would go to road 3, which doesn't exist, so pretend the lane doesn't exist (else Surtrac gets confused and throws assertion errors; RQS fixes this by checking intersection connections thus not seeing the road either)
 
     #Literally just make up random nonsense for red-green phases
     maxNGreenPhases = 6
@@ -87,24 +87,33 @@ def intersectionGenerator():
     if not isT:
         #Standard lagging left stuff
         cycleBy = RIR(0, 3)
-        lightseqs[0][0] = addYellows(cycleArray([1, 0, 0, 0], cycleBy))
-        lightseqs[0][1] = addYellows(cycleArray([0.1, 1, 0, 0], cycleBy)) #Left lane: [g, G, r, r]
-        lightseqs[1][0] = addYellows(cycleArray([0, 0, 1, 0], cycleBy))
-        lightseqs[1][1] = addYellows(cycleArray([0, 0, 0.1, 1], cycleBy)) #Left lane: [r, r, g, G]
-        lightseqs[2] = lightseqs[0]
-        lightseqs[3] = lightseqs[1]
+        for i in [0, 2]:
+            for j in range(0, nLanes[str(i)]-1):
+                lightseqs[i][j] = addYellows(cycleArray([1, 0, 0, 0], cycleBy))
+            lightseqs[i][nLanes[str(i)]-1] = addYellows(cycleArray([0.1, 1, 0, 0], cycleBy)) #Left lane: [g, G, r, r]
+        for i in [1, 3]:
+            for j in range(0, nLanes[str(i)]-1):
+                lightseqs[i][j] = addYellows(cycleArray([0, 0, 1, 0], cycleBy))
+            lightseqs[i][nLanes[str(i)]-1] = addYellows(cycleArray([0, 0, 0.1, 1], cycleBy)) #Left lane: [r, r, g, G]
     else:
         #Road 3 doesn't exist, road 1 thus doesn't need a protected left
         #Road 2 can't turn left and road 1 can't go straight, thus in protected left phase road 1's right lane can still go
         cycleBy = RIR(0, 2)
-        lightseqs[0][0] = addYellows(cycleArray([1, 1, 0], cycleBy)) #Right lane just goes on green, there's no opposing left to worry about
-        lightseqs[0][1] = addYellows(cycleArray([0.1, 1, 0], cycleBy)) #Left lane: [g, G, r]
-        lightseqs[2][0] = addYellows(cycleArray([1, 0, 0], cycleBy)) #Have to stop during opposing left turn arrow
+        for j in range(nLanes[str(0)]-1):
+            lightseqs[0][j] = addYellows(cycleArray([1, 1, 0], cycleBy)) #Right lane just goes on green, there's no opposing left to worry about
+        lightseqs[0][nLanes[str(0)]-1] = addYellows(cycleArray([0.1, 1, 0], cycleBy)) #Left lane: [g, G, r]
+        for j in range(nLanes[str(2)]): #No -1 since "left" lane goes nowhere and we're pretending it just doesn't exist
+            lightseqs[2][j] = addYellows(cycleArray([1, 0, 0], cycleBy)) #Have to stop during opposing left turn arrow
         #lightseqs[2][1] = addYellows(cycleArray([0, 0, 0], cycleBy)) #Road 2 can't turn left. Treat its left lane as always red? #, so treat its left turn lane as a straight lane instead
-        lightseqs[1][0] = addYellows(cycleArray([0, 1, 1], cycleBy)) #Road 1 right lane can go during the protected left
-        lightseqs[1][1] = addYellows(cycleArray([0, 0, 1], cycleBy))
+        for j in range(nLanes[str(1)]-1):
+            lightseqs[1][j] = addYellows(cycleArray([0, 1, 1], cycleBy)) #Road 1 right lane can go during the protected left
+        lightseqs[1][nLanes[str(1)]-1] = addYellows(cycleArray([0, 0, 1], cycleBy))
         #NOTE: We're padding unused phases with 0s, but this looks weird if things cycle around s.t. something like lightseqs[1][0] gets to go on the first and last phases. Maybe the NN can figure this out, but ideally we'd have a better input format here...
-    assert(len(lightseqs[0][0]) == nPhases)
+    
+    #Sanity check
+    for i in range(nRoads):
+        for j in range(nLanes[str(i)]):
+            assert(len(lightseqs[i][j]) == nPhases)
 
     for i in range(nRoads):
         #lightseqs.append([])
@@ -130,21 +139,21 @@ def intersectionGenerator():
                 lastdepart = tempcluster["departure"]
                 clusters[lane].append(tempcluster)
 
-            #Learn to uncompress detector model estimates
-            #This requires us to generate overly-compressed clusters
-            if allowT:
-                for k in range(nClusters):
-                    #Overcompress half the clusters down randomly
-                    if random.random() < 0.5:
-                        tempcluster = clusters[lane][k]
-                        tempdur = (tempcluster["weight"]-1)*mingap
-                        tempcluster["departure"] = tempcluster["arrival"] + tempdur
-                        assert(clusters[lane][k]["departure"] == tempcluster["departure"]) #Confirm aliasing works the way I expect
-                # #Supercompress first cluster half the time
-                # if nClusters>0 and random.random() < 0.5:
-                #     tempcluster = clusters[lane][0]
-                #     tempcluster["departure"] = tempcluster["arrival"]
-                #     assert(clusters[lane][0]["departure"] == tempcluster["departure"]) #Confirm aliasing works the way I expect
+            # #Learn to uncompress detector model estimates
+            # #This requires us to generate overly-compressed clusters
+            # if allowT:
+            #     for k in range(nClusters):
+            #         #Overcompress half the clusters down randomly
+            #         if random.random() < 0.5:
+            #             tempcluster = clusters[lane][k]
+            #             tempdur = (tempcluster["weight"]-1)*mingap
+            #             tempcluster["departure"] = tempcluster["arrival"] + tempdur
+            #             assert(clusters[lane][k]["departure"] == tempcluster["departure"]) #Confirm aliasing works the way I expect
+            #     # #Supercompress first cluster half the time
+            #     # if nClusters>0 and random.random() < 0.5:
+            #     #     tempcluster = clusters[lane][0]
+            #     #     tempcluster["departure"] = tempcluster["arrival"]
+            #     #     assert(clusters[lane][0]["departure"] == tempcluster["departure"]) #Confirm aliasing works the way I expect
 
     phase = RIR(0, (nGreenPhases-1))*2 #Current light phase - forced to be even, thus green. -1 because RIR is inclusive
     mindur = 5
