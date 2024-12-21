@@ -191,7 +191,7 @@ def main(sumoconfigs):
                 print("Warning: Model " + light + " not found? Starting fresh")
 
         try:
-            agents[light].to(device)
+            agents[light] = agents[light].to(device)
         except:
             print("Error sending model to " + device)
             pass
@@ -268,8 +268,8 @@ def trainLight(light, dataset):
     dataloader = DataLoader(dataset, batch_size = batch_size, shuffle=True, num_workers=0)
     for i, databatch in enumerate(dataloader):
         if torch.cuda.is_available():
-            databatch['input'].to('cuda')
-            databatch['target'].to('cuda')
+            databatch['input'] = databatch['input'].to('cuda')
+            databatch['target'] = databatch['target'].to('cuda')
         outputNN = agents[light](databatch['input']).flatten(1) # Output from NN
         target = databatch['target'].clone().detach() # Target from expert
         if crossEntropyLoss:
