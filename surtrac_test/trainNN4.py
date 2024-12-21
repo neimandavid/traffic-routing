@@ -149,7 +149,9 @@ def main(sumoconfigs):
         for light in ["light"]:# + lights:
             try:
                 print("models/imitate_" + light + ".model")
-                os.rename("models/imitate_" + light + ".model", "models/Archive/imitate_" + light + str(datetime.now()) + ".model")
+                now = datetime.now()
+
+                os.rename("models/imitate_" + light + ".model", "models/Archive/imitate_" + light + datetime.strftime(now, '%m-%d-%Y-%H-%M-%S') + ".model")
             except FileNotFoundError:
                 print("No model found for light " + light + ", this is fine")
         
@@ -200,15 +202,39 @@ def main(sumoconfigs):
         epochlosses[light] = []
         daggertimes[light] = []
 
+    #Read old data, because we can!
+    directory = "trainingdata/Archive"
+        
+    for file in os.listdir(directory):
+        filename = os.fsdecode(file)
+        if filename.endswith(".pickle"): 
+            print(directory + "/" + filename)#os.path.join(directory, filename))
+            print("Loading training data")
+            #try:
+            trafficdataset = TrafficDataset(directory + "/" + filename)
+            #Train everything once - note that all losses are likely to spike after new training data comes in
+            for light in ["light"]:#trainingdata:
+                trainLight(light, trafficdataset)
+
+            # except FileNotFoundError as e:
+            #     pass
+            
+
     firstIter = True
     #DAgger loop
     while True:
 
         if superResetTrainingData:
+            # try:
+            #     os.remove("trainingdata/trainingdata_" + sys.argv[1] + ".pickle")
+            # except FileNotFoundError:
+            #     print("Super reset failed, this is probably fine")
             try:
-                os.remove("trainingdata/trainingdata_" + sys.argv[1] + ".pickle")
+                print("Archiving old training data.")
+                os.rename("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", "trainingdata/Archive/trainingdata_" + sys.argv[1] + str(datetime.now()) + ".pickle")
             except FileNotFoundError:
-                print("Super reset failed, this is probably fine")
+                print("Nothing to archive, this is fine")
+                pass
 
         #Get new training data
         if not(firstIter and not resetTrainingData2): #If first iteration and we already have training data, start by training on what we have
