@@ -2152,6 +2152,29 @@ def loadClustersDetectors(net, simtime, nonExitEdgeDetections3, VOI=None):
                 # print(clusters[lane][-1]["departure"] - clusters[lane][-1]["arrival"])
                 # print(clusters[lane][-1])
                 #assert(clusters[lane][-1]["departure"] > clusters[lane][-1]["arrival"] - 1e-10)
+
+    #Decompress all clusters to max allowed density (detector model believes vehicles stuck in a queue are all literally stacked on top of each other at the stop bar)
+    #This is mostly for NN input stuff; Surtrac code can sort this itself
+    for edge in nonExitEdgeDetections3:
+        for lanenum in range(nLanes[edge]):
+            lane = edge + "_" + str(lanenum)
+            clusternum = 0
+            while clusternum < len(clusters[lane]):
+                cluster = clusters[lane][clusternum]
+                cluster["departure"] = max(cluster["departure"], cluster["arrival"], cluster["arrival"]+mingap*(cluster["weight"]-1))
+                if clusternum+1 < len(clusters[lane]):
+                    nextcluster = clusters[lane][clusternum+1]
+                    if nextcluster["arrival"] < cluster["departure"] + clusterthresh:
+                        #Merge the clusters
+                        cluster["endpos"] = nextcluster["endpos"]
+                        cluster["departure"] = nextcluster["departure"]
+                        cluster["cars"] += nextcluster["cars"]
+                        cluster["weight"] += nextcluster["weight"]
+                        del clusters[lane][clusternum+1]
+                        continue #Don't increment clusternum, might be more stuff to merge or might need to decompress the supercluster
+
+                clusternum += 1
+
     
     #Traffic light info
     lightphases = dict()
