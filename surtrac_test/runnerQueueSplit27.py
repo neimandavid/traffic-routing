@@ -994,7 +994,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
-            trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
+            trainingdata["light"].append((nnin, target, torch.tensor([[temp]])))
         else:
             trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
@@ -1949,7 +1949,7 @@ def dumpIntersectionDataFun(intersectionData, network):
                             sheets[ind].cell(row+1, col+1, intersectionData[lane][nextlane][row][ind][col]) #+1 because Excel 1-indexes
             except Exception as e:
                 print(e)
-                print("Error dumping training data to Excel, ignoring and continuing")
+                print("Error dumping intersection data to Excel, ignoring and continuing")
             finally:
                 book.save("intersectiondata/"+lane+"|"+nextlane+".xlsx")
 
@@ -1977,7 +1977,7 @@ def dumpIntersectionDataFun(intersectionData, network):
                     thetarows[dtheta] += 1
     except Exception as e:
         print(e)
-        print("Error dumping training data to Excel, ignoring and continuing")
+        print("Error dumping intersection data to Excel, ignoring and continuing")
     finally:
         for dtheta in thetabooks:
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")

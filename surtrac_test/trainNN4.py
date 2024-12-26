@@ -37,7 +37,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 #In case we want to pause a run and continue later, set these to false
-reset = True
+reset = False
 resetNN = reset
 resetTrainingData2 = True
 superResetTrainingData = True
@@ -100,11 +100,12 @@ class TrafficDataset(Dataset):
         self.dataset = temp["light"]
 
         #Apparently this breaks on Drogon??? Something about item[1] being a float not a long (maybe I threw too much data at it, or CE loss is bad?) Commenting since I don't need it anymore, but weird.
-        # nstick = 0
-        # ntotal = 0
-        # for item in self.dataset:
-        #     nstick += item[1]
-        #     ntotal += 1
+        nstick = 0
+        ntotal = 0
+        for item in self.dataset:
+            nstick += item[1]
+            ntotal += 1
+        print("Stick fraction: " + str(nstick/ntotal))
         # self.stickweight = (nstick+1)/(ntotal-nstick+1) #Ratio of stick to switch, adding a pseudocount to each to avoid errors
 
         # print(self.stickweight)
@@ -204,21 +205,22 @@ def main(sumoconfigs):
         daggertimes[light] = []
 
     #Read old data, because we can!
-    directory = "trainingdata/Archive"
-        
-    for file in os.listdir(directory):
-        filename = os.fsdecode(file)
-        if filename.endswith(".pickle"): 
-            print(directory + "/" + filename)#os.path.join(directory, filename))
-            print("Loading training data")
-            #try:
-            trafficdataset = TrafficDataset(directory + "/" + filename)
-            #Train everything once - note that all losses are likely to spike after new training data comes in
-            for light in ["light"]:#trainingdata:
-                trainLight(light, trafficdataset)
+    if resetNN:
+        directory = "trainingdata/Archive"
+            
+        for file in os.listdir(directory):
+            filename = os.fsdecode(file)
+            if filename.endswith(".pickle"): 
+                print(directory + "/" + filename)#os.path.join(directory, filename))
+                print("Loading training data")
+                #try:
+                trafficdataset = TrafficDataset(directory + "/" + filename)
+                #Train everything once - note that all losses are likely to spike after new training data comes in
+                for light in ["light"]:#trainingdata:
+                    trainLight(light, trafficdataset)
 
-            # except FileNotFoundError as e:
-            #     pass
+                # except FileNotFoundError as e:
+                #     pass
             
 
     firstIter = True
