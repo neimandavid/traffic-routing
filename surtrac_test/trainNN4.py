@@ -37,7 +37,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 #In case we want to pause a run and continue later, set these to false
-reset = False
+reset = True
 resetNN = reset
 resetTrainingData2 = True
 superResetTrainingData = True
