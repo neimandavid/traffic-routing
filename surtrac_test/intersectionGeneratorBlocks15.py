@@ -200,14 +200,7 @@ def intersectionGenerator():
             jprev = (j-1) % nPhases
             surtracdata["light"][i]["timeTo"][j] = surtracdata["light"][i]["timeTo"][jprev] + surtracdata["light"][jprev]["minDur"]
     
-    # print(lightseqs)
-    # print(clusters)
-    # print(surtracdata)
-
-    #convertToNNInputSurtrac(simtime, "light", clusters, lightphases, lastswitchtimes) #Runs now, yay!
-    #bestschedules = dict()
     doSurtracThread("network", simtime, "light", clusters, lightphases, lastswitchtimes, False, 10, [], dict(), dict())
-    #print(bestschedules["light"])
     #print("done")
 
 def RIR(min, max, cont=False):
@@ -251,7 +244,7 @@ def addYellows(v):
 def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes = lightlanes):
     maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
     maxnroads = 4 #And assume 4-way intersections for now
-    maxnclusters = 5 #And assume at most 10 clusters per lane
+    maxnclusters = 5 #And assume at most 5 clusters per lane
     ndatapercluster = 3 #Arrival, departure, weight
     maxnphases = 12 #Should be enough to handle both leading and lagging lefts
     phasevec = np.zeros(maxnphases)
@@ -849,15 +842,16 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
     if appendTrainingData:
         if testDumbtrac:
-            outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-            if crossEntropyLoss:
-                if (outputDumbtrac-0.25) < 0:
-                    target = torch.LongTensor([0])
-                else:
-                    target = torch.LongTensor([1])
-            else:
-                target = torch.FloatTensor([outputDumbtrac-0.25]) # Target from expert
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            assert(False) #Shouldn't run
+            # outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            # if crossEntropyLoss:
+            #     if (outputDumbtrac-0.25) < 0:
+            #         target = torch.LongTensor([0])
+            #     else:
+            #         target = torch.LongTensor([1])
+            # else:
+            #     target = torch.FloatTensor([outputDumbtrac-0.25]) # Target from expert
+            # nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
             if crossEntropyLoss:
                 if (bestschedule[7][0]-0.25) < 0:
@@ -866,13 +860,14 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                     target = torch.LongTensor([1])
             else:
                 target = torch.FloatTensor([bestschedule[7][0]-0.25]) # Target from expert
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
-            trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
+            assert(False) #Shouldn't run
+            # nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            # trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
             if not allowT:
+                nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
                 trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add all lanes from data augmentation - bad, overfits
@@ -882,7 +877,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             #     nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
             #     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
-            #Add a random point from the data augmentation to try to learn robustness to lane permutations
+            #Add a random point from the data augmentation to try to learn robustness to road permutations
             else:
                 alldataaugment = dataAugmenter2(lightlanes["light"])
                 permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]

@@ -37,7 +37,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 #In case we want to pause a run and continue later, set these to false
-reset = True
+reset = False
+reuseOldData = False
 resetNN = reset
 resetTrainingData2 = True
 superResetTrainingData = True
@@ -100,17 +101,17 @@ class TrafficDataset(Dataset):
         self.dataset = temp["light"]
 
         #Apparently this breaks on Drogon??? Something about item[1] being a float not a long (maybe I threw too much data at it, or CE loss is bad?) Commenting since I don't need it anymore, but weird.
-        nstick = 0
+        nswitch = 0
         ntotal = 0
         for item in self.dataset:
-            nstick += item[1]
+            nswitch += item[1]
             ntotal += 1
-        print("Stick fraction: " + str(nstick/ntotal))
-        # self.stickweight = (nstick+1)/(ntotal-nstick+1) #Ratio of stick to switch, adding a pseudocount to each to avoid errors
+        print("Switch fraction: " + str(nswitch/ntotal))
+        # self.switchweight = (nswitch+1)/(ntotal-nswitch+1) #Ratio of stick to switch, adding a pseudocount to each to avoid errors
 
-        # print(self.stickweight)
+        # print(self.switchweight)
         # if crossEntropyLoss:
-        #     loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, self.stickweight]))
+        #     loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, self.switchweight]))
 
     def __len__(self):
         return len(self.dataset)
@@ -177,7 +178,7 @@ def main(sumoconfigs):
         ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra #180+144+12+1=337
 
         if crossEntropyLoss:
-            agents[light] = Net(ninputs, 2, 8192)
+            agents[light] = Net(ninputs, 2, 4096)
         else:
             #agents[light] = Net(ninputs, 1, 128)
             agents[light] = Net(ninputs, 1, 4096)
@@ -205,7 +206,7 @@ def main(sumoconfigs):
         daggertimes[light] = []
 
     #Read old data, because we can!
-    if resetNN:
+    if reuseOldData:
         directory = "trainingdata/Archive"
             
         for file in os.listdir(directory):
