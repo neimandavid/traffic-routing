@@ -215,6 +215,7 @@ def main(sumoconfigs):
     if reuseOldData:
         directory = "trainingdata/Archive"
             
+        count = 0
         for file in os.listdir(directory):
             filename = os.fsdecode(file)
             if filename.endswith(".pickle"): 
@@ -224,7 +225,8 @@ def main(sumoconfigs):
                 trafficdataset = TrafficDataset(directory + "/" + filename)
                 #Train everything once - note that all losses are likely to spike after new training data comes in
                 for light in ["light"]:#trainingdata:
-                    trainLight(light, trafficdataset)
+                    count += 1
+                    trainLight(light, trafficdataset, count%10 == 0)
 
                 # except FileNotFoundError as e:
                 #     pass
@@ -295,7 +297,7 @@ def main(sumoconfigs):
             daggertimes[light].append(len(losses[light]))
 
 #Train the given light for a single epoch
-def trainLight(light, dataset):
+def trainLight(light, dataset, saveModel = True):
     #global losses
     print(light)
     avgloss = 0
@@ -329,28 +331,29 @@ def trainLight(light, dataset):
     epochlosses[light].append(totalloss/dataset.__len__())
     #agents[light].save(MODEL_FILES[light]) #OLD
 
-    print("Saving updated model")
-    #Apparently saving is somewhat slow and mid-save the file gets messed up; to fix this, save to a temp file, then move the temp file when done
-    torch.save({
-            'model_state_dict': agents[light].state_dict(),
-            'optimizer_state_dict': optimizers[light].state_dict()
-            }, MODEL_FILES[light]+"saving")
-    os.rename(MODEL_FILES[light]+"saving", MODEL_FILES[light])
+    if saveModel:
+        print("Saving updated model")
+        #Apparently saving is somewhat slow and mid-save the file gets messed up; to fix this, save to a temp file, then move the temp file when done
+        torch.save({
+                'model_state_dict': agents[light].state_dict(),
+                'optimizer_state_dict': optimizers[light].state_dict()
+                }, MODEL_FILES[light]+"saving")
+        os.rename(MODEL_FILES[light]+"saving", MODEL_FILES[light])
 
-    plt.figure()
-    plt.plot(losses[light])
-    #Vertical lines each time we get new data - annoying since we don't reuse data now
-    # for daggertime in daggertimes[light]:
-    #     plt.axvline(x=daggertime, color='k', linestyle='--')
-    plt.xlabel("Sets of " + str(nLossesBeforeReset*batch_size) + " Points")
-    if crossEntropyLoss:
-        plt.ylabel("Average Loss (CrossEntropy)")
-    else:
-        plt.ylabel("Average Loss (MeanSquaredError)")
-    plt.title("Losses, light=" + str(light))
-    #plt.show() #NOTE: Blocks code execution until you close the plot
-    plt.savefig("Plots/Losses, light=" + str(light)+".png")
-    plt.close()
+        plt.figure()
+        plt.plot(losses[light])
+        #Vertical lines each time we get new data - annoying since we don't reuse data now
+        # for daggertime in daggertimes[light]:
+        #     plt.axvline(x=daggertime, color='k', linestyle='--')
+        plt.xlabel("Sets of " + str(nLossesBeforeReset*batch_size) + " Points")
+        if crossEntropyLoss:
+            plt.ylabel("Average Loss (CrossEntropy)")
+        else:
+            plt.ylabel("Average Loss (MeanSquaredError)")
+        plt.title("Losses, light=" + str(light))
+        #plt.show() #NOTE: Blocks code execution until you close the plot
+        plt.savefig("Plots/Losses, light=" + str(light)+".png")
+        plt.close()
 
 #Dumps training data to an Excel file for human readability
 def dumpTrainingData(trainingdata):
