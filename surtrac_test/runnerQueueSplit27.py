@@ -105,13 +105,13 @@ predCutoffRouting = 10 #Surtrac receives communications about clusters arriving 
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
-noNNinMain = True
+noNNinMain = False
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
 testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
 FTP = True #If false, and testDumbtrac = True, runs actuated control instead of fixed timing plans. If true, runs fixed timing plans (should now be same as SUMO defaults)
 resetTrainingData = False
 appendTrainingData = False
-crossEntropyLoss = True
+crossEntropyLoss = False
 
 detectorModel = False
 detectorSurtrac = detectorModel
@@ -515,8 +515,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
             
             surtracStartTime = time.time()
-            totalSurtracRuns += 1
-        
+            totalSurtracRuns += 1        
             temp = agents["light"](nnin).detach().cpu().numpy() # Output from NN
             if crossEntropyLoss:
                 outputNN = temp[0][1] - temp[0][0] #Stick - switch; should be <0 if switching, >0 if sticking
@@ -979,7 +978,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                     #target = torch.tensor(([[float(0), float(1)]]))
                 #target = torch.tensor([[(bestschedule[7][0]-0.25) < 0, (bestschedule[7][0]-0.25) >= 0]]) # Target from expert
             else:
-                target = torch.tensor([[float(outputDumbtrac-0.25)]]) # Target from expert
+                target = torch.tensor([[min(float(outputDumbtrac-0.25), 10)]]) # Target from expert
             #nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #Obsolete - use Surtrac architecture anyway
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
@@ -990,7 +989,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                     target = torch.LongTensor([1])
                 #target = torch.tensor([[(bestschedule[7][0]-0.25) < 0, (bestschedule[7][0]-0.25) >= 0]]) # Target from expert
             else:
-                target = torch.tensor([[float(bestschedule[7][0]-0.25)]]) # Target from expert
+                target = torch.tensor([[min(float(bestschedule[7][0]-0.25), 10)]]) # Target from expert
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
@@ -2686,7 +2685,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             if crossEntropyLoss:
                 agents[light] = Net(ninputs, 2, 4096)
             else:
-                agents[light] = Net(ninputs, 1, 4096)
+                agents[light] = Net(ninputs, 1, 8192)
             # if testDumbtrac:
             #     # agents[light] = Net(26, 1, 32)
             #     # #agents[light] = Net(2, 1, 32)
@@ -2698,7 +2697,8 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
             print("Checking if there's a learned model. Currently testNN="+str(testNN))
             try:
-                agents[light].load(MODEL_FILES[light])
+                checkpoint = torch.load(MODEL_FILES[light], weights_only=True)
+                agents[light].load_state_dict(checkpoint['model_state_dict'])
             except FileNotFoundError:
                 print("Model doesn't exist - turning off testNN")
                 testNN = False

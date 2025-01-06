@@ -37,8 +37,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 #In case we want to pause a run and continue later, set these to false
-reset = False
-reuseOldData = False
+reset = True
+reuseOldData = True
 resetNN = reset
 resetTrainingData2 = True
 superResetTrainingData = True
@@ -48,7 +48,7 @@ if superResetTrainingData:
 #Also, Surtrac network architecture works for FTPs as well
 #So just make sure resetTrainingData=False, testDumbtrac and FTP are correct, and surtracFreq = 1ish (all in runnerQueueSplitWhatever)
 
-crossEntropyLoss = True
+crossEntropyLoss = False
 
 agents = dict()
 optimizers = dict()
@@ -180,20 +180,26 @@ def main(sumoconfigs):
         if crossEntropyLoss:
             agents[light] = Net(ninputs, 2, 4096)
         else:
-            #agents[light] = Net(ninputs, 1, 128)
-            agents[light] = Net(ninputs, 1, 4096)
+            agents[light] = Net(ninputs, 1, 8192)
         
         optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
         MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
         if not resetNN:
             # try:
-            #     agents[light].load(MODEL_FILES[light]).to('cuda')
-            # except:
+            #     agents[light].load(MODEL_FILES[light])
+            # except FileNotFoundError as e:
+            #     print(e)
+            #     print("Warning: Model " + light + " not found? Starting fresh")
+
+            #Adapted from: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training
+            
             try:
-                agents[light].load(MODEL_FILES[light])
+                checkpoint = torch.load(MODEL_FILES[light], weights_only=True)
+                agents[light].load_state_dict(checkpoint['model_state_dict'])
+                optimizers[light].load_state_dict(checkpoint['optimizer_state_dict'])
             except FileNotFoundError as e:
-                print(e)
-                print("Warning: Model " + light + " not found? Starting fresh")
+                    print(e)
+                    print("Warning: Model " + light + " not found? Starting fresh")
 
         try:
             agents[light] = agents[light].to(device)
@@ -295,8 +301,8 @@ def trainLight(light, dataset):
     avgloss = 0
     nlosses = 0
     totalloss = 0
-
     dataloader = DataLoader(dataset, batch_size = batch_size, shuffle=True, num_workers=0)
+    print("End load")
     for i, databatch in enumerate(dataloader):
         if torch.cuda.is_available():
             databatch['input'] = databatch['input'].to('cuda')
@@ -321,7 +327,16 @@ def trainLight(light, dataset):
         optimizers[light].zero_grad() # reset accumulated gradients to 0
     
     epochlosses[light].append(totalloss/dataset.__len__())
-    agents[light].save(MODEL_FILES[light])
+    #agents[light].save(MODEL_FILES[light]) #OLD
+
+    print("Saving updated model")
+    #Apparently saving is somewhat slow and mid-save the file gets messed up; to fix this, save to a temp file, then move the temp file when done
+    torch.save({
+            'model_state_dict': agents[light].state_dict(),
+            'optimizer_state_dict': optimizers[light].state_dict()
+            }, MODEL_FILES[light]+"saving")
+    os.rename(MODEL_FILES[light]+"saving", MODEL_FILES[light])
+
     plt.figure()
     plt.plot(losses[light])
     #Vertical lines each time we get new data - annoying since we don't reuse data now
