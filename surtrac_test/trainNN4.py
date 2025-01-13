@@ -20,7 +20,7 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 #import runnerQueueSplit
 import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!! (If training from a network, not just IG)
-import intersectionGeneratorBlocks15 as intersectionGenerator
+import intersectionGeneratorBlocks as intersectionGenerator
 from importlib import reload
 from Net import Net
 
@@ -181,6 +181,12 @@ def main(sumoconfigs):
             agents[light] = Net(ninputs, 2, 4096)
         else:
             agents[light] = Net(ninputs, 1, 8192)
+
+        try:
+            agents[light] = agents[light].to(device)
+        except:
+            print("Error sending model to " + device)
+            pass
         
         optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
         MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
@@ -200,12 +206,6 @@ def main(sumoconfigs):
             except FileNotFoundError as e:
                     print(e)
                     print("Warning: Model " + light + " not found? Starting fresh")
-
-        try:
-            agents[light] = agents[light].to(device)
-        except:
-            print("Error sending model to " + device)
-            pass
 
         losses[light] = []
         epochlosses[light] = []

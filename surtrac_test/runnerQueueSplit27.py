@@ -55,7 +55,7 @@ else:
 
 from sumolib import checkBinary
 
-useLibsumo = True
+useLibsumo = False
 if useLibsumo:
     import libsumo as traci
 else:
@@ -445,7 +445,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
             if clusterind > maxnclusters:
                 print("Warning: Too many clusters on " + str(lane) + ", ignoring the last ones")
                 break
-            clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [clusters[lane][clusterind]["arrival"]-simtime, clusters[lane][clusterind]["departure"]-simtime, clusters[lane][clusterind]["weight"]]
+            clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [(clusters[lane][clusterind]["arrival"]-simtime)/60, (clusters[lane][clusterind]["departure"]-simtime)/60, (clusters[lane][clusterind]["weight"])/20]
 
 
         for i in range(len(surtracdata[light])):

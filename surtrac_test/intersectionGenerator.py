@@ -7,7 +7,7 @@ import pickle #To save/load traffic light states
 import time
 from copy import deepcopy, copy
 
-multithreadSurtrac = False
+multithreadSurtrac = True
 
 if multithreadSurtrac:
     from multiprocessing import Process
@@ -16,20 +16,19 @@ if multithreadSurtrac:
 
 import itertools
 
-# try:
-#     multiprocessing.set_start_method("spawn")
-# except:
-#     pass
+try:
+    multiprocessing.set_start_method("spawn")
+except:
+    pass
 
 lightlanes = dict()
-nLanes = dict()#[0, 0, 0, 0]
 surtracdata = dict()
 lightphasedata = dict()
 lightoutlanes = dict()
 lanephases = dict()
 trainingdata = dict()
 
-crossEntropyLoss = True#False #If false, mean-squared error on time before switch
+crossEntropyLoss = False #If false, mean-squared error on time before switch
 nruns = 100000
 
 mingap = 2.5 #Seconds between cars
@@ -61,6 +60,7 @@ def intersectionGenerator():
 
     lightlanes["light"] = []
 
+    #Pretty sure 0th lane is right lane, but won't matter anyway unless we disable data augmentation
     for i in range(nRoads):
         lightseqs.append([])
         for j in range(nLanes[str(i)]):
@@ -77,13 +77,13 @@ def intersectionGenerator():
             lastdepart = simtime
             for k in range(nClusters):
                 tempcluster = dict()
-                tempcluster["arrival"] = lastdepart + RIR(minClusterGap, maxClusterGap)
+                tempcluster["arrival"] = lastdepart + RIR(minClusterGap, maxClusterGap, True)
                 if k == 0:
-                    tempcluster["arrival"] = lastdepart + RIR(0, maxClusterGap)
+                    tempcluster["arrival"] = lastdepart + RIR(0, maxClusterGap, True)
                 tempcluster["weight"] = RIR(1, maxClusterWeight) #TODO consider making this log-uniform rather than straight uniform?
                 assert(tempcluster["weight"] > 0)
                 tempdur = (tempcluster["weight"]-1)*mingap
-                tempcluster["departure"] = tempcluster["arrival"] + RIR(tempdur, 2*tempdur)
+                tempcluster["departure"] = tempcluster["arrival"] + RIR(tempdur, 2*tempdur, True)
                 lastdepart = tempcluster["departure"]
                 clusters[lane].append(tempcluster)
 
@@ -132,21 +132,18 @@ def intersectionGenerator():
             jprev = (j-1) % nPhases
             surtracdata["light"][i]["timeTo"][j] = surtracdata["light"][i]["timeTo"][jprev] + surtracdata["light"][jprev]["minDur"]
     
-    # print(lightseqs)
-    # print(clusters)
-    # print(surtracdata)
-
-    #convertToNNInputSurtrac(simtime, "light", clusters, lightphases, lastswitchtimes) #Runs now, yay!
-    #bestschedules = dict()
     doSurtracThread("network", simtime, "light", clusters, lightphases, lastswitchtimes, False, 10, [], dict(), dict())
-    #print(bestschedules["light"])
     #print("done")
 
-def RIR(min, max):
+def RIR(min, max, cont=False):
     #Returns a random int between min and max, inclusive
+    #Or if cont is true, a random float in that range (probably exclusive above)
     if min > max:
         print("min > max, things are probably wrong") #Though RIR itself probably still returns decent stuff. The +1 is probably the wrong direction, though
-    return math.floor(random.random()*(max-min+1)) + min #floor cancels the +1. Ex: RIR(1, 6) = rand*6+1 = [0, 5] + 1
+    if not cont:
+        return math.floor(random.random()*(max-min+1)) + min #floor cancels the +1. Ex: RIR(1, 6) = rand*6+1 = [0, 5] + 1
+    else:
+        return random.random()*(max-min) + min
 
 def nonZeroVector(length):
     if length == 0:
@@ -179,7 +176,7 @@ def addYellows(v):
 def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes = lightlanes):
     maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
     maxnroads = 4 #And assume 4-way intersections for now
-    maxnclusters = 5 #And assume at most 10 clusters per lane
+    maxnclusters = 5 #And assume at most 5 clusters per lane
     ndatapercluster = 3 #Arrival, departure, weight
     maxnphases = 12 #Should be enough to handle both leading and lagging lefts
     phasevec = np.zeros(maxnphases)
@@ -236,7 +233,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
             if clusterind > maxnclusters:
                 print("Warning: Too many clusters on " + str(lane) + ", ignoring the last ones")
                 break
-            clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [clusters[lane][clusterind]["arrival"]-simtime, clusters[lane][clusterind]["departure"]-simtime, clusters[lane][clusterind]["weight"]]
+            clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [(clusters[lane][clusterind]["arrival"]-simtime)/60, (clusters[lane][clusterind]["departure"]-simtime)/60, clusters[lane][clusterind]["weight"]/20]
 
 
         for i in range(len(surtracdata[light])):
@@ -247,7 +244,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
 
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
-    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop], [simtime]))]))
+    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop]))]))
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
@@ -777,15 +774,16 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
     if appendTrainingData:
         if testDumbtrac:
-            outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-            if crossEntropyLoss:
-                if (outputDumbtrac-0.25) < 0:
-                    target = torch.LongTensor([0])
-                else:
-                    target = torch.LongTensor([1])
-            else:
-                target = torch.FloatTensor([outputDumbtrac-0.25]) # Target from expert
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            assert(False) #Shouldn't run
+            # outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            # if crossEntropyLoss:
+            #     if (outputDumbtrac-0.25) < 0:
+            #         target = torch.LongTensor([0])
+            #     else:
+            #         target = torch.LongTensor([1])
+            # else:
+            #     target = torch.FloatTensor([outputDumbtrac-0.25]) # Target from expert
+            # nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
             if crossEntropyLoss:
                 if (bestschedule[7][0]-0.25) < 0:
@@ -793,11 +791,12 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 else:
                     target = torch.LongTensor([1])
             else:
-                target = torch.FloatTensor([bestschedule[7][0]-0.25]) # Target from expert
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+                target = torch.FloatTensor([min(bestschedule[7][0]-0.25, 10)]) # Target from expert
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
-            trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
+            assert(False) #Shouldn't run
+            # nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            # trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
             trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
@@ -836,11 +835,9 @@ def main():
 
     surtracThreads = dict()
     if multithreadSurtrac:
-        nProcesses = multiprocessing.cpu_count()
+        nProcesses = 4#multiprocessing.cpu_count() #Cores used
     else:
         nProcesses = 1
-
-    #print(multiprocessing.cpu_count())
             
     for i in range(nProcesses):
         print("Starting thread " + str(i))
@@ -858,6 +855,7 @@ def main():
 
     print("Saving training data")
     with open("trainingdata/trainingdata_" + "IG" + ".pickle", 'wb') as handle:
+        trainingdata["light"] = list(trainingdata["light"]) #Can't save and load multiprocessing manager objects, so convert to a normal list first
         pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def loopIntersectionGenerator(nLoops = 1):
@@ -888,6 +886,27 @@ def dataAugmenter(lanelist):
             l3new.append(catlist)
     return l3new
 
+#For not permuting lanes within roads
+def dataAugmenter2(lanelist):
+    #Given a list of "road_lane" strings, want all reorderings, where we can change the order the roads appear and change the order within each road that the lanes appear
+    #First, split to sublists by road
+    listlist = []
+    curRoad = None
+    for lane in lanelist:
+        if lane.split("_")[0] == curRoad:
+            listlist[-1].append(lane)
+        else:
+            curRoad = lane.split("_")[0]
+            listlist.append([lane])
+    l3new = []
+    perms = itertools.permutations(listlist)
+    for perm in perms:
+        catlist = []
+        for sublist in perm:
+            catlist += sublist
+        l3new.append(catlist)
+    return l3new
+
 def makeListListList(listlist):
     if len(listlist) == 0:
         return [[]] #TODO Check format here
@@ -913,6 +932,16 @@ def makeListListList(listlist):
                 for utation in makeListListList(listlist[1:]):
                     listlistlist.append([list(perm)]+utation)
         return listlistlist
+
+#For changing which phase is phase 0 in light cycles
+def cycleArray(arr, n):
+    return arr
+    if not allowT:
+        return arr
+    newarr = copy(arr)
+    for i in range(len(arr)):
+        newarr[i] = arr[(i+n)%len(arr)]
+    return newarr
 
 # this is the main entry point of this script
 if __name__ == "__main__":
