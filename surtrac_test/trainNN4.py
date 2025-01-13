@@ -20,7 +20,7 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 #import runnerQueueSplit
 import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!! (If training from a network, not just IG)
-import intersectionGeneratorBlocks as intersectionGenerator
+import intersectionGenerator as intersectionGenerator
 from importlib import reload
 from Net import Net
 
@@ -180,7 +180,7 @@ def main(sumoconfigs):
         if crossEntropyLoss:
             agents[light] = Net(ninputs, 2, 4096)
         else:
-            agents[light] = Net(ninputs, 1, 4096)
+            agents[light] = Net(ninputs, 1, 8192)
 
         try:
             agents[light] = agents[light].to(device)
