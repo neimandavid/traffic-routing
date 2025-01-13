@@ -56,7 +56,7 @@ def intersectionGenerator():
     maxNClusters = 5
     minClusterGap = 5
     maxClusterGap = 10
-    maxClusterWeight = 10
+    maxClusterWeight = 20
 
     lightlanes["light"] = []
 
@@ -835,7 +835,7 @@ def main():
 
     surtracThreads = dict()
     if multithreadSurtrac:
-        nProcesses = 4#multiprocessing.cpu_count() #Cores used
+        nProcesses = multiprocessing.cpu_count() #Cores used
     else:
         nProcesses = 1
             
