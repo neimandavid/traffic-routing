@@ -80,7 +80,7 @@ class HingeLoss(torch.nn.Module):
 if crossEntropyLoss:
     loss_fn = torch.nn.CrossEntropyLoss()#(weight=torch.Tensor([1, 1.5])) #If training on IG, there'll be a reasonable number of "switch" scenarios
 else:
-    loss_fn = torch.nn.MSELoss()
+    loss_fn = torch.nn.L1Loss()
 
 
 #Neural net things
