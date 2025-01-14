@@ -63,20 +63,6 @@ losses = dict()
 epochlosses = dict()    
 daggertimes = dict()
 
-#Modified from: https://discuss.pytorch.org/t/hinge-loss-in-pytorch/86220
-class HingeLoss(torch.nn.Module):
-
-    def __init__(self):
-        super(HingeLoss, self).__init__()
-        self.relu = nn.ReLU()
-
-    def forward(self, output, target):
-        all_ones = torch.ones_like(target)
-        #labels = 2 * target - all_ones #Turns 0 or 1 into -1 or 1
-        losses = all_ones - torch.mul(output.squeeze(1), target)
-
-        return torch.norm(self.relu(losses))
-
 if crossEntropyLoss:
     loss_fn = torch.nn.CrossEntropyLoss()#(weight=torch.Tensor([1, 1.5])) #If training on IG, there'll be a reasonable number of "switch" scenarios
 else:
@@ -100,18 +86,12 @@ class TrafficDataset(Dataset):
             temp = pickle.load(handle)
         self.dataset = temp["light"]
 
-        #Apparently this breaks on Drogon??? Something about item[1] being a float not a long (maybe I threw too much data at it, or CE loss is bad?) Commenting since I don't need it anymore, but weird.
-        nswitch = 0
+        nstick = 0
         ntotal = 0
         for item in self.dataset:
-            nswitch += item[1]
+            nstick += item[1]
             ntotal += 1
-        print("Switch fraction: " + str(nswitch/ntotal))
-        # self.switchweight = (nswitch+1)/(ntotal-nswitch+1) #Ratio of stick to switch, adding a pseudocount to each to avoid errors
-
-        # print(self.switchweight)
-        # if crossEntropyLoss:
-        #     loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, self.switchweight]))
+        print("Stick fraction: " + str(nstick/ntotal))
 
     def __len__(self):
         return len(self.dataset)
@@ -215,21 +195,22 @@ def main(sumoconfigs):
     if reuseOldData:
         directory = "trainingdata/Archive"
             
-        count = 0
-        for file in os.listdir(directory):
-            filename = os.fsdecode(file)
-            if filename.endswith(".pickle"): 
-                print(directory + "/" + filename)#os.path.join(directory, filename))
-                print("Loading training data")
-                #try:
-                trafficdataset = TrafficDataset(directory + "/" + filename)
-                #Train everything once - note that all losses are likely to spike after new training data comes in
-                for light in ["light"]:#trainingdata:
-                    count += 1
-                    trainLight(light, trafficdataset, count%10 == 0)
+        for _ in range(1):
+            count = 0
+            for file in os.listdir(directory):
+                filename = os.fsdecode(file)
+                if filename.endswith(".pickle"): 
+                    print(directory + "/" + filename)#os.path.join(directory, filename))
+                    print("Loading training data")
+                    #try:
+                    trafficdataset = TrafficDataset(directory + "/" + filename)
+                    #Train everything once - note that all losses are likely to spike after new training data comes in
+                    for light in ["light"]:#trainingdata:
+                        count += 1
+                        trainLight(light, trafficdataset, count%10 == 0)
 
-                # except FileNotFoundError as e:
-                #     pass
+                    # except FileNotFoundError as e:
+                    #     pass
             
 
     firstIter = True
@@ -338,6 +319,7 @@ def trainLight(light, dataset, saveModel = True):
                 'model_state_dict': agents[light].state_dict(),
                 'optimizer_state_dict': optimizers[light].state_dict()
                 }, MODEL_FILES[light]+"saving")
+        #os.remove(MODEL_FILES[light]) #Because apparently just saving over this moves the old file to trash, and that's annoying and eats space?
         os.rename(MODEL_FILES[light]+"saving", MODEL_FILES[light])
 
         plt.figure()

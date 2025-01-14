@@ -855,9 +855,9 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         else:
             if crossEntropyLoss:
                 if (bestschedule[7][0]-0.25) < 0:
-                    target = torch.LongTensor([0])
+                    target = torch.LongTensor([0]) #Switch
                 else:
-                    target = torch.LongTensor([1])
+                    target = torch.LongTensor([1]) #Stick
             else:
                 target = torch.FloatTensor([min(bestschedule[7][0]-0.25, 10)]) # Target from expert
 
