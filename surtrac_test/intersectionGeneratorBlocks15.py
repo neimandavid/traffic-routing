@@ -31,7 +31,7 @@ lanephases = dict()
 trainingdata = dict()
 
 crossEntropyLoss = False #If false, mean-squared error on time before switch
-nruns = 100000
+nruns = 10000#0
 
 mingap = 2.5 #Seconds between cars
 
@@ -884,7 +884,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 templightlanes = dict()
                 templightlanes["light"] = permlightlanes
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
-                if target > 0 or random.random() < 0.33: #Quick hack to get roughly half the data to be switch. Using this to test loss value at initial plateau - I'm not convinced this'll help when training, especially since it effectively ignores half the data we generate, and generation is slow
+                if True:#target > 0 or random.random() < 0.33: #Quick hack to get roughly half the data to be switch. Using this to test loss value at initial plateau - I'm not convinced this'll help when training, especially since it effectively ignores half the data we generate, and generation is slow
                     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
