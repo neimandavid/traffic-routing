@@ -160,7 +160,7 @@ def main(sumoconfigs):
         if crossEntropyLoss:
             agents[light] = Net(ninputs, 2, 4096)
         else:
-            agents[light] = Net(ninputs, 1, 8192)
+            agents[light] = Net(ninputs, 1, 4096)
 
         try:
             agents[light] = agents[light].to(device)

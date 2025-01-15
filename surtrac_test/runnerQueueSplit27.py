@@ -2687,7 +2687,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             if crossEntropyLoss:
                 agents[light] = Net(ninputs, 2, 4096)
             else:
-                agents[light] = Net(ninputs, 1, 8192)
+                agents[light] = Net(ninputs, 1, 4096)
             # if testDumbtrac:
             #     # agents[light] = Net(26, 1, 32)
             #     # #agents[light] = Net(2, 1, 32)
