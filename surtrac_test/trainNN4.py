@@ -20,7 +20,7 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 #import runnerQueueSplit
 import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!! (If training from a network, not just IG)
-import intersectionGenerator as intersectionGenerator
+import intersectionGeneratorBlocks15 as intersectionGenerator
 from importlib import reload
 from Net import Net
 

@@ -53,7 +53,7 @@ lightoutlanes = dict()
 lanephases = dict()
 trainingdata = dict()
 
-crossEntropyLoss = True#False #If false, mean-squared error on time before switch
+crossEntropyLoss = False #If false, mean-squared error on time before switch
 nruns = 10000#0
 
 mingap = 2.5 #Seconds between cars
@@ -992,7 +992,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 else:
                     target = torch.LongTensor([1])
             else:
-                target = torch.FloatTensor([bestschedule[7][0]-0.25]) # Target from expert
+                target = torch.FloatTensor([min(bestschedule[7][0]-0.25, 10)]) # Target from expert
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
