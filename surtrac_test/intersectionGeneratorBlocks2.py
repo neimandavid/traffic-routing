@@ -999,8 +999,6 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
-            if not allowT:
-                trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add all lanes from data augmentation - bad, overfits
             # for permlightlanes in dataAugmenter(lightlanes["light"]):
@@ -1010,12 +1008,14 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             #     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add a random point from the data augmentation to try to learn robustness to lane permutations
-            else:
+            if allowT:
                 alldataaugment = dataAugmenter2(lightlanes["light"])
                 permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]
                 templightlanes = dict()
                 templightlanes["light"] = permlightlanes
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
+
+            if target > 0 or random.random() < 0.33:
                 trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
