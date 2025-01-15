@@ -467,7 +467,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
                             if not phase == i:
                                 #Have to switch light phases.
-                                newFirstSwitch = max(schedule[6] + surtracdata[light][phase]["minDur"], schedule[4]-mingap) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed
+                                newFirstSwitch = max(schedule[6] + surtracdata[light][phase]["minDur"], schedule[4]-mingap, simtime) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed. Except for first phase, which usually wants to switch 2.5s in the past if there's no clusters
                             else:
                                 #This cluster is too long to fit entirely in the current phase
                                 newFirstSwitch = schedule[6] + surtracdata[light][phase]["maxDur"] #Set current phase to max duration

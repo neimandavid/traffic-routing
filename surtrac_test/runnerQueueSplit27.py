@@ -55,7 +55,7 @@ else:
 
 from sumolib import checkBinary
 
-useLibsumo = False
+useLibsumo = True#False
 if useLibsumo:
     import libsumo as traci
 else:
@@ -463,6 +463,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     global totalSurtracRuns
     global totalSurtracClusters
     global totalSurtracTime
+
+    global templightind #TODO delete
 
     if inRoutingSim:
         freq = max(routingSurtracFreq, timestep)
