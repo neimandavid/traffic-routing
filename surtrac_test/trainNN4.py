@@ -93,9 +93,9 @@ class TrafficDataset(Dataset):
             #So if we're using cross-entropy loss, we need to convert time-to-switch into should-I-switch-now?
             if crossEntropyLoss:
                 if item[1] > 0:
-                    item[1] = 1
+                    item = (item[0], 1)
                 else:
-                    item[1] = 0
+                    item = (item[0], 0)
 
             nstick += item[1]
             ntotal += 1
