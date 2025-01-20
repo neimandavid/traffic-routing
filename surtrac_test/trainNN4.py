@@ -48,7 +48,7 @@ if superResetTrainingData:
 #Also, Surtrac network architecture works for FTPs as well
 #So just make sure resetTrainingData=False, testDumbtrac and FTP are correct, and surtracFreq = 1ish (all in runnerQueueSplitWhatever)
 
-crossEntropyLoss = False
+crossEntropyLoss = True
 
 agents = dict()
 optimizers = dict()
@@ -89,6 +89,14 @@ class TrafficDataset(Dataset):
         nstick = 0
         ntotal = 0
         for item in self.dataset:
+            #We're going to assume all training data is MSE data (in particular, this means I can switch loss fns without retraining)
+            #So if we're using cross-entropy loss, we need to convert time-to-switch into should-I-switch-now?
+            if crossEntropyLoss:
+                if item[1] > 0:
+                    item[1] = 1
+                else:
+                    item[1] = 0
+
             nstick += item[1]
             ntotal += 1
         print("Stick fraction: " + str(nstick/ntotal))
@@ -158,9 +166,9 @@ def main(sumoconfigs):
         ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra #180+144+12+1=337
 
         if crossEntropyLoss:
-            agents[light] = Net(ninputs, 2, 4096)
+            agents[light] = Net(ninputs, 2, 8192)
         else:
-            agents[light] = Net(ninputs, 1, 4096)
+            agents[light] = Net(ninputs, 1, 8192)
 
         try:
             agents[light] = agents[light].to(device)
