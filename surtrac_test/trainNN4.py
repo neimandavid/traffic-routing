@@ -88,14 +88,16 @@ class TrafficDataset(Dataset):
 
         nstick = 0
         ntotal = 0
-        for item in self.dataset:
+        #for item in self.dataset:
+        for itemnum in range(len(self.dataset)):
+            item = self.dataset[itemnum]
             #We're going to assume all training data is MSE data (in particular, this means I can switch loss fns without retraining)
             #So if we're using cross-entropy loss, we need to convert time-to-switch into should-I-switch-now?
             if crossEntropyLoss:
                 if item[1] > 0:
-                    item = (item[0], torch.LongTensor([1]))
+                    self.dataset[itemnum] = (item[0], torch.LongTensor([1]))
                 else:
-                    item = (item[0], torch.LongTensor([0]))
+                    self.dataset[itemnum] = (item[0], torch.LongTensor([0]))
 
             nstick += item[1]
             ntotal += 1
