@@ -798,7 +798,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             # trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
-            if True: #target > 0 or random.random() < 0.33: #Quick hack to get roughly half the data to be switch. Using this to test loss value at initial plateau - I'm not convinced this'll help when training, especially since it effectively ignores half the data we generate, and generation is slow
+            if target > 0 or random.random() < 0.33: #Quick hack to get roughly half the data to be switch. Using this to test loss value at initial plateau - I'm not convinced this'll help when training, especially since it effectively ignores half the data we generate, and generation is slow
                 trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add all lanes from data augmentation - bad, overfits

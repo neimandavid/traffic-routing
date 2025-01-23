@@ -200,7 +200,15 @@ def intersectionGenerator():
             jprev = (j-1) % nPhases
             surtracdata["light"][i]["timeTo"][j] = surtracdata["light"][i]["timeTo"][jprev] + surtracdata["light"][jprev]["minDur"]
     
-    doSurtracThread("network", simtime, "light", clusters, lightphases, lastswitchtimes, False, 10, [], dict(), dict())
+    while simtime < 100:
+        target = doSurtracThread("network", simtime, "light", clusters, lightphases, lastswitchtimes, False, 10, [], dict(), dict())
+        if target == None:
+            break #No clusters left, or something went wrong like starting with too many clusters
+        if target > 0: #Light switched
+            lightphases["light"] = (lightphases["light"]+2)%nPhases #Switch up two phases to the next green phase
+            clusters = pushForward(clusters, 10) #Skip 10s = 2 min durations (NN does nothing until min phase of new green is done)
+        else:
+            clusters = pushForward(clusters, 1) #Skip 1s into the future
     #print("done")
 
 def RIR(min, max, cont=False):
@@ -884,12 +892,32 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 templightlanes = dict()
                 templightlanes["light"] = permlightlanes
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
-                if target > 0 or random.random() < 0.33: #Quick hack to get roughly half the data to be switch. Using this to test loss value at initial plateau - I'm not convinced this'll help when training, especially since it effectively ignores half the data we generate, and generation is slow
+                if True:# target > 0 or random.random() < 0.33: #Quick hack to get roughly half the data to be switch. Using this to test loss value at initial plateau - I'm not convinced this'll help when training, especially since it effectively ignores half the data we generate, and generation is slow
                     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
-        
+                return target
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
         bestschedules[light] = testnnschedule
+
+def pushForward(clusters, dt=1):
+    for lane in clusters:
+        clusterind = 0
+        while clusterind < len(clusters[lane]):
+            tempcluster = clusters[lane][clusterind]
+
+            oldlen = tempcluster["departure"] - tempcluster["arrival"]
+            tempcluster["arrival"] = max(tempcluster["arrival"]-dt, 0) #This should alias
+            tempcluster["departure"] = tempcluster["departure"]-dt
+
+            if tempcluster["departure"] < 0:
+                #This cluster has already left, delete it and move on
+                del clusters[lane][clusterind]
+                continue
+
+            newlen = tempcluster["departure"] - tempcluster["arrival"]
+            if not oldlen == 0: #If it is, either the cluster left and we hit the continue above and deleted it, or it didn't and weight doesn't change
+                tempcluster["weight"] *= newlen/oldlen #Assume uniform density and some cars went through. This could give a fractional weight but it's probably fine
+
 
 def main():
     global trainingdata

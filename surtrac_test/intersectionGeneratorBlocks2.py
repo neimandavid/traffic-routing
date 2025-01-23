@@ -1015,7 +1015,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 templightlanes["light"] = permlightlanes
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
 
-            if True:# target > 0 or random.random() < 0.33:
+            if target > 0 or random.random() < 0.33:
                 trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
