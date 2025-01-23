@@ -20,7 +20,7 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 #import runnerQueueSplit
 import runnerQueueSplit27 as runnerQueueSplit #KEEP THIS UP TO DATE!!! (If training from a network, not just IG)
-import intersectionGeneratorBlocks15 as intersectionGenerator
+import intersectionGeneratorBlocks15Pushforward as intersectionGenerator
 from importlib import reload
 from Net import Net
 
@@ -38,7 +38,7 @@ print(device)
 
 #In case we want to pause a run and continue later, set these to false
 reset = True
-reuseOldData = True
+reuseOldData = False
 resetNN = reset
 resetTrainingData2 = True
 superResetTrainingData = True

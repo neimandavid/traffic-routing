@@ -206,9 +206,9 @@ def intersectionGenerator():
             break #No clusters left, or something went wrong like starting with too many clusters
         if target > 0: #Light switched
             lightphases["light"] = (lightphases["light"]+2)%nPhases #Switch up two phases to the next green phase
-            clusters = pushForward(clusters, 10) #Skip 10s = 2 min durations (NN does nothing until min phase of new green is done)
+            pushForward(clusters, 10) #Skip 10s = 2 min durations (NN does nothing until min phase of new green is done)
         else:
-            clusters = pushForward(clusters, 1) #Skip 1s into the future
+            pushForward(clusters, 1) #Skip 1s into the future
     #print("done")
 
 def RIR(min, max, cont=False):
