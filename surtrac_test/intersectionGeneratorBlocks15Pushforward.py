@@ -205,10 +205,13 @@ def intersectionGenerator():
         if target == None:
             break #No clusters left, or something went wrong like starting with too many clusters
         if target > 0: #Light switched
-            lightphases["light"] = (lightphases["light"]+2)%nPhases #Switch forward two phases to the next green phase
-            pushForward(clusters, 10) #Skip 10s = 2 min durations (NN does nothing until min phase of new green is done)
+            phase = (lightphases["light"]+1)%nPhases
+            pushForward(clusters, phase, surtracdata, 5)
+            phase = (lightphases["light"]+1)%nPhases
+            pushForward(clusters, phase, surtracdata, 5)
+            lightphases["light"] = phase #Switch forward two phases to the next green phase
         else:
-            pushForward(clusters, 1) #Skip 1s into the future
+            pushForward(clusters, phase, surtracdata, 1) #Skip 1s into the future
     #print("done")
 
 def RIR(min, max, cont=False):
@@ -899,26 +902,31 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
         bestschedules[light] = testnnschedule
 
-def pushForward(clusters, dt=1):
+def pushForward(clusters, phase, surtracdata, dt=1):
     for lane in clusters:
         clusterind = 0
         while clusterind < len(clusters[lane]):
             tempcluster = clusters[lane][clusterind]
 
-            oldlen = tempcluster["departure"] - tempcluster["arrival"]
-            tempcluster["arrival"] = max(tempcluster["arrival"]-dt, 0) #This should alias
-            tempcluster["departure"] = tempcluster["departure"]-dt
+            if lane in surtracdata[light][phase]["lanes"]: #Cluster can go
+                oldlen = tempcluster["departure"] - tempcluster["arrival"]
+                tempcluster["arrival"] = max(tempcluster["arrival"]-dt, 0) #This should alias
+                tempcluster["departure"] = tempcluster["departure"]-dt
 
-            if tempcluster["departure"] < 0:
-                #This cluster has already left, delete it and move on
-                del clusters[lane][clusterind]
-                continue
+                if tempcluster["departure"] < 0:
+                    #This cluster has already left, delete it and move on
+                    del clusters[lane][clusterind]
+                    continue
 
-            newlen = tempcluster["departure"] - tempcluster["arrival"]
-            if not oldlen == 0: #If it is, either the cluster left and we hit the continue above and deleted it, or it didn't and weight doesn't change
-                tempcluster["weight"] *= newlen/oldlen #Assume uniform density and some cars went through. This could give a fractional weight but it's probably fine
+                newlen = tempcluster["departure"] - tempcluster["arrival"]
+                if not oldlen == 0: #If it is, either the cluster left and we hit the continue above and deleted it, or it didn't and weight doesn't change
+                    tempcluster["weight"] *= newlen/oldlen #Assume uniform density and some cars went through. This could give a fractional weight but it's probably fine
 
-            clusterind+=1
+                clusterind+=1
+
+            else:
+                tempcluster["arrival"] = max(tempcluster["arrival"]-dt, 0) #This should alias
+                tempcluster["departure"] = max(tempcluster["departure"]-dt, tempcluster["arrival"] + mingap*(tempcluster["weight"]-1)
 
 def main():
     global trainingdata

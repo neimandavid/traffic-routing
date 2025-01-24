@@ -38,7 +38,7 @@ print(device)
 
 #In case we want to pause a run and continue later, set these to false
 reset = True
-reuseOldData = False
+reuseOldData = True
 resetNN = reset
 resetTrainingData2 = True
 superResetTrainingData = True
