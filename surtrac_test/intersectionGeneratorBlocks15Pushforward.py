@@ -926,7 +926,7 @@ def pushForward(clusters, phase, surtracdata, dt=1):
 
             else:
                 tempcluster["arrival"] = max(tempcluster["arrival"]-dt, 0) #This should alias
-                tempcluster["departure"] = max(tempcluster["departure"]-dt, tempcluster["arrival"] + mingap*(tempcluster["weight"]-1)
+                tempcluster["departure"] = max(tempcluster["departure"]-dt, tempcluster["arrival"] + mingap*(tempcluster["weight"]-1))
 
 def main():
     global trainingdata
