@@ -210,8 +210,11 @@ def intersectionGenerator():
             phase = (lightphases["light"]+1)%nPhases
             pushForward(clusters, phase, surtracdata, 5)
             lightphases["light"] = phase #Switch forward two phases to the next green phase
+            simtime += 10
+            lastswitchtimes["light"] = simtime-5
         else:
             pushForward(clusters, phase, surtracdata, 1) #Skip 1s into the future
+            simtime += 1
     #print("done")
 
 def RIR(min, max, cont=False):
