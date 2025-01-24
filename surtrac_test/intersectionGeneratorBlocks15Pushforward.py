@@ -31,7 +31,7 @@ lanephases = dict()
 trainingdata = dict()
 
 crossEntropyLoss = False #If false, mean-squared error on time before switch
-nruns = 10000#0
+nruns = 100#00#0
 
 mingap = 2.5 #Seconds between cars
 
@@ -927,6 +927,7 @@ def pushForward(clusters, phase, surtracdata, dt=1):
             else:
                 tempcluster["arrival"] = max(tempcluster["arrival"]-dt, 0) #This should alias
                 tempcluster["departure"] = max(tempcluster["departure"]-dt, tempcluster["arrival"] + mingap*(tempcluster["weight"]-1))
+                clusterind+=1
 
 def main():
     global trainingdata
