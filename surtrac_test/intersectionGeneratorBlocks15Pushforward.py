@@ -205,7 +205,7 @@ def intersectionGenerator():
         if target == None:
             break #No clusters left, or something went wrong like starting with too many clusters
         if target > 0: #Light switched
-            lightphases["light"] = (lightphases["light"]+2)%nPhases #Switch up two phases to the next green phase
+            lightphases["light"] = (lightphases["light"]+2)%nPhases #Switch forward two phases to the next green phase
             pushForward(clusters, 10) #Skip 10s = 2 min durations (NN does nothing until min phase of new green is done)
         else:
             pushForward(clusters, 1) #Skip 1s into the future
@@ -918,6 +918,7 @@ def pushForward(clusters, dt=1):
             if not oldlen == 0: #If it is, either the cluster left and we hit the continue above and deleted it, or it didn't and weight doesn't change
                 tempcluster["weight"] *= newlen/oldlen #Assume uniform density and some cars went through. This could give a fractional weight but it's probably fine
 
+            clusterind+=1
 
 def main():
     global trainingdata
