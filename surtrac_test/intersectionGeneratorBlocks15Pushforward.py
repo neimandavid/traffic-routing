@@ -908,7 +908,7 @@ def pushForward(clusters, phase, surtracdata, dt=1):
         while clusterind < len(clusters[lane]):
             tempcluster = clusters[lane][clusterind]
 
-            if lane in surtracdata[light][phase]["lanes"]: #Cluster can go
+            if lane in surtracdata["light"][phase]["lanes"]: #Cluster can go
                 oldlen = tempcluster["departure"] - tempcluster["arrival"]
                 tempcluster["arrival"] = max(tempcluster["arrival"]-dt, 0) #This should alias
                 tempcluster["departure"] = tempcluster["departure"]-dt
