@@ -204,7 +204,7 @@ def intersectionGenerator():
         target = doSurtracThread("network", simtime, "light", clusters, lightphases, lastswitchtimes, False, 10, [], dict(), dict())
         if target == None:
             break #No clusters left, or something went wrong like starting with too many clusters
-        if target > 0: #Light switched
+        if target <= 0: #Light switched
             phase = (lightphases["light"]+1)%nPhases
             pushForward(clusters, phase, surtracdata, 5)
             phase = (lightphases["light"]+1)%nPhases
