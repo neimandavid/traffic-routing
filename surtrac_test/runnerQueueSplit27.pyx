@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 #Adapted from TraCI tutorial here: https://github.com/eclipse/sumo/blob/main/tests/complex/tutorial/traci_tls/runner.py
 
+# cython: profile=True
+# distutils: define_macros=CYTHON_TRACE_NOGIL=1
+
 #QueueSplit5 added a first iteration of a Surtrac model to QueueSplit4
 #New in QueueSplit6: When there's multiple light phases a lane can go in, don't double-create clusters
 #New in QueueSplit7: Adding Surtrac to simulate-ahead
@@ -460,7 +463,10 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
     return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
 
-def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
+def doSurtracThread(network, int simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
+    cdef int clusterind
+    cdef int laneindex
+    
     global totalSurtracRuns
     global totalSurtracClusters
     global totalSurtracTime
@@ -620,7 +626,9 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         lastSwitch = lastswitchtimes[light]
         schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
 
-        for _ in range(nClusters): #Keep adding a cluster until #clusters added = #clusters to be added
+        
+
+        for clusterind in range(nClusters): #Keep adding a cluster until #clusters added = #clusters to be added
             scheduleHashDict = dict()
             for schedule in schedules:
                 for laneindex in range(lenlightlaneslight):
@@ -1311,7 +1319,7 @@ def run(network, rerouters, pSmart, verbose = True):
     tstart = time.time()
     simtime = 0
 
-    while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000):
+    while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000) and simtime < 200:
         simtime += 1
         traci.simulationStep() #Tell the simulator to simulate the next time step
 
