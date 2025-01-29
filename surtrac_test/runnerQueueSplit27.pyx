@@ -28,6 +28,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import numba
+
 import torch
 from torch import nn
 
@@ -460,7 +462,6 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
     return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
 
-#@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
     global totalSurtracRuns
     global totalSurtracClusters
@@ -873,7 +874,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                             #NEXT TODO: Apparently still a thing even with splitting the initial VOI to multiple lanes???
                             continue
 
-                        for nextlaneind in range(nLanes[nextedge]):
+                        for nextlaneind in range(traci.edge.getLaneNumber(nextedge)):#range(nLanes[nextedge]):
                             nextlane = nextedge+"_"+str(nextlaneind)
                             arr = nextSendTime + fftimes[nextlane]
                             if arr > simtime + predictionCutoff:
@@ -2827,7 +2828,7 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                     #TODO ghost cars disappearing sometimes? Possibly related to intersection behavior (speed of new spawn?)
                     print("Error in rerouteSUMOGC?? Ignoring")
                     print(e)
-                    raise(e)
+                    #raise(e)
                     if not useLibsumo:
                         traci.switch("main")
 
