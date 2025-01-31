@@ -860,6 +860,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
+            assert(False)
             trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
@@ -880,7 +881,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 templightlanes = dict()
                 templightlanes["light"] = permlightlanes
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
-                if target > 0 or random.random() < 0.33: #Quick hack to get roughly half the data to be switch. Using this to test loss value at initial plateau - I'm not convinced this'll help when training, especially since it effectively ignores half the data we generate, and generation is slow
+                if True:#target > 0 or random.random() < 0.33: #Quick hack to get roughly half the data to be switch. Using this to test loss value at initial plateau - I'm not convinced this'll help when training, especially since it effectively ignores half the data we generate, and generation is slow
                     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
@@ -922,6 +923,7 @@ def main():
 
     print("Saving training data")
     with open("trainingdata/trainingdata_" + "IG" + ".pickle", 'wb') as handle:
+        trainingdata["light"] = list(trainingdata["light"]) #Can't save and load multiprocessing manager objects, so convert to a normal list first
         pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def loopIntersectionGenerator(nLoops = 1):

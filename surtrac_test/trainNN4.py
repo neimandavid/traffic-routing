@@ -48,7 +48,7 @@ if superResetTrainingData:
 #Also, Surtrac network architecture works for FTPs as well
 #So just make sure resetTrainingData=False, testDumbtrac and FTP are correct, and surtracFreq = 1ish (all in runnerQueueSplitWhatever)
 
-crossEntropyLoss = True
+crossEntropyLoss = True #NOTE: We're just always assuming training data is MSE s.t. we can always reuse it
 
 agents = dict()
 optimizers = dict()
