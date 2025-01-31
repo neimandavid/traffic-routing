@@ -30,7 +30,7 @@ lightoutlanes = dict()
 lanephases = dict()
 trainingdata = dict()
 
-crossEntropyLoss = True#False #If false, mean-squared error on time before switch
+crossEntropyLoss = False #If false, mean-squared error on time before switch
 nruns = 10000#0
 
 mingap = 2.5 #Seconds between cars
@@ -133,21 +133,21 @@ def intersectionGenerator():
                 lastdepart = tempcluster["departure"]
                 clusters[lane].append(tempcluster)
 
-            #Learn to uncompress detector model estimates
-            #This requires us to generate overly-compressed clusters
-            if allowT:
-                for k in range(nClusters):
-                    #Overcompress half the clusters down randomly
-                    if random.random() < 0.5:
-                        tempcluster = clusters[lane][k]
-                        tempdur = (tempcluster["weight"]-1)*mingap
-                        tempcluster["departure"] = tempcluster["arrival"] + tempdur
-                        assert(clusters[lane][k]["departure"] == tempcluster["departure"]) #Confirm aliasing works the way I expect
-                # #Supercompress first cluster half the time
-                # if nClusters>0 and random.random() < 0.5:
-                #     tempcluster = clusters[lane][0]
-                #     tempcluster["departure"] = tempcluster["arrival"]
-                #     assert(clusters[lane][0]["departure"] == tempcluster["departure"]) #Confirm aliasing works the way I expect
+            # #Learn to uncompress detector model estimates
+            # #This requires us to generate overly-compressed clusters
+            # if allowT:
+            #     for k in range(nClusters):
+            #         #Overcompress half the clusters down randomly
+            #         if random.random() < 0.5:
+            #             tempcluster = clusters[lane][k]
+            #             tempdur = (tempcluster["weight"]-1)*mingap
+            #             tempcluster["departure"] = tempcluster["arrival"] + tempdur
+            #             assert(clusters[lane][k]["departure"] == tempcluster["departure"]) #Confirm aliasing works the way I expect
+            #     # #Supercompress first cluster half the time
+            #     # if nClusters>0 and random.random() < 0.5:
+            #     #     tempcluster = clusters[lane][0]
+            #     #     tempcluster["departure"] = tempcluster["arrival"]
+            #     #     assert(clusters[lane][0]["departure"] == tempcluster["departure"]) #Confirm aliasing works the way I expect
 
     phase = RIR(0, (nGreenPhases-1))*2 #Current light phase - forced to be even, thus green. -1 because RIR is inclusive
     mindur = 5
@@ -194,14 +194,7 @@ def intersectionGenerator():
             jprev = (j-1) % nPhases
             surtracdata["light"][i]["timeTo"][j] = surtracdata["light"][i]["timeTo"][jprev] + surtracdata["light"][jprev]["minDur"]
     
-    # print(lightseqs)
-    # print(clusters)
-    # print(surtracdata)
-
-    #convertToNNInputSurtrac(simtime, "light", clusters, lightphases, lastswitchtimes) #Runs now, yay!
-    #bestschedules = dict()
     doSurtracThread("network", simtime, "light", clusters, lightphases, lastswitchtimes, False, 10, [], dict(), dict())
-    #print(bestschedules["light"])
     #print("done")
 
 def RIR(min, max, cont=False):
@@ -245,7 +238,7 @@ def addYellows(v):
 def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes = lightlanes):
     maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
     maxnroads = 4 #And assume 4-way intersections for now
-    maxnclusters = 5 #And assume at most 10 clusters per lane
+    maxnclusters = 5 #And assume at most 5 clusters per lane
     ndatapercluster = 3 #Arrival, departure, weight
     maxnphases = 12 #Should be enough to handle both leading and lagging lefts
     phasevec = np.zeros(maxnphases)
@@ -843,30 +836,32 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
     if appendTrainingData:
         if testDumbtrac:
-            outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
-            if crossEntropyLoss:
-                if (outputDumbtrac-0.25) < 0:
-                    target = torch.LongTensor([0])
-                else:
-                    target = torch.LongTensor([1])
-            else:
-                target = torch.FloatTensor([outputDumbtrac-0.25]) # Target from expert
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            assert(False) #Shouldn't run
+            # outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            # if crossEntropyLoss:
+            #     if (outputDumbtrac-0.25) < 0:
+            #         target = torch.LongTensor([0])
+            #     else:
+            #         target = torch.LongTensor([1])
+            # else:
+            #     target = torch.FloatTensor([outputDumbtrac-0.25]) # Target from expert
+            # nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
         else:
             if crossEntropyLoss:
                 if (bestschedule[7][0]-0.25) < 0:
-                    target = torch.LongTensor([0])
+                    target = torch.LongTensor([0]) #Switch
                 else:
-                    target = torch.LongTensor([1])
+                    target = torch.LongTensor([1]) #Stick
             else:
-                target = torch.FloatTensor([bestschedule[7][0]-0.25]) # Target from expert
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+                target = torch.FloatTensor([min(bestschedule[7][0]-0.25, 10)]) # Target from expert
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
-            trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
+            assert(False) #Shouldn't run
+            # nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            # trainingdata["light"].append((nnin, target, torch.tensor([[outputNN]])))
         else:
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
             if not allowT:
+                nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
                 trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add all lanes from data augmentation - bad, overfits
@@ -876,14 +871,14 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             #     nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
             #     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
-            #Add a random point from the data augmentation to try to learn robustness to lane permutations
+            #Add a random point from the data augmentation to try to learn robustness to road permutations
             else:
                 alldataaugment = dataAugmenter2(lightlanes["light"])
                 permlightlanes = alldataaugment[int(random.random()*len(alldataaugment))]
                 templightlanes = dict()
                 templightlanes["light"] = permlightlanes
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
-                if target > 0 or random.random() < 0.33: #Quick hack to get roughly half the data to be switch. Using this to test loss value at initial plateau - I'm not convinced this'll help when training, especially since it effectively ignores half the data we generate, and generation is slow
+                if True:#target > 0 or random.random() < 0.33: #Quick hack to get roughly half the data to be switch. Using this to test loss value at initial plateau - I'm not convinced this'll help when training, especially since it effectively ignores half the data we generate, and generation is slow
                     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
