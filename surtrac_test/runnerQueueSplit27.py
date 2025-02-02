@@ -436,7 +436,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
             laneind = -1
             prevRoad = road
         laneind += 1
-        if nLanes[road] > 1 and lanenum == nLanes[road]:
+        if nLanes[road] > 1 and lanenum == nLanes[road]-1:
             laneind = maxnlanes-1 #Left lane on left always
         assert(laneind < maxnlanes)
 
