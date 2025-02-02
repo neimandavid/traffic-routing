@@ -55,7 +55,7 @@ else:
 
 from sumolib import checkBinary
 
-useLibsumo = False
+useLibsumo = True
 if useLibsumo:
     import libsumo as traci
 else:
@@ -436,6 +436,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
             laneind = -1
             prevRoad = road
         laneind += 1
+        rawlaneind = laneind
         if nLanes[road] > 1 and lanenum == nLanes[road]-1:
             laneind = maxnlanes-1 #Left lane on left always
         assert(laneind < maxnlanes)
@@ -457,7 +458,10 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
             if lane in surtracdata[light][i]["lanes"]:
                 greenlanes[roadind*maxnlanes*maxnphases+laneind*maxnphases+i] = 1
                 #greenlanes should look like [road1lane1greenphases, road1lane2greenphases, etc] where each of those is just a binary vector with 1s for green phases
-
+                #Hack in fake extra non-left lanes with no cars if not enough lanes
+                #But those lanes still need to think
+                for templaneind in range(rawlaneind, laneind): #This should only go off if we skipped lanes due to left turns
+                    greenlanes[roadind*maxnlanes*maxnphases+templaneind*maxnphases+i] = 1
 
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
     return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
