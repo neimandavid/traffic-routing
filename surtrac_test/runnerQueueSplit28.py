@@ -24,6 +24,7 @@
 #25: New plan for lane changes - blindly sample which lane stuff ends up in
 #26: Detector model for Surtrac in routing as well (since the goal is to approximate what the main simulation would be doing)
 #27: Support new SurtracNet (single network for all intersections, takes in intersection geometry and light phase info). MIGHT BE OUT OF DATE ON DETECTOR MODEL STUFF, TODO add that back in from RQS26
+#28: Better multithreading. Start routing sims when a vehicle enters a road, early stop when it nears an intersection
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -132,6 +133,10 @@ firstClusterGaps = []
 
 testNNrolls = []
 nVehicles = []
+
+stopDict = dict()
+routingthreads = dict()
+routingresults = manager.dict()
 
 learnYellow = False #False to strictly enforce that yellow lights are always their minimum length (no scheduling clusters during yellow+turn arrow, and ML solution isn't used there)
 learnMinMaxDurations = False #False to strictly enforce min/max duration limits (in particular, don't call ML, just do the right thing)
@@ -1305,6 +1310,8 @@ def run(network, rerouters, pSmart, verbose = True):
     global clustersCache
     global teleportdata
     global adopterinfo
+    global routingthreads
+    global stopDict
     #netfile is the filepath to the network file, so we can call sumolib to get successors
     #rerouters is the list of induction loops on edges with multiple successor edges
     
@@ -1457,6 +1464,13 @@ def run(network, rerouters, pSmart, verbose = True):
                     leftDict[id] += 1
                 laneDict[id] = newlane
                 edgeDict[id] = newloc
+
+                #Start routing sim
+                if multithreadRouting:
+                    routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
+                    routingthreads[vehicle].start()
+                    stopDict[id] = False
+
                 #assert(laneDict[id] == traci.vehicle.getLaneID(id))
                 try:
                     assert(laneDict[id].split("_")[0] in currentRoutes[id])
@@ -2779,10 +2793,12 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
     global delay3adjdict
     #Clear any stored Surtrac stuff
     global surtracDict
-    surtracDict = dict()
+    global routingthreads
+    global routingresults
 
-    routingthreads = dict()
-    routingresults = manager.dict()
+    surtracDict = dict() #TODO why is this here???
+
+    
 
     saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
 
@@ -2820,9 +2836,8 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                     routingresults[vehicle] = manager.list([None, None])
 
                     if multithreadRouting:
-                        #print("Starting vehicle routing thread")
-                        routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
-                        routingthreads[vehicle].start()
+                        #We're near the intersection and should stop routing
+                        stopDict[vehicle] = True
                     else:
                         rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults)
                     
@@ -3072,6 +3087,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     global routingTime
     global surtracDict
     global nonExitEdgeDetections
+    global stopDict
 
     dontReRemove = [] #So we delete detector records of vehicles exactly once
     remainingDuration = pickle.loads(pickle.dumps(remainingDurationIn)) #This is apparently important, not sure why. It's especially weird given the next time we see remainingDuration is as the output of a loadClusters call
@@ -3255,7 +3271,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     #Run simulation, track time to completion
     while(True):
         #Timeout if things have gone wrong somehow
-        if time.time()-routestartwctime > timeout:
+        if time.time()-routestartwctime > timeout or (startvehicle in stopDict and stopDict[startvehicle]):
             print("Routing timeout: Edge " + startedge + ", time: " + str(starttime))
             routeStats[startvehicle]["nTimeouts"] += 1
             
