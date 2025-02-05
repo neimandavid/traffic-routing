@@ -3606,7 +3606,7 @@ def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, li
 
 def pickledump(filename, data):
     with open(filename+"temp", 'wb') as handle:
-        pickle.dump(lightStates, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
     os.rename(filename+"temp", filename)
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
