@@ -1332,6 +1332,7 @@ def run(network, rerouters, pSmart, verbose = True):
     while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000):
         simtime += 1
         traci.simulationStep() #Tell the simulator to simulate the next time step
+        time.sleep(0.5) #TODO make this smarter AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
         if debugMode:
             assert(simtime == traci.simulation.getTime())
@@ -3270,6 +3271,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     #START ROUTING SIM MAIN LOOP
     #Run simulation, track time to completion
     while(True):
+        time.sleep(0) #Make sure we're running all the routing threads
         #Timeout if things have gone wrong somehow
         if time.time()-routestartwctime > timeout or (startvehicle in stopDict and stopDict[startvehicle]):
             print("Routing timeout: Edge " + startedge + ", time: " + str(starttime))
