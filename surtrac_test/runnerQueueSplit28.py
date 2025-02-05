@@ -1332,7 +1332,7 @@ def run(network, rerouters, pSmart, verbose = True):
     while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000):
         simtime += 1
         traci.simulationStep() #Tell the simulator to simulate the next time step
-        time.sleep(0.5) #TODO make this smarter AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        time.sleep(0.1) #TODO make this smarter AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
         if debugMode:
             assert(simtime == traci.simulation.getTime())
@@ -1467,11 +1467,11 @@ def run(network, rerouters, pSmart, verbose = True):
                 edgeDict[id] = newloc
 
                 #Start routing sim
-                if multithreadRouting:
+                if multithreadRouting and id in isSmart and isSmart[id]:
                     saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
-                    routingresults[vehicle] = manager.list([None, None])
-                    routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
-                    routingthreads[vehicle].start()
+                    routingresults[id] = manager.list([None, None])
+                    routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
+                    routingthreads[id].start()
                     stopDict[id] = False
 
                 #assert(laneDict[id] == traci.vehicle.getLaneID(id))
@@ -2859,47 +2859,49 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                     if not useLibsumo:
                         traci.switch("main")
 
-        oldids[detector] = ids
-
-    for vehicle in routingresults:
-        if multithreadRouting:
-            routingthreads[vehicle].join()
-        [newroute, esttime] = routingresults[vehicle]
-
-        routeStats[vehicle]["nCalls"] += 1
-        if timedata[vehicle][2] == -1:
-            routeStats[vehicle]["nCallsFirst"] += 1
-        else:
-            routeStats[vehicle]["nCallsAfterFirst"] += 1 #Not necessarily nCalls-1; want to account for vehicles that never got routed
-        try:
-            if not tuple(newroute) == currentRoutes[vehicle] and not newroute == currentRoutes[vehicle][-len(newroute):]:
-                routeStats[vehicle]["nSwaps"] += 1
-                routeStats[vehicle]["swapped"] = True
-                if timedata[vehicle][2] == -1:
-                    routeStats[vehicle]["nSwapsFirst"] += 1
-                else:
-                    routeStats[vehicle]["nSwapsAfterFirst"] += 1
-        except:
-            print("Failed route compare")
-            print(currentRoutes[vehicle])
-            print(newroute)
-
-        timedata[vehicle][0] = simtime #Time prediction was made
-        #timedata[vehicle][1] is going to be actual time at goal
-        timedata[vehicle][2] = esttime #Predicted time until goal
-        timedata[vehicle][3] = currentRoutes[vehicle][0]
-        timedata[vehicle][4] = currentRoutes[vehicle][-1]
+                if multithreadRouting:
+                    routingthreads[vehicle].join()
                 
-        if not newroute == None:
-            try:
-                pass
-                traci.vehicle.setRoute(vehicle, newroute)
-                currentRoutes[vehicle] = newroute
-            except traci.exceptions.TraCIException as e:
-                print("Couldn't update route, not sure what happened, ignoring")
-                print(e)
-        else:
-            print("newroute == None, likely a problem in routing")        
+                [newroute, esttime] = routingresults[vehicle]
+
+                routeStats[vehicle]["nCalls"] += 1
+                if timedata[vehicle][2] == -1:
+                    routeStats[vehicle]["nCallsFirst"] += 1
+                else:
+                    routeStats[vehicle]["nCallsAfterFirst"] += 1 #Not necessarily nCalls-1; want to account for vehicles that never got routed
+                try:
+                    if not tuple(newroute) == currentRoutes[vehicle] and not newroute == currentRoutes[vehicle][-len(newroute):]:
+                        routeStats[vehicle]["nSwaps"] += 1
+                        routeStats[vehicle]["swapped"] = True
+                        if timedata[vehicle][2] == -1:
+                            routeStats[vehicle]["nSwapsFirst"] += 1
+                        else:
+                            routeStats[vehicle]["nSwapsAfterFirst"] += 1
+                except:
+                    print("Failed route compare")
+                    print(currentRoutes[vehicle])
+                    print(newroute)
+
+                timedata[vehicle][0] = simtime #Time prediction was made
+                #timedata[vehicle][1] is going to be actual time at goal
+                timedata[vehicle][2] = esttime #Predicted time until goal
+                timedata[vehicle][3] = currentRoutes[vehicle][0]
+                timedata[vehicle][4] = currentRoutes[vehicle][-1]
+                        
+                if not newroute == None:
+                    try:
+                        pass
+                        traci.vehicle.setRoute(vehicle, newroute)
+                        currentRoutes[vehicle] = newroute
+                    except traci.exceptions.TraCIException as e:
+                        print("Couldn't update route, not sure what happened, ignoring")
+                        print(vehicle)
+                        print(newroute)
+                        print(e)
+                else:
+                    print("newroute == None, likely a problem in routing")        
+
+        oldids[detector] = ids
 
 
 def backwardDijkstraAStar(network, goal):
