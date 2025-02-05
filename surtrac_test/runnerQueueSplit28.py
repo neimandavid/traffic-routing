@@ -3588,7 +3588,8 @@ def getSuccessors(edge, network):
 
 def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases):
     #Copy state from main sim to test sim
-    traci.simulation.saveState("savestates/teststate_"+edge+".xml")
+    traci.simulation.saveState("savestates/teststate_"+edge+".xmltemp")
+    os.rename("savestates/teststate_"+edge+".xmltemp", "savestates/teststate_"+edge+".xml")
     #saveState apparently doesn't save traffic light states despite what the docs say
     #So save all the traffic light states and copy them over
     lightStates = dict()
