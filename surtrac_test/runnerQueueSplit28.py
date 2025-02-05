@@ -3598,16 +3598,16 @@ def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, li
         #Why do the built-in functions have such terrible names?!
         lightStates[light][1] = traci.trafficlight.getNextSwitch(light) - traci.simulation.getTime()
     #Save lightStates to a file
-    with open("savestates/lightstate_"+edge+".pickle", 'wb') as handle:
+    pickledump("savestates/lightstate_"+edge+".pickle", lightStates)
+    pickledump("savestates/lightstate_"+edge+"_remainingDuration.pickle", remainingDuration)
+    pickledump("savestates/lightstate_"+edge+"_lastSwitchTimes.pickle", lastSwitchTimes)
+    pickledump("savestates/lightstate_"+edge+"_sumoPredClusters.pickle", sumoPredClusters)
+    pickledump("savestates/lightstate_"+edge+"_lightphases.pickle", lightphases)
+
+def pickledump(filename, data):
+    with open(filename+"temp", 'wb') as handle:
         pickle.dump(lightStates, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open("savestates/lightstate_"+edge+"_remainingDuration.pickle", 'wb') as handle:
-        pickle.dump(remainingDuration, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open("savestates/lightstate_"+edge+"_lastSwitchTimes.pickle", 'wb') as handle:
-        pickle.dump(lastSwitchTimes, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open("savestates/lightstate_"+edge+"_sumoPredClusters.pickle", 'wb') as handle:
-        pickle.dump(sumoPredClusters, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open("savestates/lightstate_"+edge+"_lightphases.pickle", 'wb') as handle:
-        pickle.dump(lightphases, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    os.rename(filename+"temp", filename)
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
 def loadStateInfo(prevedge, simtime, network): #simtime is just so I can pass it into loadStateInfoDetectors...
