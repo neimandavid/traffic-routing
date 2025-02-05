@@ -2841,6 +2841,7 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                         #We're near the intersection and should stop routing
                         stopDict[vehicle] = True
                     else:
+                        print("multithreadRouting == False???")
                         routingresults[vehicle] = manager.list([None, None])
                         rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults)
                     
@@ -3507,6 +3508,8 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     nSuccessfulRoutingCalls += 1
                     routingTime += time.time() - routestartwctime
                     reroutedata[startvehicle] = [VOIs[id][3], simtime - starttime]
+                    print("Done routing, hopefully")
+                    print(reroutedata[startvehicle])
                     return reroutedata[startvehicle]
 
                 toDelete.append(id)
