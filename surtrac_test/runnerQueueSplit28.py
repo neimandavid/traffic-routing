@@ -1332,7 +1332,7 @@ def run(network, rerouters, pSmart, verbose = True):
     while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000):
         simtime += 1
         traci.simulationStep() #Tell the simulator to simulate the next time step
-        time.sleep(0.1) #TODO make this smarter AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        time.sleep(0.5) #TODO make this smarter AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
         if debugMode:
             assert(simtime == traci.simulation.getTime())
@@ -3120,11 +3120,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
     #Get goal
     startroute = traci.vehicle.getRoute(vehicle)
-    print("Starting reroutesumogc")
-    print(vehicle)
-    print(startroute)
-    print(startedge)
-    print("end init print")
     startind = startroute.index(startedge)
     startroute = startroute[startind:]
     goaledge = startroute[-1]
@@ -3513,8 +3508,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     nSuccessfulRoutingCalls += 1
                     routingTime += time.time() - routestartwctime
                     reroutedata[startvehicle] = [VOIs[id][3], simtime - starttime]
-                    print("Done routing, hopefully")
-                    print(reroutedata[startvehicle])
                     return reroutedata[startvehicle]
 
                 toDelete.append(id)
