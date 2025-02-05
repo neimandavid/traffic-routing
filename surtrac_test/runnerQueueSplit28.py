@@ -1470,7 +1470,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 if multithreadRouting and id in isSmart and isSmart[id]:
                     saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
                     routingresults[id] = manager.list([None, None])
-                    routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
+                    routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
                     routingthreads[id].start()
                     stopDict[id] = False
 
