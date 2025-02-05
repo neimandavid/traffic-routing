@@ -3123,6 +3123,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     print("Starting reroutesumogc")
     print(vehicle)
     print(startroute)
+    print(startedge)
     print("end init print")
     startind = startroute.index(startedge)
     startroute = startroute[startind:]
