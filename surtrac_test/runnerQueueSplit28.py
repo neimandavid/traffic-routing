@@ -1468,6 +1468,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
                 #Start routing sim
                 if multithreadRouting:
+                    saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
                     routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
                     routingthreads[vehicle].start()
                     stopDict[id] = False
