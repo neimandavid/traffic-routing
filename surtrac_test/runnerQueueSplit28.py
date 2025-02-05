@@ -2802,7 +2802,8 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
 
     
 
-    saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
+    if not multithreadRouting:
+        saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
 
     for detector in rerouters:
         ids = traci.inductionloop.getLastStepVehicleIDs(detector) #All vehicles to be rerouted
@@ -3134,9 +3135,11 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         # traci.start([checkBinary('sumo'), "-c", sumoconfig,
         #                         "--additional-files", "additional_autogen.xml",
         #                         "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
+        #But still need to load the current state, grab edgeDict, etc.
         (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime, network)
     else:
-        saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) #Saves the traffic state and traffic light timings #TODO pretty sure I do this at the start of reroute - at some point, make sure nothing breaks if I comment this
+        if not multithreadRouting:
+            saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) #Saves the traffic state and traffic light timings #TODO pretty sure I do this at the start of reroute - at some point, make sure nothing breaks if I comment this
         traci.switch("test")
 
         (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime, network)
