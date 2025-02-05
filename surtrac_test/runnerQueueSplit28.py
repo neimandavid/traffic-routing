@@ -3120,6 +3120,10 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
     #Get goal
     startroute = traci.vehicle.getRoute(vehicle)
+    print("Starting reroutesumogc")
+    print(vehicle)
+    print(startroute)
+    print("end init print")
     startind = startroute.index(startedge)
     startroute = startroute[startind:]
     goaledge = startroute[-1]
