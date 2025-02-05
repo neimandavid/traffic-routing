@@ -1469,6 +1469,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 #Start routing sim
                 if multithreadRouting:
                     saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
+                    routingresults[vehicle] = manager.list([None, None])
                     routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
                     routingthreads[vehicle].start()
                     stopDict[id] = False
@@ -2836,12 +2837,11 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
             if isSmart[vehicle]:
                 try:
                     
-                    routingresults[vehicle] = manager.list([None, None])
-
                     if multithreadRouting:
                         #We're near the intersection and should stop routing
                         stopDict[vehicle] = True
                     else:
+                        routingresults[vehicle] = manager.list([None, None])
                         rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults)
                     
                         if not useLibsumo:
