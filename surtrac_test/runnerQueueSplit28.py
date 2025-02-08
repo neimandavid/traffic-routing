@@ -122,6 +122,8 @@ adopterComms = True
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
 
+simspeedfactor = 1 #How much slower than real-time we want this to run. 1 for real-time, 2 for twice as slow, etc.
+
 templightind = 0 #TODO delete
 
 clusterStats = False #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
@@ -1328,11 +1330,18 @@ def run(network, rerouters, pSmart, verbose = True):
 
     tstart = time.time()
     simtime = 0
+    try:
+        os.nice(-5) #Increase priority of this process, hopefully
+    except:
+        print("Failed to reduce niceness, hopefully this is fine?")
 
     while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000):
         simtime += 1
         traci.simulationStep() #Tell the simulator to simulate the next time step
-        time.sleep(0.5) #TODO make this smarter AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        
+        if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
+            while time.time() - tstart < simspeedfactor*simtime:
+                sleep(0)
 
         if debugMode:
             assert(simtime == traci.simulation.getTime())
