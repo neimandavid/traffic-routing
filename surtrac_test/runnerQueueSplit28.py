@@ -1341,7 +1341,7 @@ def run(network, rerouters, pSmart, verbose = True):
         
         if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
             while time.time() - tstart < simspeedfactor*simtime:
-                time.sleep(0)
+                pass#time.sleep(0)#sleep(0) is bad since we might stop this thread from running
 
         if debugMode:
             assert(simtime == traci.simulation.getTime())
