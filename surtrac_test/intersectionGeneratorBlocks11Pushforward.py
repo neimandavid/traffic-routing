@@ -898,6 +898,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 templightlanes["light"] = permlightlanes
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
                 if appendTrainingData:
+                    print("Appending training data for sure this time")
                     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
                 return target
     
