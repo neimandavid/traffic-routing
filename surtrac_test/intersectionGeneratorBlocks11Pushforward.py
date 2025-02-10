@@ -197,11 +197,13 @@ def intersectionGenerator():
     #Plan is to grab from after first switch forward, so don't grab initial data
     tempAppendTrainingData = False
     while simtime < 100:
+        print(tempAppendTrainingData)
         target = doSurtracThread("network", simtime, "light", clusters, lightphases, lastswitchtimes, False, 10, [], dict(), dict(), tempAppendTrainingData)
         if target == None:
             break #No clusters left, or something went wrong like starting with too many clusters
         if target <= 0: #Light switched
             tempAppendTrainingData = True #Can start grabbing data now
+            print("Yay, grabbing data I hope")
             phase = (lightphases["light"]+1)%nPhases
             pushForward(clusters, phase, surtracdata, 5)
             phase = (lightphases["light"]+1)%nPhases
@@ -897,7 +899,6 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
                 if appendTrainingData:
                     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
-                print(target)
                 return target
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
