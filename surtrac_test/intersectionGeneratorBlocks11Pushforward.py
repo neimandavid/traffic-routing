@@ -897,6 +897,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
                 if appendTrainingData:
                     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+                print(target)
                 return target
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
