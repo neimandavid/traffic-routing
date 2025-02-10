@@ -195,16 +195,16 @@ def intersectionGenerator():
             surtracdata["light"][i]["timeTo"][j] = surtracdata["light"][i]["timeTo"][jprev] + surtracdata["light"][jprev]["minDur"]
     
     #Plan is to grab from after first switch forward, so don't grab initial data
-    tempAppendTrainingData = False
+    tempAppendTrainingData = True
     while simtime < 100:
         target = doSurtracThread("network", simtime, "light", clusters, lightphases, lastswitchtimes, False, 10, [], dict(), dict(), tempAppendTrainingData)
         if target == None:
             break #No clusters left, or something went wrong like starting with too many clusters
         if target <= 0: #Light switched
             tempAppendTrainingData = True #Can start grabbing data now
-            phase = (lightphases["light"]+1)%nPhases
+            phase = (phase+1)%nPhases
             pushForward(clusters, phase, surtracdata, 5)
-            phase = (lightphases["light"]+2)%nPhases
+            phase = (phase+1)%nPhases
             pushForward(clusters, phase, surtracdata, 5)
             lightphases["light"] = phase #Switch forward two phases to the next green phase
             simtime += 10
@@ -922,7 +922,10 @@ def pushForward(clusters, phase, surtracdata, dt=1):
                 newlen = tempcluster["departure"] - tempcluster["arrival"]
                 if not oldlen == 0: #If it is, either the cluster left and we hit the continue above and deleted it, or it didn't and weight doesn't change
                     tempcluster["weight"] *= newlen/oldlen #Assume uniform density and some cars went through. This could give a fractional weight but it's probably fine
-                    if tempcluster["weight"] < 1:
+                    if random.random() < tempcluster["weight"]:
+                        del clusters[lane][clusterind]
+                        continue
+                    else:
                         tempcluster["weight"] = 1 #Mindur depends on weight-1, fractional weight is bad?
 
                 clusterind+=1
