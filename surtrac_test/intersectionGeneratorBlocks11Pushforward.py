@@ -922,7 +922,7 @@ def pushForward(clusters, phase, surtracdata, dt=1):
                 newlen = tempcluster["departure"] - tempcluster["arrival"]
                 if not oldlen == 0: #If it is, either the cluster left and we hit the continue above and deleted it, or it didn't and weight doesn't change
                     tempcluster["weight"] *= newlen/oldlen #Assume uniform density and some cars went through. This could give a fractional weight but it's probably fine
-                    if random.random() < tempcluster["weight"]:
+                    if random.random() < 0:#tempcluster["weight"]:
                         del clusters[lane][clusterind]
                         continue
                     else:
