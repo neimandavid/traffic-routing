@@ -197,13 +197,11 @@ def intersectionGenerator():
     #Plan is to grab from after first switch forward, so don't grab initial data
     tempAppendTrainingData = False
     while simtime < 100:
-        print(tempAppendTrainingData)
         target = doSurtracThread("network", simtime, "light", clusters, lightphases, lastswitchtimes, False, 10, [], dict(), dict(), tempAppendTrainingData)
         if target == None:
             break #No clusters left, or something went wrong like starting with too many clusters
         if target <= 0: #Light switched
             tempAppendTrainingData = True #Can start grabbing data now
-            print("Yay, grabbing data I hope")
             phase = (lightphases["light"]+1)%nPhases
             pushForward(clusters, phase, surtracdata, 5)
             phase = (lightphases["light"]+1)%nPhases
@@ -328,7 +326,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
     return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
 
 #@profile
-def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules, appendTrainingData):
+def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules, tempAppendTrainingData):
     global totalSurtracRuns
     global totalSurtracClusters
     global totalSurtracTime
@@ -347,6 +345,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     testDumbtrac = False
     debugMode = False
     disableSurtracPred = True
+    appendTrainingData = True
 
         
     i = lightphases[light]
@@ -852,7 +851,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         # if debugMode:
         #     totalSurtracTime += time.time() - surtracStartTime
 
-    if True:#appendTrainingData:
+    if appendTrainingData:
         if testDumbtrac:
             assert(False) #Shouldn't run
             # outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
@@ -880,7 +879,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         else:
             if not allowT:
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, lightlanes)
-                if appendTrainingData:
+                if tempAppendTrainingData:
                     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
             
             #Add all lanes from data augmentation - bad, overfits
@@ -897,7 +896,8 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                 templightlanes = dict()
                 templightlanes["light"] = permlightlanes
                 nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes, templightlanes)
-                if appendTrainingData:
+                print(tempAppendTrainingData)
+                if tempAppendTrainingData:
                     print("Appending training data for sure this time")
                     trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
                 return target
