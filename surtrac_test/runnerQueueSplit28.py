@@ -1341,8 +1341,8 @@ def run(network, rerouters, pSmart, verbose = True):
 
                 #End early if no routing is running, no point waiting on nothing
                 noThreadsRunning = True
-                for thread in routingthreads:
-                    thread.join(timeout=0)
+                for vehicle in routingthreads:
+                    routingthreads[vehicle].join(timeout=0)
                     if thread.is_alive():
                         noThreadsRunning = False
                         break
