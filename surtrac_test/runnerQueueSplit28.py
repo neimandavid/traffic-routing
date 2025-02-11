@@ -1343,7 +1343,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 noThreadsRunning = True
                 for vehicle in routingthreads:
                     routingthreads[vehicle].join(timeout=0)
-                    if thread.is_alive():
+                    if routingthreads[vehicle].is_alive():
                         noThreadsRunning = False
                         break
 
