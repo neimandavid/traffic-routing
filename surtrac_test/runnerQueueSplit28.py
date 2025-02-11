@@ -1330,10 +1330,6 @@ def run(network, rerouters, pSmart, verbose = True):
 
     tstart = time.time()
     simtime = 0
-    try:
-        os.nice(-5) #Increase priority of this process, hopefully
-    except:
-        print("Failed to reduce niceness, hopefully this is fine?")
 
     while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000):
         simtime += 1
@@ -1341,7 +1337,18 @@ def run(network, rerouters, pSmart, verbose = True):
         
         if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
             while time.time() - tstart < simspeedfactor*simtime:
-                pass#time.sleep(0)#sleep(0) is bad since we might stop this thread from running
+                pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
+
+                #End early if no routing is running, no point waiting on nothing
+                noThreadsRunning = True
+                for thread in routingthreads:
+                    thread.join(timeout=0)
+                    if thread.is_alive():
+                        noThreadsRunning = False
+                        break
+
+                if noThreadsRunning:
+                    break
 
         if debugMode:
             assert(simtime == traci.simulation.getTime())
