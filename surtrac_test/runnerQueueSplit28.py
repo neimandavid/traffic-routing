@@ -1331,6 +1331,10 @@ def run(network, rerouters, pSmart, verbose = True):
     tstart = time.time()
     simtime = 0
     #tstart2 = tstart #This gets adjusted forward if we finish routing early so we don't cheat and "save up" time on easy parts
+    try:
+        os.nice(-5) #Increase priority of this process, hopefully
+    except:
+        print("Failed to reduce niceness, hopefully this is fine?")
 
     while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000):
         simtime += 1
