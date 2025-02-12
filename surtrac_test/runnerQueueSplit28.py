@@ -1341,6 +1341,8 @@ def run(network, rerouters, pSmart, verbose = True):
         traci.simulationStep() #Tell the simulator to simulate the next time step
         
         if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
+            if time.time() - tstart < simspeedfactor*simtime:
+                print("We're ahead of schedule!")
             while time.time() - tstart < simspeedfactor*simtime: #Use tstart2 if we want to not "save up" time on easy parts
                 pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
 
