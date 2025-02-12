@@ -1415,6 +1415,11 @@ def run(network, rerouters, pSmart, verbose = True):
         #Check predicted vs. actual travel times
         for vehicle in traci.simulation.getArrivedIDList():
             if isSmart[vehicle]:
+                #Clean up multiprocessing array stuff
+                if vehicle in routingthreads:
+                    del routingthreads[vehicle]
+                if vehicle in stopDict:
+                    del stopDict[vehicle]
                 timedata[vehicle][1] = simtime
                 # print("Actual minus expected: %f" % ((timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2]))
                 # print("Actual : %f" % (timedata[vehicle][1]-timedata[vehicle][0]))
