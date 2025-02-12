@@ -1330,24 +1330,32 @@ def run(network, rerouters, pSmart, verbose = True):
 
     tstart = time.time()
     simtime = 0
+    #tstart2 = tstart #This gets adjusted forward if we finish routing early so we don't cheat and "save up" time on easy parts
 
     while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000):
         simtime += 1
         traci.simulationStep() #Tell the simulator to simulate the next time step
         
         if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
-            while time.time() - tstart < simspeedfactor*simtime:
+            while time.time() - tstart < simspeedfactor*simtime: #Use tstart2 if we want to not "save up" time on easy parts
                 pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
 
                 #End early if no routing is running, no point waiting on nothing
                 noThreadsRunning = True
                 for vehicle in routingthreads:
+
+                    #Timeout more often
+                    if time.time() - tstart >= simspeedfactor*simtime:
+                        noThreadsRunning = False
+                        break
+
                     routingthreads[vehicle].join(timeout=0)
                     if routingthreads[vehicle].is_alive():
                         noThreadsRunning = False
                         break
 
                 if noThreadsRunning:
+                    #tstart2 = max(tstart2, time.time() - simspeedfactor*simtime) #Move tstart2 forward so it looks like we're exactly on schedule
                     break
 
         if debugMode:
