@@ -1342,29 +1342,29 @@ def run(network, rerouters, pSmart, verbose = True):
         traci.simulationStep() #Tell the simulator to simulate the next time step
         
         if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
-            time.sleep(0.5)
-            # if time.time() - tstart < simspeedfactor*simtime:
-            #     print("We're ahead of schedule!")
-            # while time.time() - tstart < simspeedfactor*simtime: #Use tstart2 if we want to not "save up" time on easy parts
-            #     pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
+            #time.sleep(0.5)
+            if time.time() - tstart < simspeedfactor*simtime:
+                print("We're ahead of schedule!")
+            while time.time() - tstart < simspeedfactor*simtime: #Use tstart2 if we want to not "save up" time on easy parts
+                pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
 
-            #     #End early if no routing is running, no point waiting on nothing
-            #     noThreadsRunning = True
-            #     for vehicle in routingthreads:
+                #End early if no routing is running, no point waiting on nothing
+                noThreadsRunning = True
+                for vehicle in routingthreads:
 
-            #         #Timeout more often
-            #         if time.time() - tstart >= simspeedfactor*simtime:
-            #             noThreadsRunning = False
-            #             break
+                    #Timeout more often
+                    if time.time() - tstart >= simspeedfactor*simtime:
+                        noThreadsRunning = False
+                        break
 
-            #         routingthreads[vehicle].join(timeout=0)
-            #         if routingthreads[vehicle].is_alive():
-            #             noThreadsRunning = False
-            #             break
+                    routingthreads[vehicle].join(timeout=0)
+                    if routingthreads[vehicle].is_alive():
+                        noThreadsRunning = False
+                        break
 
-            #     if noThreadsRunning:
-            #         #tstart2 = max(tstart2, time.time() - simspeedfactor*simtime) #Move tstart2 forward so it looks like we're exactly on schedule
-            #         break
+                if noThreadsRunning:
+                    #tstart2 = max(tstart2, time.time() - simspeedfactor*simtime) #Move tstart2 forward so it looks like we're exactly on schedule
+                    break
 
         if debugMode:
             assert(simtime == traci.simulation.getTime())
@@ -3131,6 +3131,12 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     global surtracDict
     global nonExitEdgeDetections
     global stopDict
+
+    try:
+        os.nice(5) #Make this a lower priority process
+    except Exception as e:
+        print(e)
+        print("Failed to increase niceness")
 
     dontReRemove = [] #So we delete detector records of vehicles exactly once
     remainingDuration = pickle.loads(pickle.dumps(remainingDurationIn)) #This is apparently important, not sure why. It's especially weird given the next time we see remainingDuration is as the output of a loadClusters call
