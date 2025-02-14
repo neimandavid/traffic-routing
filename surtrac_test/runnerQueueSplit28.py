@@ -3166,6 +3166,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     startroute = traci.vehicle.getRoute(vehicle)
     startind = startroute.index(startedge)
     startroute = startroute[startind:]
+    endroute = startroute[startind:]
     goaledge = startroute[-1]
 
     if startedge == goaledge:
@@ -3321,6 +3322,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
     #START ROUTING SIM MAIN LOOP
     #Run simulation, track time to completion
+    reroutedata[startvehicle] = [startroute, -1] #We'll overwrite this if we don't timeout first
     while(True):
         time.sleep(0) #Make sure we're running all the routing threads
         #Timeout if things have gone wrong somehow
@@ -3510,6 +3512,13 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         routingTime += time.time() - routestartwctime
                         reroutedata[startvehicle] = [VOIs[id][3], simtime - starttime]
                         return reroutedata[startvehicle]
+
+                    #Else if we've found something new on the initial route, update the first part of the route at least (because anytime routing)
+                    if VOIs[id][0].split("_")[0] in endroute:
+                        newstartind = endroute.index(VOIs[id][0].split("_")[0])
+                        reroutedata[startvehicle] = [VOIs[id][3]+endroute[newstartind+1:], -1]
+                        endroute = endroute[newstartind+1:]
+                        print("Anytime update, yay!")
 
                     #If we still need to spawn non-left copies (presumably we're in the intersection), do that
                     if VOIs[id][5]:
