@@ -1506,7 +1506,8 @@ def run(network, rerouters, pSmart, verbose = True):
                 #Start routing sim
                 if multithreadRouting and id in isSmart and isSmart[id]:
                     saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
-                    routingresults[id] = manager.list([None, None])
+                    startroute = traci.vehicle.getRoute(id)
+                    routingresults[id] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
                     routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
                     routingthreads[id].start()
                     stopDict[id] = False
@@ -3133,6 +3134,9 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     global nonExitEdgeDetections
     global stopDict
 
+    reroutedata[startvehicle] = [startroute, -1] #We'll overwrite this if we don't timeout first
+
+
     try:
         os.nice(5) #Make this a lower priority process
     except Exception as e:
@@ -3322,7 +3326,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
     #START ROUTING SIM MAIN LOOP
     #Run simulation, track time to completion
-    reroutedata[startvehicle] = [startroute, -1] #We'll overwrite this if we don't timeout first
     while(True):
         time.sleep(0) #Make sure we're running all the routing threads
         #Timeout if things have gone wrong somehow
