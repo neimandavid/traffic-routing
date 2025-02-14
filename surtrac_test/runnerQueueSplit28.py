@@ -3134,6 +3134,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     global nonExitEdgeDetections
     global stopDict
 
+    vehicle = startvehicle
     startroute = traci.vehicle.getRoute(vehicle)
     reroutedata[startvehicle] = [startroute, -1] #We'll overwrite this if we don't timeout first
 
@@ -3148,7 +3149,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     remainingDuration = pickle.loads(pickle.dumps(remainingDurationIn)) #This is apparently important, not sure why. It's especially weird given the next time we see remainingDuration is as the output of a loadClusters call
 
     nRoutingCalls += 1
-    vehicle = startvehicle
     routestartwctime = time.time() #For timeouts and maybe stats
     timeout = 60
 
