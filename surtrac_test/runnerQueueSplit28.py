@@ -1343,8 +1343,8 @@ def run(network, rerouters, pSmart, verbose = True):
         
         if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
             #time.sleep(0.5)
-            if time.time() - tstart < simspeedfactor*simtime:
-                print("We're ahead of schedule!")
+            # if time.time() - tstart < simspeedfactor*simtime:
+            #     print("We're ahead of schedule!")
             while time.time() - tstart < simspeedfactor*simtime: #Use tstart2 if we want to not "save up" time on easy parts
                 pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
 
@@ -3330,7 +3330,8 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     while(True):
         time.sleep(0) #Make sure we're running all the routing threads
         #Timeout if things have gone wrong somehow
-        if time.time()-routestartwctime > timeout or (startvehicle in stopDict and stopDict[startvehicle]):
+#        if time.time()-routestartwctime > timeout or (startvehicle in stopDict and stopDict[startvehicle]):
+        if (startvehicle in stopDict and stopDict[startvehicle]):
             print("Routing timeout: Edge " + startedge + ", time: " + str(starttime) + ", vehicle: " + startvehicle)
             routeStats[startvehicle]["nTimeouts"] += 1
             
