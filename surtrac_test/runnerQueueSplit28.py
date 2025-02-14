@@ -3516,7 +3516,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     #Else if we've found something new on the initial route, update the first part of the route at least (because anytime routing)
                     if VOIs[id][0].split("_")[0] in endroute:
                         newstartind = endroute.index(VOIs[id][0].split("_")[0])
-                        reroutedata[startvehicle] = [VOIs[id][3]+endroute[newstartind+1:], -1]
+                        reroutedata[startvehicle] = [tuple(VOIs[id][3])+tuple(endroute[newstartind+1:]), -1]
                         endroute = endroute[newstartind+1:]
                         print("Anytime update, yay!")
 
