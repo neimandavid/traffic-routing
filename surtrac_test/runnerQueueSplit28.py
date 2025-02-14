@@ -3134,6 +3134,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     global nonExitEdgeDetections
     global stopDict
 
+    startroute = traci.vehicle.getRoute(vehicle)
     reroutedata[startvehicle] = [startroute, -1] #We'll overwrite this if we don't timeout first
 
 
@@ -3167,7 +3168,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     #assert(traci.getLabel() == "main")
 
     #Get goal
-    startroute = traci.vehicle.getRoute(vehicle)
     startind = startroute.index(startedge)
     startroute = startroute[startind:]
     endroute = startroute[startind:]
