@@ -2877,6 +2877,7 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                     if multithreadRouting:
                         #We're near the intersection and should stop routing
                         stopDict[vehicle] = True
+                        routingthreads[vehicle].terminate() #TODO does this break stuff??
                     else:
                         print("multithreadRouting == False???")
                         routingresults[vehicle] = manager.list([None, None])
@@ -3324,7 +3325,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         time.sleep(0) #Make sure we're running all the routing threads
         #Timeout if things have gone wrong somehow
         if time.time()-routestartwctime > timeout or (startvehicle in stopDict and stopDict[startvehicle]):
-            print("Routing timeout: Edge " + startedge + ", time: " + str(starttime))
+            print("Routing timeout: Edge " + startedge + ", time: " + str(starttime) + ", vehicle: " + startvehicle)
             routeStats[startvehicle]["nTimeouts"] += 1
             
             if not useLibsumo:
