@@ -1507,6 +1507,8 @@ def run(network, rerouters, pSmart, verbose = True):
                 if multithreadRouting and id in isSmart and isSmart[id]:
                     saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
                     startroute = traci.vehicle.getRoute(id)
+                    startind = startroute.index(newlane.split("_")[0])
+                    startroute = startroute[startind:]
                     routingresults[id] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
                     routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
                     routingthreads[id].start()
@@ -3135,7 +3137,13 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     global stopDict
 
     vehicle = startvehicle
+    #Get goal
     startroute = traci.vehicle.getRoute(vehicle)
+    startedge = startlane.split("_")[0]
+    startind = startroute.index(startedge)
+    startroute = startroute[startind:]
+    endroute = startroute[startind:]
+    goaledge = startroute[-1]
     reroutedata[startvehicle] = [startroute, -1] #We'll overwrite this if we don't timeout first
 
 
@@ -3154,7 +3162,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
     ghostcardata = dict()
 
-    startedge = startlane.split("_")[0]
     VOIs = dict()
     #VOIs[vehicle] stores current lane, current speed, current position, route to now, left turn edge (if any), and whether we still need to spawn non-left copies
     VOIs[vehicle] = [startlane, traci.vehicle.getSpeed(vehicle), traci.vehicle.getLanePosition(vehicle), [startedge], getLeftEdge(startlane, network), True]
@@ -3166,12 +3173,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     #Unless it reached the end of the goal road, in which case great, we're done
     #Hopefully those new inserts take priority over standard cars and it all works?
     #assert(traci.getLabel() == "main")
-
-    #Get goal
-    startind = startroute.index(startedge)
-    startroute = startroute[startind:]
-    endroute = startroute[startind:]
-    goaledge = startroute[-1]
 
     if startedge == goaledge:
         #No rerouting needed, we're basically done
@@ -3521,7 +3522,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         newstartind = endroute.index(VOIs[id][0].split("_")[0])
                         reroutedata[startvehicle] = [tuple(VOIs[id][3])+tuple(endroute[newstartind+1:]), -1]
                         endroute = endroute[newstartind+1:]
-                        print("Anytime update, yay!")
 
                     #If we still need to spawn non-left copies (presumably we're in the intersection), do that
                     if VOIs[id][5]:
