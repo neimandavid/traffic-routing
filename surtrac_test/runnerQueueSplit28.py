@@ -58,8 +58,12 @@ from sumolib import checkBinary
 
 useLibsumo = True
 if useLibsumo:
-    import libsumo as traci
-else:
+    try:
+        import libsumo as traci
+    except:
+        print("Error using libsumo. Dropping back to traci instead. Hopefully this is fine")
+        useLibsumo = False
+if not useLibsumo:
     import traci  #To interface with SUMO simulations
 
 import sumolib #To query node/edge stuff about the network
@@ -892,6 +896,13 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
                         for nextlaneind in range(nLanes[nextedge]):
                             nextlane = nextedge+"_"+str(nextlaneind)
+
+                            if not nextlane in lightoutlanes[light]:
+                                #Something's weird and our data says vehicles are skipping lanes
+                                #Might be a teleport in the initial turn data
+                                #Regardless, skip it and hope it's fine?
+                                continue
+
                             arr = nextSendTime + fftimes[nextlane]
                             if arr > simtime + predictionCutoff:
                                 #Don't add to prediction; it's too far in the future. And it'll be too far into the future for all other lanes on this edge too, so just stop
@@ -918,6 +929,13 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                             newPredClusters[nextlane][-1]["departure"] = arr
                     else:
                         for nextlane in turndata[lane]:
+
+                            if not nextlane in lightoutlanes[light]:
+                                #Something's weird and our data says vehicles are skipping lanes
+                                #Might be a teleport in the initial turn data
+                                #Regardless, skip it and hope it's fine?
+                                continue
+                            
                             #Copy-paste previous logic for creating a new cluster
                             arr = nextSendTime + fftimes[nextlane]
                             if arr > simtime + predictionCutoff:
@@ -1331,11 +1349,6 @@ def run(network, rerouters, pSmart, verbose = True):
     tstart = time.time()
     simtime = 0
     #tstart2 = tstart #This gets adjusted forward if we finish routing early so we don't cheat and "save up" time on easy parts
-    try:
-        os.nice(-5) #Increase priority of this process, hopefully
-    except Exception as e:
-        print(e)
-        print("Failed to reduce niceness, hopefully this is fine?")
 
     while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000):
         simtime += 1
