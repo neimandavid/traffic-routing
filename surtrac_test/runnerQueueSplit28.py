@@ -863,8 +863,16 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                         #So if we're here, there's no way we'll ever want to predict this or any later car
                         break
 
-                    cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
-                    if not cartuple[0] in isSmart or isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
+                    try:
+                        cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
+                    except:
+                        print("Oops???????????")
+                        print(clusterNums[lane])
+                        print(clusters[lane])
+                        print(carNums[lane])
+                        print(clusters[lane][clusterNums[lane]]["cars"])
+                        asdf
+                    if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
                         #Split on "|" and "_" to deal with splitty cars correctly
                         route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
                         edge = lane.split("_")[0]
@@ -1035,7 +1043,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             trainingdata["light"].append((nnin, target, torch.tensor([[temp]])))
         else:
             if templightind < len(lights) and light == lights[templightind]:
-                print("yay")
+                #print("yay")
                 templightind += 1
                 trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
@@ -1209,7 +1217,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
                     for cartuple in clusters[lane][clusterind]["cars"]:
                         #cartuple[0] is name of car; cartuple[1] is departure time; cartuple[2] is debug info
                         #assert(cartuple[0] in isSmart)
-                        if not cartuple[0] in isSmart or isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
+                        if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from the routing sim, in which case we may have ghost cars or off-network predicted cars that we don't have routes for
                             route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
                             if not edge in route:
                                 #Not sure if or why this happens - maybe the route is changing and predictions aren't updating?
@@ -3695,7 +3703,7 @@ def loadStateInfo(prevedge, simtime, network): #simtime is just so I can pass it
         if len(lane) == 0 or lane[0] == ":":
             continue
         for vehicle in traci.lane.getLastStepVehicleIDs(lane):
-            if not vehicle in isSmart or isSmart[vehicle] == False:
+            if not vehicle in isSmart or not isSmart[vehicle]:
                 traci.vehicle.setRoute(vehicle, sampleRouteFromTurnData(lane, turndata))
 
     #Copy traffic light timings
