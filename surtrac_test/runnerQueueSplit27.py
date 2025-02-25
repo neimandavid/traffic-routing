@@ -103,9 +103,9 @@ routingSimUsesSUMO = True #Only switch this if we go back to custom routing simu
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
-disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
-predCutoffMain = 10 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
-predCutoffRouting = 10 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
+disableSurtracPred = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
+predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
+predCutoffRouting = 20 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
 testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
@@ -661,7 +661,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                             continue
                         directionalMakespans = copy(schedule[3])
 
-                        nLanes = len(surtracdata[light][i]["lanes"])
+                        nLanesTotal = len(surtracdata[light][i]["lanes"])
                         j = surtracdata[light][i]["lanes"].index(lane)
 
                         newDurations = copy(schedule[7]) #Shallow copy should be fine
@@ -717,7 +717,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                             newLastSwitch = newFirstSwitch + surtracdata[light][(phase+1)%nPhases]["timeTo"][i] #Switch right after previous cluster finishes (why not when next cluster arrives minus sult? Maybe try both?)                        
                             pst = newLastSwitch + sult #Total makespan + switching time + startup loss time
                             #Technically this sult implementation isn't quite right, as a cluster might reach the light as the light turns green and not have to stop and restart
-                            directionalMakespans = [pst]*nLanes #Other directions can't schedule a cluster before the light switches
+                            directionalMakespans = [pst]*nLanesTotal #Other directions can't schedule a cluster before the light switches
 
                             newDurations[-1] = newFirstSwitch - schedule[6] #Previous phase lasted from when it started to when it switched
                             tempphase = (phase+1)%nPhases

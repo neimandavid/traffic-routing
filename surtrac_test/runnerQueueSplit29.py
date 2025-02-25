@@ -698,7 +698,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                         continue
                     directionalMakespans = copy(schedule[3])
 
-                    nLanes = len(surtracdata[light][i]["lanes"])
+                    nLanesTotal = len(surtracdata[light][i]["lanes"])
                     j = surtracdata[light][i]["lanes"].index(lane)
 
                     newDurations = copy(schedule[7]) #Shallow copy should be fine
@@ -754,7 +754,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                         newLastSwitch = newFirstSwitch + surtracdata[light][(phase+1)%nPhases]["timeTo"][i] #Switch right after previous cluster finishes (why not when next cluster arrives minus sult? Maybe try both?)                        
                         pst = newLastSwitch + sult #Total makespan + switching time + startup loss time
                         #Technically this sult implementation isn't quite right, as a cluster might reach the light as the light turns green and not have to stop and restart
-                        directionalMakespans = [pst]*nLanes #Other directions can't schedule a cluster before the light switches
+                        directionalMakespans = [pst]*nLanesTotal #Other directions can't schedule a cluster before the light switches
 
                         newDurations[-1] = newFirstSwitch - schedule[6] #Previous phase lasted from when it started to when it switched
                         tempphase = (phase+1)%nPhases
