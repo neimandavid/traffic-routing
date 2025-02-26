@@ -856,6 +856,15 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                         #So if we're here, there's no way we'll ever want to predict this or any later car
                         break
 
+                    #We're having issues with empty clusters when we do predictions and use libsumo (multithreaded routing apparently not necessary to break stuff). Not sure why this is happening, but let's just deal with those cases and hope everything's fine
+                    while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
+                        clusterNums[lane] += 1
+                        carNums[lane] = 0
+                    if len(clusters[lane]) == clusterNums[lane]:
+                        #Nothing left on this lane, we're done here
+                        #nextSendTimes.pop(lane)
+                        continue
+
                     try:
                         cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
                     except:
