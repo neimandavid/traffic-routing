@@ -858,13 +858,13 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
                     #We're having issues with empty clusters when we do predictions and use libsumo (multithreaded routing apparently not necessary to break stuff). Not sure why this is happening, but let's just deal with those cases and hope everything's fine
                     #NEXT TODO can I delete this?
-                    # while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
-                    #     clusterNums[lane] += 1
-                    #     carNums[lane] = 0
-                    # if len(clusters[lane]) == clusterNums[lane]:
-                    #     #Nothing left on this lane, we're done here
-                    #     #nextSendTimes.pop(lane)
-                    #     continue
+                    while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
+                        clusterNums[lane] += 1
+                        carNums[lane] = 0
+                    if len(clusters[lane]) == clusterNums[lane]:
+                        #Nothing left on this lane, we're done here
+                        #nextSendTimes.pop(lane)
+                        continue
 
                     try:
                         cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
@@ -1515,7 +1515,7 @@ def run(network, rerouters, pSmart, verbose = True):
                         predclusterind = 0
                         print("Start new loop")
                         while predclusterind < len(sumoPredClusters[predlane]):
-                        print(len(sumoPredClusters[predlane]) - predclusterind)
+                            print(len(sumoPredClusters[predlane]) - predclusterind)
 #                        for predcluster in sumoPredClusters[predlane]:
                             predcluster = sumoPredClusters[predlane][predclusterind]
 
