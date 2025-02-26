@@ -1511,9 +1511,11 @@ def run(network, rerouters, pSmart, verbose = True):
                     assert(laneDict[id].split("_")[0] in currentRoutes[id])
                 #Remove vehicle from predictions, since the next intersection should actually see it now
                 if not disableSurtracPred:
-                    for predlane in sumoPredClusters:
+                    for predlane in sumoPredClusters: #TODO is this infinite looping on batwing somehow??
                         predclusterind = 0
+                        print("Start new loop")
                         while predclusterind < len(sumoPredClusters[predlane]):
+                        print(len(sumoPredClusters[predlane]) - predclusterind)
 #                        for predcluster in sumoPredClusters[predlane]:
                             predcluster = sumoPredClusters[predlane][predclusterind]
 
@@ -1542,7 +1544,8 @@ def run(network, rerouters, pSmart, verbose = True):
                             #Remove empty clusters
                             if len(predcluster["cars"]) == 0:
 #                                sumoPredClusters[predlane].remove(predcluster)
-                                sumoPredClusters[predlane].pop(predclusterind)
+                                #sumoPredClusters[predlane].pop(predclusterind)
+                                sumoPredClusters[predlane] = sumoPredClusters[predlane][1:]
                             else:
                                 pass
                                 #predcluster["arrival"] = minarr #predcluster["cars"][0][1]
@@ -3451,7 +3454,8 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             #Remove empty clusters
                             if len(predcluster["cars"]) == 0:
 #                                sumoPredClusters3[predlane].remove(predcluster)
-                                sumoPredClusters3[predlane].pop(predclusterind)
+                                #sumoPredClusters3[predlane].pop(predclusterind)
+                                sumoPredClusters3[predlane] = sumoPredClusters3[predlane][1:]
                             else:
                                 pass
                                 #predcluster["arrival"] = minarr #predcluster["cars"][0][1]
