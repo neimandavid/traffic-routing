@@ -71,10 +71,10 @@ predCutoffRouting = 0 #Surtrac receives communications about clusters arriving t
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
 #To test
-testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
+testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 testDumbtrac = False #If true, also stores Dumbtrac, not Surtrac, in training data (if appendTrainingData is also true)
 resetTrainingData = False
-appendTrainingData = False
+appendTrainingData = True
 learnYellow = True #False to strictly enforce that yellow lights are always their minimum length (no scheduling clusters during yellow+turn arrow, and ML solution isn't used there)
 learnMinMaxDurations = True #False to strictly enforce min/max duration limits (in particular, don't call ML, just do the right thing)
 FTP = True
@@ -2768,7 +2768,7 @@ def main(sumoconfig, pSmart, verbose = True, useLastRNGState = False, appendTrai
                 agents[light] = Net(26, 1, 32)
                 #agents[light] = Net(2, 1, 32)
             else:
-                agents[light] = Net(362, 1, 1024)
+                agents[light] = Net(362, 1, 128)
             optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
             print("Checking if there's a learned model. Currently testNN="+str(testNN))

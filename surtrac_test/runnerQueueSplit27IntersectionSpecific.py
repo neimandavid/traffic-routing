@@ -103,7 +103,7 @@ routingSimUsesSUMO = True #Only switch this if we go back to custom routing simu
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
-disableSurtracPred = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
+disableSurtracPred = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 20 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
@@ -534,7 +534,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             
             surtracStartTime = time.time()
             totalSurtracRuns += 1        
-            temp = agents["light"](nnin).detach().cpu().numpy() # Output from NN
+            temp = agents[light](nnin).detach().cpu().numpy() # Output from NN
             if crossEntropyLoss:
                 outputNN = temp[0][1] - temp[0][0] #Stick - switch; should be <0 if switching, >0 if sticking
             else:
@@ -856,16 +856,6 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                         #So if we're here, there's no way we'll ever want to predict this or any later car
                         break
 
-                    #We're having issues with empty clusters when we do predictions and use libsumo (multithreaded routing apparently not necessary to break stuff). Not sure why this is happening, but let's just deal with those cases and hope everything's fine
-                    #NEXT TODO can I delete this?
-                    while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
-                        clusterNums[lane] += 1
-                        carNums[lane] = 0
-                    if len(clusters[lane]) == clusterNums[lane]:
-                        #Nothing left on this lane, we're done here
-                        #nextSendTimes.pop(lane)
-                        continue
-
                     try:
                         cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
                     except:
@@ -1043,12 +1033,13 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
-            trainingdata["light"].append((nnin, target, torch.tensor([[temp]])))
+            trainingdata[light].append((nnin, target, torch.tensor([[temp]])))
         else:
             if templightind < len(lights) and light == lights[templightind]:
                 #print("yay")
                 templightind += 1
-                trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+                #trainingdata[light].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            trainingdata[light].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
@@ -1511,11 +1502,8 @@ def run(network, rerouters, pSmart, verbose = True):
                     assert(laneDict[id].split("_")[0] in currentRoutes[id])
                 #Remove vehicle from predictions, since the next intersection should actually see it now
                 if not disableSurtracPred:
-                    for predlane in sumoPredClusters: #TODO is this infinite looping on batwing somehow??
-                        predclusterind = 0
-                        while predclusterind < len(sumoPredClusters[predlane]):
-#                        for predcluster in sumoPredClusters[predlane]:
-                            predcluster = sumoPredClusters[predlane][predclusterind]
+                    for predlane in sumoPredClusters:
+                        for predcluster in sumoPredClusters[predlane]:
 
                             predcarind = 0
                             minarr = inf
@@ -1531,24 +1519,17 @@ def run(network, rerouters, pSmart, verbose = True):
                                         minarr = predcartuple[1]
                                     if predcartuple[1] > maxarr:
                                         maxarr = predcartuple[1]
-
-                            #Sanity check
-                            if debugMode:
-                                weightsum = 0
-                                for predcarind in range(len(predcluster["cars"])):
-                                    weightsum += predcluster["cars"][predcarind][2]
-                                assert(abs(weightsum - predcluster["weight"]) < 1e-10)
-
-                            #Remove empty clusters
                             if len(predcluster["cars"]) == 0:
-#                                sumoPredClusters[predlane].remove(predcluster)
-                                #sumoPredClusters[predlane].pop(predclusterind)
-                                sumoPredClusters[predlane] = sumoPredClusters[predlane][1:]
+                                sumoPredClusters[predlane].remove(predcluster)
                             else:
                                 pass
                                 #predcluster["arrival"] = minarr #predcluster["cars"][0][1]
                                 #predcluster["departure"] = maxarr #predcluster["cars"][-1][1]
-                                predclusterind += 1
+
+                            weightsum = 0
+                            for predcarind in range(len(predcluster["cars"])):
+                                weightsum += predcluster["cars"][predcarind][2]
+                            assert(abs(weightsum - predcluster["weight"]) < 1e-10)
 
                 #Store data to compute delay after first intersection
                 if not id in delay2adjdict:
@@ -2730,7 +2711,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     #Do NN setup
     testNN = testNNdefault
     print("testNN="+str(testNN))
-    for light in ["light"]:#lights:
+    for light in lights:
         if resetTrainingData:
             trainingdata[light] = []
 
@@ -2772,7 +2753,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
                 trainingdata = pickle.load(handle)
         except FileNotFoundError:
             print("Training data not found, starting fresh")
-            for light in ["light"]:#lights:
+            for light in lights:
                 trainingdata[light] = []
     
     outdata = run(network, rerouters, pSmart, verbose)
@@ -3112,7 +3093,7 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict
     return dontReRemove2
 
 #@profile
-def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchtimes, sumoPredClusters3, lightphases, simtime, network, reroutedata):
+def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, reroutedata):
     global nRoutingCalls
     global nSuccessfulRoutingCalls
     global routingTime
@@ -3162,12 +3143,12 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         # traci.start([checkBinary('sumo'), "-c", sumoconfig,
         #                         "--additional-files", "additional_autogen.xml",
         #                         "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
-        (remainingDuration, lastSwitchTimes, sumoPredClusters3, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime, network)
+        (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime, network)
     else:
-        #saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters3, lightphases) #Saves the traffic state and traffic light timings #TODO pretty sure I do this at the start of reroute - at some point, make sure nothing breaks if I comment this
+        saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) #Saves the traffic state and traffic light timings #TODO pretty sure I do this at the start of reroute - at some point, make sure nothing breaks if I comment this
         traci.switch("test")
 
-        (remainingDuration, lastSwitchTimes, sumoPredClusters3, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime, network)
+        (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime, network)
     
     #assert(traci.vehicle.getRoadID(vehicle) == startedge) #This fails with loadStateInfoDetectors; apparently getRoadID returns an empty string. Does adding vehicles not register until the next timestep? (But loading the save the normal way does?)
 
@@ -3418,47 +3399,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
                 laneDict3[id] = newlane
                 edgeDict3[id] = newloc
-
-                #Remove vehicle from predictions, since the next intersection should actually see it now
-                if not disableSurtracPred:
-                    for predlane in sumoPredClusters3:
-                        predclusterind = 0
-                        while predclusterind < len(sumoPredClusters3[predlane]):
-#                        for predcluster in sumoPredClusters3[predlane]:
-                            predcluster = sumoPredClusters3[predlane][predclusterind]
-
-                            predcarind = 0
-                            minarr = inf
-                            maxarr = -inf
-                            while predcarind < len(predcluster["cars"]):
-                                predcartuple = predcluster["cars"][predcarind]
-                                if predcartuple[0] == id:
-                                    predcluster["cars"].pop(predcarind)
-                                    predcluster["weight"] -= predcartuple[2]
-                                else:
-                                    predcarind += 1
-                                    if predcartuple[1] < minarr:
-                                        minarr = predcartuple[1]
-                                    if predcartuple[1] > maxarr:
-                                        maxarr = predcartuple[1]
-
-                            #Sanity check
-                            if debugMode:
-                                weightsum = 0
-                                for predcarind in range(len(predcluster["cars"])):
-                                    weightsum += predcluster["cars"][predcarind][2]
-                                assert(abs(weightsum - predcluster["weight"]) < 1e-10)
-
-                            #Remove empty clusters
-                            if len(predcluster["cars"]) == 0:
-#                                sumoPredClusters3[predlane].remove(predcluster)
-                                #sumoPredClusters3[predlane].pop(predclusterind)
-                                sumoPredClusters3[predlane] = sumoPredClusters3[predlane][1:]
-                            else:
-                                pass
-                                #predcluster["arrival"] = minarr #predcluster["cars"][0][1]
-                                #predcluster["departure"] = maxarr #predcluster["cars"][-1][1]
-                                predclusterind += 1
+                #TODO main run() function clears Surtrac predictions at this point; I'll need to do that if I get this thing to share routes
 
         #Add new cars
         for nextlane in arrivals:
@@ -3588,14 +3529,14 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             updateLights = True
             if not(reuseSurtrac and simtime in surtracDict): #Overwrite unless we want to reuse
                 updateLights = False
-                surtracDict[simtime] = doSurtrac(network, simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters3, True, nonExitEdgeDetections2)
+                surtracDict[simtime] = doSurtrac(network, simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters, True, nonExitEdgeDetections2)
             # else:
             #     print("Reusing Surtrac, yay!")
 
             temp = pickle.loads(pickle.dumps(surtracDict[simtime]))
 
             #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
-            sumoPredClusters3 = temp[1]
+            sumoPredClusters = temp[1]
             remainingDuration.update(temp[2])
 
             if updateLights:
@@ -3698,10 +3639,10 @@ def loadStateInfo(prevedge, simtime, network): #simtime is just so I can pass it
     with open("savestates/lightstate_"+prevedge+"_lastSwitchTimes.pickle", 'rb') as handle:
         lastSwitchTimes = pickle.load(handle)
     with open("savestates/lightstate_"+prevedge+"_sumoPredClusters.pickle", 'rb') as handle:
-        sumoPredClusters2 = pickle.load(handle)
+        sumoPredClusters = pickle.load(handle)
     with open("savestates/lightstate_"+prevedge+"_lightphases.pickle", 'rb') as handle:
         lightphases = pickle.load(handle)
-    return (remainingDuration, lastSwitchTimes, sumoPredClusters2, lightphases, deepcopy(edgeDict), deepcopy(laneDict))
+    return (remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases, deepcopy(edgeDict), deepcopy(laneDict))
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
 def loadStateInfoDetectors(prevedge, simtime, network):
@@ -3811,10 +3752,10 @@ def loadStateInfoDetectors(prevedge, simtime, network):
     with open("savestates/lightstate_"+prevedge+"_lastSwitchTimes.pickle", 'rb') as handle:
         lastSwitchTimes = pickle.load(handle)
     with open("savestates/lightstate_"+prevedge+"_sumoPredClusters.pickle", 'rb') as handle:
-        sumoPredClusters2 = pickle.load(handle)
+        sumoPredClusters = pickle.load(handle)
     with open("savestates/lightstate_"+prevedge+"_lightphases.pickle", 'rb') as handle:
         lightphases = pickle.load(handle)
-    return (remainingDuration, lastSwitchTimes, sumoPredClusters2, lightphases, newEdgeDict, newLaneDict)
+    return (remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases, newEdgeDict, newLaneDict)
 
 #Magically makes the vehicle lists stop deleting themselves somehow???
 def dontBreakEverything():

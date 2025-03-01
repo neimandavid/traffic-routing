@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #Code is old, probably shouldn't be used
-assert(False)
+#assert(False)
 
 import os
 import sys
@@ -22,15 +22,16 @@ from torch.utils.data import Dataset, DataLoader
 
 import runnerQueueSplit18NN
 from importlib import reload
+from Net import Net
 
-import xlwt
+#import xlwt
 
 #In case we want to pause a run and continue later, set these to false
-reset = False
+reset = True
 resetNN = reset
 resetTrainingData2 = reset
 
-testSurtrac = False
+testSurtrac = True
 
 nEpochs = 10
 nDaggers = 100
@@ -39,7 +40,7 @@ agents = dict()
 optimizers = dict()
 
 actions = [0, 1]
-learning_rate = 0.0005
+learning_rate = 0.00005
 batch_size = 1
 
 nLossesBeforeReset = 1000
@@ -57,30 +58,6 @@ def log(*args, **kwargs):
         with open(LOG_FILE, 'a+') as f:
             print(*args, file=f, **kwargs)
     print(*args, **kwargs)
-
-class Net(torch.nn.Module):
-    def __init__(self, in_size, out_size, hidden_size):
-        super().__init__()
-        self.linear_relu_stack = nn.Sequential(
-            #Input: Assume 4 roads, 3 lanes each, store #stopped and #total on each. Also store current phase and duration, and really hope the phases and roads are in the same order
-            #So 26 inputs. Phase, duration, L1astopped, L1atotal, ..., L4dstopped, L4dtotal
-
-            nn.Linear(in_size, hidden_size), #Blindly copying an architecture
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LeakyReLU(),
-            nn.Linear(hidden_size, out_size)
-        )
-        
-    def forward(self, x):
-        out = self.linear_relu_stack(x)
-        return out
-
-    def save(self, file_path):
-        torch.save(self.state_dict(), file_path)
-
-    def load(self, file_path):
-        self.load_state_dict(torch.load(file_path))
 
 class TrafficLoader(Dataset):
     def __init__(self, datafile, light):
@@ -205,7 +182,7 @@ def mainold(sumoconfig):
         #IMPORTANT: Make sure runnerQueueSplit18NN is set to testNN=True, testDumbtrac= not testSurtrac, resetTrainingData=False, appendTrainingData=True
         print("Generating new training data")
         reload(runnerQueueSplit18NN)
-        runnerQueueSplit18NN.main(sys.argv[1], 0, False)
+        runnerQueueSplit18NN.main(sys.argv[1], 0, False, False, True)
 
         #Load current dataset
         print("Loading training data")
@@ -214,42 +191,42 @@ def mainold(sumoconfig):
 
         #Write data to an Excel file
         #Adapted from https://stackoverflow.com/questions/13437727/how-to-write-to-an-excel-spreadsheet-using-python
-        print("Writing training data to spreadsheet")
-        book = xlwt.Workbook(encoding="utf-8")
-        sheets = dict()
-        for light in trainingdata:
-            sheets[light] = book.add_sheet(light)
-            sheets[light].write(0, 0, "Input")
-            row = 1
-            for batch in trainingdata[light]:
-                for linenum in range(batch[0].size(0)):
-                    if row >= 65536:
-                        #XLS format only supports 65536 rows, so stop there
-                        break
-                    col = 0
-                    for entry in batch[0][linenum]:
-                        sheets[light].write(row, col, float(entry))
-                        col += 1
-                    if row == 1:
-                        sheets[light].write(0, col, "Expert Output")
-                    sheets[light].write(row, col, float(batch[1][linenum]))
-                    try:
-                        col += 1
-                        if row == 1:
-                            sheets[light].write(0, col, "NN Output")
-                        sheets[light].write(row, col, float(batch[2][linenum]))
-                    except:
-                        #Worried old training data has no third entry
-                        pass
-                    row += 1
-        book.save("trainingdata/trainingdata_"+sys.argv[1]+".xls")
+        # print("Writing training data to spreadsheet")
+        # book = xlwt.Workbook(encoding="utf-8")
+        # sheets = dict()
+        # for light in trainingdata:
+        #     sheets[light] = book.add_sheet(light)
+        #     sheets[light].write(0, 0, "Input")
+        #     row = 1
+        #     for batch in trainingdata[light]:
+        #         for linenum in range(batch[0].size(0)):
+        #             if row >= 65536:
+        #                 #XLS format only supports 65536 rows, so stop there
+        #                 break
+        #             col = 0
+        #             for entry in batch[0][linenum]:
+        #                 sheets[light].write(row, col, float(entry))
+        #                 col += 1
+        #             if row == 1:
+        #                 sheets[light].write(0, col, "Expert Output")
+        #             sheets[light].write(row, col, float(batch[1][linenum]))
+        #             try:
+        #                 col += 1
+        #                 if row == 1:
+        #                     sheets[light].write(0, col, "NN Output")
+        #                 sheets[light].write(row, col, float(batch[2][linenum]))
+        #             except:
+        #                 #Worried old training data has no third entry
+        #                 pass
+        #             row += 1
+        # book.save("trainingdata/trainingdata_"+sys.argv[1]+".xls")
 
         #Set up initial neural nets on first iteration
         if daggernum == 0:
             #Do NN setup
             for light in trainingdata:
                 if testSurtrac:
-                    agents[light] = Net(362, 1, 512)
+                    agents[light] = Net(362, 1, 128)
                 else:
                     agents[light] = Net(26, 1, 32) #Net(26, 2, 512)
                 optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
