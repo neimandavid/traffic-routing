@@ -108,7 +108,7 @@ predCutoffMain = 20 #Surtrac receives communications about clusters arriving thi
 predCutoffRouting = 20 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
-testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
+testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = False
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
 testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
@@ -2727,9 +2727,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
             if crossEntropyLoss:
-                agents[light] = Net(ninputs, 2, 8192)
+                agents[light] = Net(ninputs, 2, 512)
             else:
-                agents[light] = Net(ninputs, 1, 4096)
+                agents[light] = Net(ninputs, 1, 512)
             # if testDumbtrac:
             #     # agents[light] = Net(26, 1, 32)
             #     # #agents[light] = Net(2, 1, 32)

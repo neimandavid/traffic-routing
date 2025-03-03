@@ -2871,9 +2871,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
             if crossEntropyLoss:
-                agents[light] = Net(ninputs, 2, 8192)
+                agents[light] = Net(ninputs, 2, 512)
             else:
-                agents[light] = Net(ninputs, 1, 4096)
+                agents[light] = Net(ninputs, 1, 512)
             # if testDumbtrac:
             #     # agents[light] = Net(26, 1, 32)
             #     # #agents[light] = Net(2, 1, 32)
