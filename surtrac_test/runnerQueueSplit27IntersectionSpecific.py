@@ -75,11 +75,10 @@ from multiprocessing import Process
 import multiprocessing
 
 try:
-    multiprocessing.set_start_method("fork")
+    multiprocessing.set_start_method("spawn")
 except:
     pass
 
-manager = multiprocessing.Manager()
 sumoconfig = None
 
 pSmart = 1.0 #Adoption probability
@@ -1033,7 +1032,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
-            trainingdata[light].append((nnin, target, torch.tensor([[temp]])))
+            trainingdata[light].append((nnin, target, torch.tensor(np.array([[temp]]))))
         else:
             if templightind < len(lights) and light == lights[templightind]:
                 #print("yay")
@@ -1062,6 +1061,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
     if disableSurtracPred or not multithreadRouting:
         catpreds = dict()
     else:
+        manager = multiprocessing.Manager()
         catpreds = manager.dict()
     remainingDuration = dict()
     bestschedules = dict()
@@ -2737,7 +2737,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             #     agents[light] = Net(182, 1, 64)
             # else:
             #     agents[light] = Net(182, 1, 64)
-            optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
+            #optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
             print("Checking if there's a learned model. Currently testNN="+str(testNN))
             try:
@@ -2809,6 +2809,7 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
     surtracDict = dict()
 
     routingthreads = dict()
+    manager = multiprocessing.Manager()
     routingresults = manager.dict()
 
     saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
@@ -3100,6 +3101,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     global surtracDict
     global nonExitEdgeDetections
 
+    print("Start routing")
     dontReRemove = [] #So we delete detector records of vehicles exactly once
     remainingDuration = pickle.loads(pickle.dumps(remainingDurationIn)) #This is apparently important, not sure why. It's especially weird given the next time we see remainingDuration is as the output of a loadClusters call
 
@@ -3137,7 +3139,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         reroutedata[startvehicle] = [startroute, -1]
         return reroutedata[startvehicle]
 
-    if useLibsumo:
+    if useLibsumo: #TODO pretty sure this is bad if libsumo but singlethreading...
         pass
         #Apparently the new thread just comes with a copy of the old simulation - don't need to do this at all?
         # traci.start([checkBinary('sumo'), "-c", sumoconfig,

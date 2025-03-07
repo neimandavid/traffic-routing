@@ -1133,7 +1133,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
-            trainingdata[light].append((nnin, target, torch.tensor([[temp]])))
+            trainingdata[light].append((nnin, target, torch.tensor(np.array([[temp]]))))
         else:
             if templightind < len(lights) and light == lights[templightind]:
                 #print("yay")
@@ -1625,6 +1625,7 @@ def run(network, rerouters, pSmart, verbose = True):
                     startroute = startroute[startind:]
                     routingresults[id] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
                     routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
+                    routingthreads[id].daemon = True
                     routingthreads[id].start()
                     stopDict[id] = False
 
@@ -2119,6 +2120,7 @@ def run(network, rerouters, pSmart, verbose = True):
         print("Warning: Trying to clean up savestates file, but no file found. This is weird - did you comment out routing or something? Ignoring for now.")
         pass
 
+    print("End run")
     return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart, nteleports, teleportdata]  
 
 def dumpIntersectionDataFun(intersectionData, network):
@@ -2942,6 +2944,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
         pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+    print("End main")
+    # for vehicle in routingthreads:
+    #     routingthreads[vehicle].terminate()
     return [outdata, rngstate]
 
 #Tell all the detectors to reroute the cars they've seen
@@ -2994,7 +2999,7 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
                     if multithreadRouting:
                         #We're near the intersection and should stop routing
                         stopDict[vehicle] = True
-                        routingthreads[vehicle].terminate() #TODO does this break stuff??
+                        routingthreads[vehicle].terminate()
                     else:
                         print("multithreadRouting == False???")
                         routingresults[vehicle] = manager.list([None, None])
