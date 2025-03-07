@@ -197,6 +197,8 @@ vehiclesOnNetwork = []
 dontReroute = []
 surtracDict = dict()
 adopterinfo = dict()
+leftedges = dict()
+endpointcoords = dict()
 
 #Predict traffic entering network
 arrivals = dict()
@@ -474,7 +476,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
     return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
 
 #@profile
-def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
+def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
     global totalSurtracRuns
     global totalSurtracClusters
     global totalSurtracTime
@@ -1046,7 +1048,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         
 
 #@profile
-def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True, nonExitEdgeDetections4 = nonExitEdgeDetections): #deepcopy breaks main Surtrac somehow?!
+def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True, nonExitEdgeDetections4 = nonExitEdgeDetections): #deepcopy breaks main Surtrac somehow?!
     global clustersCache
     global totalLoadRuns
     global totalLoadTime
@@ -1073,12 +1075,12 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
         totalLoadRuns += 1
         loadStart = time.time()
         if inRoutingSim and not detectorRoutingSurtrac: #Only use the detector model for Surtrac if we're not routing
-            clustersCache = loadClusters(network, simtime, nonExitEdgeDetections4)
+            clustersCache = loadClusters(simtime, nonExitEdgeDetections4)
         else:
             if detectorSurtrac:
-                clustersCache = loadClustersDetectors(network, simtime, nonExitEdgeDetections4) #This at least grabs the same vehicles as standard loadClusters, including ungrabbing them once they hit an exit road. Positions are probably slightly inaccurate, though, since this uses a detector model
+                clustersCache = loadClustersDetectors(simtime, nonExitEdgeDetections4) #This at least grabs the same vehicles as standard loadClusters, including ungrabbing them once they hit an exit road. Positions are probably slightly inaccurate, though, since this uses a detector model
             else:
-                clustersCache = loadClusters(network, simtime, nonExitEdgeDetections4)
+                clustersCache = loadClusters(simtime, nonExitEdgeDetections4)
             
         runTime = time.time() - loadStart
         totalLoadTime += runTime
@@ -1107,10 +1109,10 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
 
     for light in lights:
         if multithreadSurtrac:
-            surtracThreads[light] = threading.Thread(target=doSurtracThread, args=(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules))
+            surtracThreads[light] = threading.Thread(target=doSurtracThread, args=(simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules))
             surtracThreads[light].start()
         else:
-            doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules)
+            doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules)
 
     for light in lights:
         if multithreadSurtrac:
@@ -1473,12 +1475,17 @@ def run(network, rerouters, pSmart, verbose = True):
                         else:
                             nonExitEdgeDetections[newloc][0].append((newlane+".0maindetect."+str(simtime), newlane, simtime))
 
-                c0 = network.getEdge(edgeDict[id]).getFromNode().getCoord()
-                c1 = network.getEdge(edgeDict[id]).getToNode().getCoord()
-                theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
+                # c0 = network.getEdge(edgeDict[id]).getFromNode().getCoord()
+                # c1 = network.getEdge(edgeDict[id]).getToNode().getCoord()
+                # theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
 
-                c2 = network.getEdge(newloc).getToNode().getCoord()
-                theta1 = math.atan2(c2[1]-c1[1], c2[0]-c1[0])
+                # c2 = network.getEdge(newloc).getToNode().getCoord()
+                # theta1 = math.atan2(c2[1]-c1[1], c2[0]-c1[0])
+
+                cs = endpointcoords[edgeDict[id]]
+                theta0 = math.atan2(cs[3]-cs[1], cs[2]-cs[0])
+                cn = endpointcoords[newloc]
+                theta1 = math.atan2(cn[3]-cn[1], cn[2]-cn[0])
 
                 if (theta1-theta0+math.pi)%(2*math.pi)-math.pi > 0:
                     leftDict[id] += 1
@@ -1585,7 +1592,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
         surtracFreq = mainSurtracFreq #Period between updates in main SUMO sim
         if simtime%surtracFreq >= (simtime+1)%surtracFreq:
-            temp = doSurtrac(network, simtime, None, None, mainlastswitchtimes, sumoPredClusters, False, deepcopy(nonExitEdgeDetections))
+            temp = doSurtrac(simtime, None, None, mainlastswitchtimes, sumoPredClusters, False, deepcopy(nonExitEdgeDetections))
             #Don't bother storing toUpdate = temp[0], since doSurtrac has done that update already
             sumoPredClusters = temp[1]
             remainingDuration.update(temp[2])
@@ -1649,7 +1656,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
         #testNonExitEdgeDetections = pickle.loads(pickle.dumps(nonExitEdgeDetections))
         #assert(testNonExitEdgeDetections == nonExitEdgeDetections)
-        reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters) #Reroute cars (including simulate-ahead cars)
+        reroute(rerouters, simtime, remainingDuration, sumoPredClusters) #Reroute cars (including simulate-ahead cars)
         #assert(testNonExitEdgeDetections == nonExitEdgeDetections)
 
         assert(remainingDuration == oldRemainingDuration)
@@ -1967,7 +1974,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
     #Dump intersection data to Excel
     if dumpIntersectionData:
-        dumpIntersectionDataFun(intersectionData, network)
+        dumpIntersectionDataFun(intersectionData)
 
     try:
         os.remove("savestates/teststate_"+savename+".xml") #Delete the savestates file so we don't have random garbage building up over time
@@ -1977,7 +1984,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
     return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart, nteleports, teleportdata]  
 
-def dumpIntersectionDataFun(intersectionData, network):
+def dumpIntersectionDataFun(intersectionData):
     print("Writing intersection data to spreadsheet")
     for lane in intersectionData:
         for nextlane in intersectionData[lane]:
@@ -2002,7 +2009,7 @@ def dumpIntersectionDataFun(intersectionData, network):
     try:
         for lane in intersectionData:
             for nextlane in intersectionData[lane]:
-                dtheta = getDTheta(lane.split("_")[0], nextlane.split("_")[0], network) * 180/math.pi
+                dtheta = getDTheta(lane.split("_")[0], nextlane.split("_")[0]) * 180/math.pi
             
                 if not dtheta in thetabooks:
                     book = openpyxl.Workbook()
@@ -2026,7 +2033,7 @@ def dumpIntersectionDataFun(intersectionData, network):
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
 #@profile
-def loadClusters(net, simtime, VOI=None):
+def loadClusters(simtime, VOI=None):
     global totalLoadCars
     global nVehicles
     #Load locations of cars and current traffic light states into custom data structures
@@ -2090,7 +2097,7 @@ def loadClusters(net, simtime, VOI=None):
     return (clusters, lightphases)
 
 #This is currently only used for Surtrac; should be another function that handles starting routing sims
-def loadClustersDetectors(net, simtime, nonExitEdgeDetections3, VOI=None):
+def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
     global totalLoadCars
     global nVehicles
     #Load locations of cars and current traffic light states into custom data structures
@@ -2544,7 +2551,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             notlightlanes[toNode.getID()].append(lane.id)
         fromNode = network.getEdge(edge).getFromNode()
         if fromNode.getType() != "traffic_light":
-            notlightoutlanes[fromNode.getID()].append(lane.id)
+            notlightoutlanes[fromNode.getID()].append(lane.id)        
 
     #Grab stuff once at the start to avoid slow calls to traci in the routing
     edges = traci.edge.getIDList()
@@ -2561,10 +2568,12 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
         if not edge[0] == ":":
             speeds[edge] = network.getEdge(edge).getSpeed()
             fftimes[edge] = lengths[edge+"_0"]/speeds[edge]
+            endpointcoords[edge] = network.getEdge(edge).getFromNode().getCoord() + network.getEdge(edge).getToNode().getCoord() #+ should concatenate into a length-4 vector: [fromx, fromy, tox, toy]
 
     for lane in lanes:
         if not lane[0] == ":":
             fftimes[lane] = fftimes[lane.split("_")[0]]
+            leftedges[lane] = getLeftEdge(lane, network)
 
     lowprioritygreenlightlinks = dict()
     prioritygreenlightlinks = dict()
@@ -2802,7 +2811,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 
 #Tell all the detectors to reroute the cars they've seen
 #@profile
-def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[]):
+def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     global delay3adjdict
     #Clear any stored Surtrac stuff
     global surtracDict
@@ -2849,16 +2858,16 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
 
                     if multithreadRouting:
                         #print("Starting vehicle routing thread")
-                        routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
+                        routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, routingresults))
                         routingthreads[vehicle].start()
                     else:
-                        rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults)
+                        rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, routingresults)
                     
                         if not useLibsumo:
                             assert(traci.getLabel() == "main")
                         else:
                             #(remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) = loadStateInfo("MAIN", simtime)
-                            loadStateInfo(savename, simtime, network)
+                            loadStateInfo(savename, simtime)
                     #assert(traci.getLabel() == "main")
 
                 except traci.exceptions.TraCIException as e:
@@ -2943,17 +2952,21 @@ def backwardDijkstraAStar(network, goal):
             heappush(pq, (gval+c+h, succ))
     return gvals
 
-def getDTheta(startedge, nextedge, network):
+def getDTheta(startedge, nextedge):
     #Preprocess in case we accidentally pass in lanes instead of edges
     startedge = startedge.split("_")[0]
     nextedge = nextedge.split("_")[0]
 
-    c0 = network.getEdge(startedge).getFromNode().getCoord()
-    c1 = network.getEdge(startedge).getToNode().getCoord()
-    theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
+    # c0 = network.getEdge(startedge).getFromNode().getCoord()
+    # c1 = network.getEdge(startedge).getToNode().getCoord()
+    # theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
 
-    c2 = network.getEdge(nextedge).getToNode().getCoord()
-    theta1 = math.atan2(c2[1]-c1[1], c2[0]-c1[0])
+    # c2 = network.getEdge(nextedge).getToNode().getCoord()
+    # theta1 = math.atan2(c2[1]-c1[1], c2[0]-c1[0])
+    cs = endpointcoords[startedge]
+    theta0 = math.atan2(cs[3]-cs[1], cs[2]-cs[0])
+    cn = endpointcoords[nextedge]
+    theta1 = math.atan2(cn[3]-cn[1], cn[2]-cn[0])
 
     dtheta = (theta1-theta0+math.pi)%(2*math.pi)-math.pi
     return dtheta
@@ -2967,13 +2980,13 @@ def getLeftEdge(startlane, network):
         #Add to all lanes on that edge
         nextedge = nextlinktuple[0].split("_")[0]
 
-        dtheta = getDTheta(startedge, nextedge, network)
+        dtheta = getDTheta(startedge, nextedge)
         if dtheta > maxleft:
             leftedge = nextedge
             maxleft = dtheta
     return leftedge
 
-def prepGhostCars(VOIs, id, ghostcarlanes, network, spawnLeft, ghostcardata, simtime):
+def prepGhostCars(VOIs, id, ghostcarlanes, spawnLeft, ghostcardata, simtime):
     
     if not spawnLeft:
         defaultghostcarpos = 5
@@ -3011,7 +3024,7 @@ def prepGhostCars(VOIs, id, ghostcarlanes, network, spawnLeft, ghostcardata, sim
                             ghostcardata[simtime+leftdelay] = []
                         newspeed = min(13, oldspeed)
                         ghostcardata[simtime+leftdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
-                    elif abs(getDTheta(lane.split("_")[0], nextlane.split("_")[0], network)) < 0.1: #Straight
+                    elif abs(getDTheta(lane.split("_")[0], nextlane.split("_")[0])) < 0.1: #Straight
                         straightdelay = 3
                         if not simtime + straightdelay in ghostcardata:
                             ghostcardata[simtime+straightdelay] = []
@@ -3024,7 +3037,7 @@ def prepGhostCars(VOIs, id, ghostcarlanes, network, spawnLeft, ghostcardata, sim
                         newspeed = min(10, oldspeed)
                         ghostcardata[simtime+rightdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
 
-def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict2, edgeDict2, nonExitEdgeDetections, dontReRemove2):
+def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDict2, nonExitEdgeDetections, dontReRemove2):
     carcardist = 15 #TODO: Don't hard-code this in two different places in code!!! (Actually, maybe fine, other one might need a gap on both sides?)
     replaceExistingCar = False #TODO would turning this on help??
     touchNothing = False #WARNING: Setting this to True triggers the missing VOI sanity check, likely due to VOIs not actually being inserted on time. That said, I don't actually understand why, given it should still add to the VOIs list, unless it starts teleporting to its goal immediately or something weird
@@ -3073,10 +3086,8 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict
             if not nextlane in traci.route.getIDList():
                 traci.route.add(nextlane, [nextedge])
             if not replacedCar:
-                if not (network.getEdge(nextedge).getSpeed() == traci.lane.getMaxSpeed(nextlane)):
-                    print("Speed check fail")
                 #traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[-1]), departSpeed="max")
-                traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[-1]), departSpeed=max(0, min(newspeed, 0.8*network.getEdge(nextedge).getSpeed())))
+                traci.vehicle.add(newghostcar, nextlane, departLane=int(nextlane.split("_")[-1]), departSpeed=max(0, min(newspeed, 0.8*speeds[nextedge])))
                 #There should be a departPos argument, but somehow it takes a string? And probably tries to insert at or behind the pos, making VOIs disappear if no space if I don't explicitly call moveTo
                 if not touchNothing:
                     traci.vehicle.moveTo(newghostcar, nextlane, ghostcarpos)
@@ -3086,7 +3097,7 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict
                     nonExitEdgeDetections[nextlane.split("_")[0]][0].append((newghostcar+"."+str(simtime), nextlane, simtime))
             traci.vehicle.setSpeedFactor(newghostcar, 1)
             traci.vehicle.setColor(newghostcar, [0, 255, 255, 255])
-            leftedge = getLeftEdge(nextlane, network)
+            leftedge = leftedges[nextlane]
             traci.vehicle.setRoute(newghostcar, [nextedge])
             if not leftedge == None:
                 traci.vehicle.setRoute(newghostcar, [nextedge, leftedge])
@@ -3094,7 +3105,7 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict
     return dontReRemove2
 
 #@profile
-def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, reroutedata):
+def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, reroutedata):
     global nRoutingCalls
     global nSuccessfulRoutingCalls
     global routingTime
@@ -3115,7 +3126,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     startedge = startlane.split("_")[0]
     VOIs = dict()
     #VOIs[vehicle] stores current lane, current speed, current position, route to now, left turn edge (if any), and whether we still need to spawn non-left copies
-    VOIs[vehicle] = [startlane, traci.vehicle.getSpeed(vehicle), traci.vehicle.getLanePosition(vehicle), [startedge], getLeftEdge(startlane, network), True]
+    VOIs[vehicle] = [startlane, traci.vehicle.getSpeed(vehicle), traci.vehicle.getLanePosition(vehicle), [startedge], leftedges[startlane], True]
     ghostcarlanes = []
 
     #New plan: We're doing ghost cars in SUMO
@@ -3145,12 +3156,12 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         # traci.start([checkBinary('sumo'), "-c", sumoconfig,
         #                         "--additional-files", "additional_autogen.xml",
         #                         "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
-        (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime, network)
+        (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime)
     else:
         saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) #Saves the traffic state and traffic light timings #TODO pretty sure I do this at the start of reroute - at some point, make sure nothing breaks if I comment this
         traci.switch("test")
 
-        (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime, network)
+        (remainingDuration, lastSwitchTimes, sumoPredClusters, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime)
     
     #assert(traci.vehicle.getRoadID(vehicle) == startedge) #This fails with loadStateInfoDetectors; apparently getRoadID returns an empty string. Does adding vehicles not register until the next timestep? (But loading the save the normal way does?)
 
@@ -3161,7 +3172,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     try:
         traci.vehicle.setColor(vehicle, [0, 255, 255, 255]) #Make the ghost car white for debug purposes
         #Tell ghost car to turn left
-        leftedge = getLeftEdge(startlane, network)
+        leftedge = leftedges[startlane]
         traci.vehicle.setRoute(vehicle, [startedge])
         if not leftedge == None:
             traci.vehicle.setRoute(vehicle, [startedge, leftedge])
@@ -3226,8 +3237,8 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             newspeed = VOIs[startvehicle][1]
             if not nextlane in traci.route.getIDList():
                 traci.route.add(nextlane, [nextlane.split("_")[0]])
-            #traci.vehicle.add(newghostcar, nextlane, departLane=lanenum, departSpeed="max")#min(newspeed, 0.99*network.getEdge(startedge).getSpeed()))
-            traci.vehicle.add(newghostcar, nextlane, departLane=lanenum, departSpeed=min(newspeed, 0.8*network.getEdge(startedge).getSpeed()))
+            #traci.vehicle.add(newghostcar, nextlane, departLane=lanenum, departSpeed="max")#min(newspeed, 0.99*speeds[startedge]))
+            traci.vehicle.add(newghostcar, nextlane, departLane=lanenum, departSpeed=min(newspeed, 0.8*speeds[startedge]))
             edgeDict3[newghostcar] = nextlane.split("_")[0]
             laneDict3[newghostcar] = nextlane
             #Not going to insert a detector reading for these, hopefully it's fine
@@ -3237,7 +3248,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         #Regardless of whether we had to make a new ghost car or could convert an existing one, make it look like a ghost car
         traci.vehicle.setColor(newghostcar, [0, 255, 255, 255]) #Make the ghost car white for debug purposes
         #Tell new ghost car to turn left
-        leftedge = getLeftEdge(nextlane, network)
+        leftedge = leftedges[nextlane]
         traci.vehicle.setRoute(newghostcar, [startedge])
         if not leftedge == None:
             traci.vehicle.setRoute(newghostcar, [startedge, leftedge])
@@ -3474,7 +3485,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     #If we still need to spawn non-left copies (presumably we're in the intersection), do that
                     if VOIs[id][5]:
                         VOIs[id][5] = False #Don't repeatedly spawn these - ghostcarlanes should sort this, though
-                        prepGhostCars(VOIs, id, ghostcarlanes, network, False, ghostcardata, simtime)
+                        prepGhostCars(VOIs, id, ghostcarlanes, False, ghostcardata, simtime)
 
                     #If we made it out of the intersection and successfully turned left, delete yourself and spawn replacements
                     #VOIs[id] stores current lane, current speed, current position, route to now, left turn edge (if any), and whether we still need to spawn non-left copies
@@ -3496,7 +3507,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         laneDict3.pop(id)
                         edgeDict3.pop(id)
 
-                        prepGhostCars(VOIs, id, ghostcarlanes, network, True, ghostcardata, simtime)    
+                        prepGhostCars(VOIs, id, ghostcarlanes, True, ghostcardata, simtime)    
 
                 else:
                     VOIs[id][1] = traci.vehicle.getLanePosition(id)
@@ -3521,7 +3532,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         for id in toDelete:
             VOIs.pop(id)
 
-        dontReRemove = spawnGhostCars(ghostcardata, ghostcarlanes, simtime, network, VOIs, laneDict3, edgeDict3, nonExitEdgeDetections2, dontReRemove)
+        dontReRemove = spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict3, edgeDict3, nonExitEdgeDetections2, dontReRemove)
 
         #Light logic for Surtrac, etc.
 
@@ -3531,7 +3542,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             updateLights = True
             if not(reuseSurtrac and simtime in surtracDict): #Overwrite unless we want to reuse
                 updateLights = False
-                surtracDict[simtime] = doSurtrac(network, simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters, True, nonExitEdgeDetections2)
+                surtracDict[simtime] = doSurtrac(simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters, True, nonExitEdgeDetections2)
             # else:
             #     print("Reusing Surtrac, yay!")
 
@@ -3577,19 +3588,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                 else:
                     print("Unrecognized light " + light + ", this shouldn't happen")
 
-
-# Gets successor edges of a given edge in a given network
-# Parameters:
-#   edge: an edge ID string
-#   network: the network object from sumolib.net.readNet(netfile)
-# Returns:
-#   successors: a list of edge IDs for the successor edges (outgoing edges from the next intersection)
-def getSuccessors(edge, network):
-    ids = []
-    for succ in list(network.getEdge(edge).getOutgoing()):
-        ids.append(succ.getID())
-    return ids
-
 def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases):
     #Copy state from main sim to test sim
     traci.simulation.saveState("savestates/teststate_"+edge+".xml")
@@ -3613,9 +3611,9 @@ def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, li
         pickle.dump(lightphases, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
-def loadStateInfo(prevedge, simtime, network): #simtime is just so I can pass it into loadStateInfoDetectors...
+def loadStateInfo(prevedge, simtime): #simtime is just so I can pass it into loadStateInfoDetectors...
     if detectorRouting:
-        return loadStateInfoDetectors(prevedge, simtime, network)
+        return loadStateInfoDetectors(prevedge, simtime)
 
     #Load traffic state
     traci.simulation.loadState("savestates/teststate_"+prevedge+".xml")
@@ -3647,7 +3645,7 @@ def loadStateInfo(prevedge, simtime, network): #simtime is just so I can pass it
     return (remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases, deepcopy(edgeDict), deepcopy(laneDict))
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
-def loadStateInfoDetectors(prevedge, simtime, network):
+def loadStateInfoDetectors(prevedge, simtime):
     global netfile
 
     newEdgeDict = dict()
