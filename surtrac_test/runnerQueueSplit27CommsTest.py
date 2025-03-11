@@ -1482,6 +1482,10 @@ def run(network, rerouters, pSmart, verbose = True):
                         else:
                             nonExitEdgeDetections[newloc][0].append((newlane+".0maindetect."+str(simtime), newlane, simtime))
 
+                #Remove vehicle from predictions, since the next intersection should actually see it now
+                if not disableSurtracPred:
+                    removeVehicleFromPredictions(sumoPredClusters, edgeDict[id])
+
                 c0 = network.getEdge(edgeDict[id]).getFromNode().getCoord()
                 c1 = network.getEdge(edgeDict[id]).getToNode().getCoord()
                 theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
@@ -1509,46 +1513,6 @@ def run(network, rerouters, pSmart, verbose = True):
                     laneDict[id] = traci.vehicle.getLaneID(id)
                     currentRoutes[id] = traci.vehicle.getRoute(id)
                     assert(laneDict[id].split("_")[0] in currentRoutes[id])
-                #Remove vehicle from predictions, since the next intersection should actually see it now
-                if not disableSurtracPred:
-                    for predlane in sumoPredClusters: #TODO is this infinite looping on batwing somehow??
-                        predclusterind = 0
-                        while predclusterind < len(sumoPredClusters[predlane]):
-#                        for predcluster in sumoPredClusters[predlane]:
-                            predcluster = sumoPredClusters[predlane][predclusterind]
-
-                            predcarind = 0
-                            minarr = inf
-                            maxarr = -inf
-                            while predcarind < len(predcluster["cars"]):
-                                predcartuple = predcluster["cars"][predcarind]
-                                if predcartuple[0] == id:
-                                    predcluster["cars"].pop(predcarind)
-                                    predcluster["weight"] -= predcartuple[2]
-                                else:
-                                    predcarind += 1
-                                    if predcartuple[1] < minarr:
-                                        minarr = predcartuple[1]
-                                    if predcartuple[1] > maxarr:
-                                        maxarr = predcartuple[1]
-
-                            #Sanity check
-                            if debugMode:
-                                weightsum = 0
-                                for predcarind in range(len(predcluster["cars"])):
-                                    weightsum += predcluster["cars"][predcarind][2]
-                                assert(abs(weightsum - predcluster["weight"]) < 1e-10)
-
-                            #Remove empty clusters
-                            if len(predcluster["cars"]) == 0:
-#                                sumoPredClusters[predlane].remove(predcluster)
-                                #sumoPredClusters[predlane].pop(predclusterind)
-                                sumoPredClusters[predlane] = sumoPredClusters[predlane][1:]
-                            else:
-                                pass
-                                #predcluster["arrival"] = minarr #predcluster["cars"][0][1]
-                                #predcluster["departure"] = maxarr #predcluster["cars"][-1][1]
-                                predclusterind += 1
 
                 #Store data to compute delay after first intersection
                 if not id in delay2adjdict:
@@ -3416,49 +3380,12 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         else:
                             nonExitEdgeDetections2[newloc][0].append((newlane+".0routingdetect."+str(simtime), newlane, simtime))
 
-                laneDict3[id] = newlane
-                edgeDict3[id] = newloc
-
                 #Remove vehicle from predictions, since the next intersection should actually see it now
                 if not disableSurtracPred:
-                    for predlane in sumoPredClusters3.keys():
-                        predclusterind = 0
-                        while predclusterind < len(sumoPredClusters3[predlane]):
-#                        for predcluster in sumoPredClusters3[predlane]:
-                            predcluster = sumoPredClusters3[predlane][predclusterind]
+                    removeVehicleFromPredictions(sumoPredClusters3, edgeDict3[id])
 
-                            predcarind = 0
-                            minarr = inf
-                            maxarr = -inf
-                            while predcarind < len(predcluster["cars"]):
-                                predcartuple = predcluster["cars"][predcarind]
-                                if predcartuple[0] == id:
-                                    predcluster["cars"].pop(predcarind)
-                                    predcluster["weight"] -= predcartuple[2]
-                                else:
-                                    predcarind += 1
-                                    if predcartuple[1] < minarr:
-                                        minarr = predcartuple[1]
-                                    if predcartuple[1] > maxarr:
-                                        maxarr = predcartuple[1]
-
-                            #Sanity check
-                            if debugMode:
-                                weightsum = 0
-                                for predcarind in range(len(predcluster["cars"])):
-                                    weightsum += predcluster["cars"][predcarind][2]
-                                assert(abs(weightsum - predcluster["weight"]) < 1e-10)
-
-                            #Remove empty clusters
-                            if len(predcluster["cars"]) == 0:
-                                #sumoPredClusters3[predlane].remove(predcluster)
-                                sumoPredClusters3[predlane].pop(predclusterind)
-                                #sumoPredClusters3[predlane] = sumoPredClusters3[predlane][1:]
-                            else:
-                                pass
-                                #predcluster["arrival"] = minarr #predcluster["cars"][0][1]
-                                #predcluster["departure"] = maxarr #predcluster["cars"][-1][1]
-                                predclusterind += 1
+                laneDict3[id] = newlane
+                edgeDict3[id] = newloc
 
         #Add new cars
         for nextlane in arrivals:
@@ -3633,6 +3560,50 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         traci.trafficlight.setPhaseDuration(light, remainingDuration[light][0])
                 else:
                     print("Unrecognized light " + light + ", this shouldn't happen")
+
+#@profile
+#NOTE: Profiling says this function isn't terrible, probably don't need to speed it up right now
+def removeVehicleFromPredictions(sumoPredClusters, lastedge):
+    for predlane in sumoPredClusters.keys():
+        #Don't bother checking lanes on edges that weren't the last edge
+        if not predlane.split("_")[0] == lastedge:
+            continue
+
+        predclusterind = 0
+        while predclusterind < len(sumoPredClusters[predlane]):
+            predcluster = sumoPredClusters[predlane][predclusterind]
+
+            predcarind = 0
+            minarr = inf
+            maxarr = -inf
+            while predcarind < len(predcluster["cars"]):
+                predcartuple = predcluster["cars"][predcarind]
+                if predcartuple[0] == id:
+                    predcluster["cars"].pop(predcarind)
+                    predcluster["weight"] -= predcartuple[2]
+                else:
+                    predcarind += 1
+                    if predcartuple[1] < minarr:
+                        minarr = predcartuple[1]
+                    if predcartuple[1] > maxarr:
+                        maxarr = predcartuple[1]
+
+            #Sanity check
+            if debugMode:
+                weightsum = 0
+                for predcarind in range(len(predcluster["cars"])):
+                    weightsum += predcluster["cars"][predcarind][2]
+                assert(abs(weightsum - predcluster["weight"]) < 1e-10)
+
+            #Remove empty clusters
+            if len(predcluster["cars"]) == 0:
+#                                sumoPredClusters[predlane].remove(predcluster)
+                sumoPredClusters[predlane].pop(predclusterind)
+                #sumoPredClusters[predlane] = sumoPredClusters[predlane][1:]
+            else:
+                predcluster["arrival"] = minarr #predcluster["cars"][0][1]
+                predcluster["departure"] = maxarr #predcluster["cars"][-1][1]
+                predclusterind += 1
 
 
 # Gets successor edges of a given edge in a given network
