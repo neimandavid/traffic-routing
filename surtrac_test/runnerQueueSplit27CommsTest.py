@@ -2867,10 +2867,10 @@ def reroute(rerouters, network, simtime, remainingDuration, sumoPredClusters=[])
 
                     if multithreadRouting:
                         #print("Starting vehicle routing thread")
-                        routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults))
+                        routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, network, routingresults))
                         routingthreads[vehicle].start()
                     else:
-                        rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, network, routingresults)
+                        rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, network, routingresults)
                     
                         if not useLibsumo:
                             assert(traci.getLabel() == "main")
@@ -3421,7 +3421,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
                 #Remove vehicle from predictions, since the next intersection should actually see it now
                 if not disableSurtracPred:
-                    for predlane in sumoPredClusters3:
+                    for predlane in sumoPredClusters3.keys():
                         predclusterind = 0
                         while predclusterind < len(sumoPredClusters3[predlane]):
 #                        for predcluster in sumoPredClusters3[predlane]:
@@ -3451,9 +3451,9 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
                             #Remove empty clusters
                             if len(predcluster["cars"]) == 0:
-#                                sumoPredClusters3[predlane].remove(predcluster)
-                                #sumoPredClusters3[predlane].pop(predclusterind)
-                                sumoPredClusters3[predlane] = sumoPredClusters3[predlane][1:]
+                                #sumoPredClusters3[predlane].remove(predcluster)
+                                sumoPredClusters3[predlane].pop(predclusterind)
+                                #sumoPredClusters3[predlane] = sumoPredClusters3[predlane][1:]
                             else:
                                 pass
                                 #predcluster["arrival"] = minarr #predcluster["cars"][0][1]
