@@ -856,7 +856,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
                         break
 
                     #We're having issues with empty clusters when we do predictions and use libsumo (multithreaded routing apparently not necessary to break stuff). Not sure why this is happening, but let's just deal with those cases and hope everything's fine
-                    #NEXT TODO can I delete this?
+                    #NEXT TODO can I delete this? Apparently not, how bad is this?
                     while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
                         clusterNums[lane] += 1
                         carNums[lane] = 0
