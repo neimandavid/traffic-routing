@@ -23,9 +23,8 @@
 #24: Detector model stops tracking specific names of non-adopters
 #25: New plan for lane changes - blindly sample which lane stuff ends up in
 #26: Detector model for Surtrac in routing as well (since the goal is to approximate what the main simulation would be doing)
-#27: Support new SurtracNet (single network for all intersections, takes in intersection geometry and light phase info). MIGHT BE OUT OF DATE ON DETECTOR MODEL STUFF, TODO add that back in from RQS26
+#27: Support new SurtracNet (single network for all intersections, takes in intersection geometry and light phase info).
 #28: Better multithreading. Start routing sims when a vehicle enters a road, early stop when it nears an intersection
-#29: TODO A* Surtrac
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -2120,7 +2119,6 @@ def run(network, rerouters, pSmart, verbose = True):
         print("Warning: Trying to clean up savestates file, but no file found. This is weird - did you comment out routing or something? Ignoring for now.")
         pass
 
-    print("End run")
     return [avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart, nteleports, teleportdata]  
 
 def dumpIntersectionDataFun(intersectionData, network):
@@ -2873,7 +2871,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
             if crossEntropyLoss:
-                agents[light] = Net(ninputs, 2, 512)
+                agents[light] = Net(ninputs, 2, 128)
             else:
                 agents[light] = Net(ninputs, 1, 512)
             # if testDumbtrac:
