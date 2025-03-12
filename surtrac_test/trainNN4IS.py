@@ -170,9 +170,9 @@ def main(sumoconfigs):
         ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra #180+144+12+1=337
 
         if crossEntropyLoss:
-            agents[light] = Net(ninputs, 2, 512)
+            agents[light] = Net(ninputs, 2, 128)
         else:
-            agents[light] = Net(ninputs, 1, 512)
+            agents[light] = Net(ninputs, 1, 128)
 
         try:
             agents[light] = agents[light].to(device)

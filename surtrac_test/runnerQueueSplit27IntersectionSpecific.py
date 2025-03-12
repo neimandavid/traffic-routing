@@ -75,10 +75,11 @@ from multiprocessing import Process
 import multiprocessing
 
 try:
-    multiprocessing.set_start_method("spawn")
+    multiprocessing.set_start_method("fork")
 except:
     pass
 
+manager = multiprocessing.Manager()
 sumoconfig = None
 
 pSmart = 1.0 #Adoption probability
@@ -107,13 +108,13 @@ predCutoffMain = 20 #Surtrac receives communications about clusters arriving thi
 predCutoffRouting = 20 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
-testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
-noNNinMain = False
+testNNdefault = True#False #Uses NN over Dumbtrac for light control if both are true
+noNNinMain = True#False
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
 testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
 FTP = True #If false, and testDumbtrac = True, runs actuated control instead of fixed timing plans. If true, runs fixed timing plans (should now be same as SUMO defaults)
-resetTrainingData = True
-appendTrainingData = True
+resetTrainingData = False#True
+appendTrainingData = False#True
 crossEntropyLoss = True
 
 detectorModel = False #REMINDER: As currently implemented, turning this on makes even 0% and 100% routing non-deterministic, as we're guessing lanes for vehicles before running Surtrac
@@ -1063,7 +1064,6 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
     if disableSurtracPred or not multithreadRouting:
         catpreds = dict()
     else:
-        manager = multiprocessing.Manager()
         catpreds = manager.dict()
     remainingDuration = dict()
     bestschedules = dict()
@@ -2551,7 +2551,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             notlightlanes[toNode.getID()].append(lane.id)
         fromNode = network.getEdge(edge).getFromNode()
         if fromNode.getType() != "traffic_light":
-            notlightoutlanes[fromNode.getID()].append(lane.id)        
+            notlightoutlanes[fromNode.getID()].append(lane.id)
 
     #Grab stuff once at the start to avoid slow calls to traci in the routing
     edges = traci.edge.getIDList()
@@ -2736,9 +2736,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
             if crossEntropyLoss:
-                agents[light] = Net(ninputs, 2, 512)
+                agents[light] = Net(ninputs, 2, 128)
             else:
-                agents[light] = Net(ninputs, 1, 512)
+                agents[light] = Net(ninputs, 1, 128)
             # if testDumbtrac:
             #     # agents[light] = Net(26, 1, 32)
             #     # #agents[light] = Net(2, 1, 32)
@@ -2818,7 +2818,6 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     surtracDict = dict()
 
     routingthreads = dict()
-    manager = multiprocessing.Manager()
     routingresults = manager.dict()
 
     saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
@@ -3112,7 +3111,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     global surtracDict
     global nonExitEdgeDetections
 
-    print("Start routing")
     dontReRemove = [] #So we delete detector records of vehicles exactly once
     remainingDuration = pickle.loads(pickle.dumps(remainingDurationIn)) #This is apparently important, not sure why. It's especially weird given the next time we see remainingDuration is as the output of a loadClusters call
 
