@@ -103,7 +103,7 @@ routingSimUsesSUMO = True #Only switch this if we go back to custom routing simu
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
-disableSurtracPred = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
+disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 20 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
@@ -124,8 +124,6 @@ detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in rou
 adopterComms = True
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
-
-templightind = 0 #TODO delete
 
 clusterStats = False #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
 clusterNumsStats = []
@@ -480,8 +478,6 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
     global totalSurtracClusters
     global totalSurtracTime
 
-    global templightind #TODO delete
-
     if inRoutingSim:
         freq = max(routingSurtracFreq, timestep)
         ttimestep = timestep
@@ -490,25 +486,16 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         ttimestep = 1
         
     i = lightphases[light]
-    if not learnYellow and ("Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state):
-        #Force yellow phases to be min duration regardless of what anything else says, and don't store it as training data
-        if simtime - lastswitchtimes[light] >= surtracdata[light][i]["minDur"]:
-            dur = 0
-        else:
-            dur = (surtracdata[light][i]["minDur"] - (simtime - lastswitchtimes[light]))//ttimestep*ttimestep
-        #Replace first element with remaining duration, rather than destroying the entire schedule, in case of Surtrac or similar
-        if light in bestschedules:
-            temp = pickle.loads(pickle.dumps(bestschedules[light][7]))
-        else:
-            temp = [0]
-        temp[0] = dur
-        bestschedules[light] = [None, None, None, None, None, None, None, temp]
-        return
 
-    if not learnMinMaxDurations:
-        #Force light to satisfy min/max duration requirements and don't store as training data
-        if simtime - lastswitchtimes[light] < surtracdata[light][i]["minDur"]:
-            dur = 1e6
+    #If using NN, don't make it learn easy edge cases like min/max duration or yellow lights, just do those by hand
+    if (testNN and (inRoutingSim or not noNNinMain)): #If using NN
+        if not learnYellow and ("Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state):
+            #Force yellow phases to be min duration regardless of what anything else says, and don't store it as training data
+            if simtime - lastswitchtimes[light] >= surtracdata[light][i]["minDur"]:
+                dur = 0
+            else:
+                dur = (surtracdata[light][i]["minDur"] - (simtime - lastswitchtimes[light]))//ttimestep*ttimestep
+            #Replace first element with remaining duration, rather than destroying the entire schedule, in case of Surtrac or similar
             if light in bestschedules:
                 temp = pickle.loads(pickle.dumps(bestschedules[light][7]))
             else:
@@ -516,16 +503,28 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
             temp[0] = dur
             bestschedules[light] = [None, None, None, None, None, None, None, temp]
             return
-        if simtime - lastswitchtimes[light] + freq > surtracdata[light][i]["maxDur"]:
-            #TODO this is slightly sloppy if freq > ttimestep - if we're trying to change just before maxDur this'll assume we tried to change at it instead
-            dur = (surtracdata[light][i]["maxDur"] - (simtime - lastswitchtimes[light]))//ttimestep*ttimestep
-            if light in bestschedules:
-                temp = pickle.loads(pickle.dumps(bestschedules[light][7]))
-            else:
-                temp = [0]
-            temp[0] = dur
-            bestschedules[light] = [None, None, None, None, None, None, None, temp]
-            return
+
+        if not learnMinMaxDurations:
+            #Force light to satisfy min/max duration requirements and don't store as training data
+            if simtime - lastswitchtimes[light] < surtracdata[light][i]["minDur"]:
+                dur = 1e6
+                if light in bestschedules:
+                    temp = pickle.loads(pickle.dumps(bestschedules[light][7]))
+                else:
+                    temp = [0]
+                temp[0] = dur
+                bestschedules[light] = [None, None, None, None, None, None, None, temp]
+                return
+            if simtime - lastswitchtimes[light] + freq > surtracdata[light][i]["maxDur"]:
+                #TODO this is slightly sloppy if freq > ttimestep - if we're trying to change just before maxDur this'll assume we tried to change at it instead
+                dur = (surtracdata[light][i]["maxDur"] - (simtime - lastswitchtimes[light]))//ttimestep*ttimestep
+                if light in bestschedules:
+                    temp = pickle.loads(pickle.dumps(bestschedules[light][7]))
+                else:
+                    temp = [0]
+                temp[0] = dur
+                bestschedules[light] = [None, None, None, None, None, None, None, temp]
+                return
 
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac: #If using NN and/or dumbtrac
         if (testNN and (inRoutingSim or not noNNinMain)): #If using NN
@@ -831,7 +830,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
         if not bestschedule == [[]]:
             #We have our best schedule, now need to generate predicted outflows
-            if disableSurtracPred:
+            if disableSurtracComms:
                 newPredClusters = emptyPreds
             else:
                 newPredClusters = pickle.loads(pickle.dumps(emptyPreds)) #Deep copy needed if I'm going to merge clusters
@@ -858,13 +857,13 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
 
                     #We're having issues with empty clusters when we do predictions and use libsumo (multithreaded routing apparently not necessary to break stuff). Not sure why this is happening, but let's just deal with those cases and hope everything's fine
                     #NEXT TODO can I delete this?
-                    while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
-                        clusterNums[lane] += 1
-                        carNums[lane] = 0
-                    if len(clusters[lane]) == clusterNums[lane]:
-                        #Nothing left on this lane, we're done here
-                        #nextSendTimes.pop(lane)
-                        continue
+                    # while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
+                    #     clusterNums[lane] += 1
+                    #     carNums[lane] = 0
+                    # if len(clusters[lane]) == clusterNums[lane]:
+                    #     #Nothing left on this lane, we're done here
+                    #     #nextSendTimes.pop(lane)
+                    #     continue
 
                     try:
                         cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
@@ -1045,10 +1044,7 @@ def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchti
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
             trainingdata["light"].append((nnin, target, torch.tensor([[temp]])))
         else:
-            if templightind < len(lights) and light == lights[templightind]:
-                #print("yay")
-                templightind += 1
-                trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
+            trainingdata["light"].append((nnin, target)) #Record the training data, but obviously not what the NN did since we aren't using an NN
         
     
     if (testNN and (inRoutingSim or not noNNinMain)) or testDumbtrac:
@@ -1068,7 +1064,7 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
         testNNrolls.append(testNN)
 
     toSwitch = []
-    if disableSurtracPred or not multithreadRouting:
+    if disableSurtracComms or not multithreadRouting:
         catpreds = dict()
     else:
         catpreds = manager.dict()
@@ -1182,8 +1178,8 @@ def doSurtrac(network, simtime, realclusters=None, lightphases=None, lastswitcht
                 print("Warning: Surtrac's giving back an empty schedule!")
 
 
-    #Predict-ahead for everything else; assume no delays.
-    if not disableSurtracPred:
+    #Communicate-ahead for everything else; assume no delays.
+    if not disableSurtracComms:
         for light in notLights:
             for lane in notlightlanes[light]:
                 if not lane in turndata:
@@ -1483,7 +1479,7 @@ def run(network, rerouters, pSmart, verbose = True):
                             nonExitEdgeDetections[newloc][0].append((newlane+".0maindetect."+str(simtime), newlane, simtime))
 
                 #Remove vehicle from predictions, since the next intersection should actually see it now
-                if not disableSurtracPred:
+                if not disableSurtracComms:
                     removeVehicleFromPredictions(sumoPredClusters, edgeDict[id])
 
                 c0 = network.getEdge(edgeDict[id]).getFromNode().getCoord()
@@ -3381,7 +3377,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             nonExitEdgeDetections2[newloc][0].append((newlane+".0routingdetect."+str(simtime), newlane, simtime))
 
                 #Remove vehicle from predictions, since the next intersection should actually see it now
-                if not disableSurtracPred:
+                if not disableSurtracComms:
                     removeVehicleFromPredictions(sumoPredClusters3, edgeDict3[id])
 
                 laneDict3[id] = newlane
@@ -3598,8 +3594,8 @@ def removeVehicleFromPredictions(sumoPredClusters, lastedge):
             #Remove empty clusters
             if len(predcluster["cars"]) == 0:
 #                                sumoPredClusters[predlane].remove(predcluster)
-                sumoPredClusters[predlane].pop(predclusterind)
-                #sumoPredClusters[predlane] = sumoPredClusters[predlane][1:]
+                #sumoPredClusters[predlane].pop(predclusterind)
+                sumoPredClusters[predlane] = sumoPredClusters[predlane][0:predclusterind]+sumoPredClusters[predlane][predclusterind+1:] #Apparently this is necessary when working with manager dict stuff? Maybe it's immutable??
             else:
                 predcluster["arrival"] = minarr #predcluster["cars"][0][1]
                 predcluster["departure"] = maxarr #predcluster["cars"][-1][1]
