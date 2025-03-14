@@ -23,7 +23,7 @@
 #24: Detector model stops tracking specific names of non-adopters
 #25: New plan for lane changes - blindly sample which lane stuff ends up in
 #26: Detector model for Surtrac in routing as well (since the goal is to approximate what the main simulation would be doing)
-#27: Support new SurtracNet (single network for all intersections, takes in intersection geometry and light phase info). MIGHT BE OUT OF DATE ON DETECTOR MODEL STUFF, TODO add that back in from RQS26
+#27: Support new SurtracNet (single network for all intersections, takes in intersection geometry and light phase info)
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -113,8 +113,8 @@ noNNinMain = False
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
 testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
 FTP = True #If false, and testDumbtrac = True, runs actuated control instead of fixed timing plans. If true, runs fixed timing plans (should now be same as SUMO defaults)
-resetTrainingData = True
-appendTrainingData = True
+resetTrainingData = False#True
+appendTrainingData = False#True
 crossEntropyLoss = True
 
 detectorModel = False #REMINDER: As currently implemented, turning this on makes even 0% and 100% routing non-deterministic, as we're guessing lanes for vehicles before running Surtrac
@@ -2706,9 +2706,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
             if crossEntropyLoss:
-                agents[light] = Net(ninputs, 2, 8192)
+                agents[light] = Net(ninputs, 2, 128)
             else:
-                agents[light] = Net(ninputs, 1, 4096)
+                agents[light] = Net(ninputs, 1, 128)
             # if testDumbtrac:
             #     # agents[light] = Net(26, 1, 32)
             #     # #agents[light] = Net(2, 1, 32)
@@ -3078,6 +3078,16 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     global routingTime
     global surtracDict
     global nonExitEdgeDetections
+
+    vehicle = startvehicle
+    #Get goal
+    startroute = traci.vehicle.getRoute(vehicle)
+    startedge = startlane.split("_")[0]
+    startind = startroute.index(startedge)
+    startroute = startroute[startind:]
+    endroute = startroute[startind:]
+    goaledge = startroute[-1]
+    reroutedata[startvehicle] = [startroute, -1] #We'll overwrite this if we don't timeout first
 
     dontReRemove = [] #So we delete detector records of vehicles exactly once
     remainingDuration = pickle.loads(pickle.dumps(remainingDurationIn)) #This is apparently important, not sure why. It's especially weird given the next time we see remainingDuration is as the output of a loadClusters call
@@ -3450,6 +3460,12 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         routingTime += time.time() - routestartwctime
                         reroutedata[startvehicle] = [VOIs[id][3], simtime - starttime]
                         return reroutedata[startvehicle]
+
+                    #Else if we've found something new on the initial route, update the first part of the route at least (because anytime routing)
+                    if VOIs[id][0].split("_")[0] in endroute:
+                        newstartind = endroute.index(VOIs[id][0].split("_")[0])
+                        reroutedata[startvehicle] = [tuple(VOIs[id][3])+tuple(endroute[newstartind+1:]), -1]
+                        endroute = endroute[newstartind+1:]
 
                     #If we still need to spawn non-left copies (presumably we're in the intersection), do that
                     if VOIs[id][5]:
