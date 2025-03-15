@@ -1634,7 +1634,7 @@ def run(network, rerouters, pSmart, verbose = True):
                     startind = startroute.index(newlane.split("_")[0])
                     startroute = startroute[startind:]
                     routingresults[id] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
-                    routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, routingresults))
+                    routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults))
                     routingthreads[id].start()
                     stopDict[id] = False
 
@@ -2974,7 +2974,7 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
                     else:
                         print("multithreadRouting == False???")
                         routingresults[vehicle] = manager.list([None, None])
-                        rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases, simtime, routingresults)
+                        rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults)
                     
                         if not useLibsumo:
                             assert(traci.getLabel() == "main")
