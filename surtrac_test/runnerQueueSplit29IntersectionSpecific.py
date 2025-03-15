@@ -1166,10 +1166,10 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
         testNNrolls.append(testNN)
 
     toSwitch = []
-    if disableSurtracComms or not multithreadRouting:
+    if disableSurtracComms or not multithreadSurtrac:
         catpreds = dict()
     else:
-        catpreds = manager.dict()
+        catpreds = manager.dict() #NOTE: I've been having concurrency issues; I suspect not using manager fixes it. Problem is this'll break multithreadSurtrac, but I don't think I care
     remainingDuration = dict()
     bestschedules = dict()
 
