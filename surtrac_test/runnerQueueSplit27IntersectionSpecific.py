@@ -1066,10 +1066,10 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
         testNNrolls.append(testNN)
 
     toSwitch = []
-    if disableSurtracComms or not multithreadRouting:
+    if disableSurtracComms or not multithreadSurtrac:
         catpreds = dict()
     else:
-        catpreds = manager.dict()
+        catpreds = manager.dict() #NOTE: I've been having concurrency issues; I suspect not using manager fixes it. Problem is this'll break multithreadSurtrac, but I don't think I care
     remainingDuration = dict()
     bestschedules = dict()
 
@@ -1483,9 +1483,6 @@ def run(network, rerouters, pSmart, verbose = True):
                 #Remove vehicle from predictions, since the next intersection should actually see it now
                 if not disableSurtracComms:
                     removeVehicleFromPredictions(sumoPredClusters, edgeDict[id])
-
-                # c2 = network.getEdge(newloc).getToNode().getCoord()
-                # theta1 = math.atan2(c2[1]-c1[1], c2[0]-c1[0])
 
                 cs = endpointcoords[edgeDict[id]]
                 theta0 = math.atan2(cs[3]-cs[1], cs[2]-cs[0])
@@ -2925,12 +2922,6 @@ def getDTheta(startedge, nextedge):
     startedge = startedge.split("_")[0]
     nextedge = nextedge.split("_")[0]
 
-    # c0 = network.getEdge(startedge).getFromNode().getCoord()
-    # c1 = network.getEdge(startedge).getToNode().getCoord()
-    # theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
-
-    # c2 = network.getEdge(nextedge).getToNode().getCoord()
-    # theta1 = math.atan2(c2[1]-c1[1], c2[0]-c1[0])
     cs = endpointcoords[startedge]
     theta0 = math.atan2(cs[3]-cs[1], cs[2]-cs[0])
     cn = endpointcoords[nextedge]
@@ -3094,13 +3085,11 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     remainingDuration = pickle.loads(pickle.dumps(remainingDurationIn)) #This is apparently important, not sure why. It's especially weird given the next time we see remainingDuration is as the output of a loadClusters call
 
     nRoutingCalls += 1
-    vehicle = startvehicle
     routestartwctime = time.time() #For timeouts and maybe stats
     timeout = 60
 
     ghostcardata = dict()
 
-    startedge = startlane.split("_")[0]
     VOIs = dict()
     #VOIs[vehicle] stores current lane, current speed, current position, route to now, left turn edge (if any), and whether we still need to spawn non-left copies
     VOIs[vehicle] = [startlane, traci.vehicle.getSpeed(vehicle), traci.vehicle.getLanePosition(vehicle), [startedge], leftedges[startlane], True]
@@ -3112,12 +3101,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     #Unless it reached the end of the goal road, in which case great, we're done
     #Hopefully those new inserts take priority over standard cars and it all works?
     #assert(traci.getLabel() == "main")
-
-    #Get goal
-    startroute = traci.vehicle.getRoute(vehicle)
-    startind = startroute.index(startedge)
-    startroute = startroute[startind:]
-    goaledge = startroute[-1]
 
     if startedge == goaledge:
         #No rerouting needed, we're basically done

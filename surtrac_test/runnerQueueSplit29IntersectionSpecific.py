@@ -915,6 +915,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                 pst = ast+newdur
                                 newclusterind += 1
 
+                        heuristic = 0
                         #heappush(pq, (newschedule[5], newschedule)) #Add to A* priority queue
                         heappush(pq, (newschedule[5]+heuristic, newschedule)) #Add to A* priority queue
 
