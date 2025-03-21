@@ -341,17 +341,17 @@ def run(network, rerouters, pSmart, verbose = True):
                 traci.vehicle.setColor(vehicle, [255, 0, 0, 255])
             timedata[vehicle] = [simtime, -1, -1, 'unknown', 'unknown']
             currentRoutes[vehicle] = traci.vehicle.getRoute(vehicle)
-            routeStats[vehicle] = dict()
-            routeStats[vehicle]["nCalls"] = 0
-            routeStats[vehicle]["nCallsFirst"] = 0
-            routeStats[vehicle]["nCallsAfterFirst"] = 0
-            routeStats[vehicle]["nSwaps"] = 0
-            routeStats[vehicle]["nSwapsFirst"] = 0
-            routeStats[vehicle]["nSwapsAfterFirst"] = 0
-            routeStats[vehicle]["swapped"] = False
-            routeStats[vehicle]["nTimeouts"] = 0
-            routeStats[vehicle]["nTeleports"] = 0
-            routeStats[vehicle]["distance"] = 0
+            # routeStats[vehicle] = dict()
+            # routeStats[vehicle]["nCalls"] = 0
+            # routeStats[vehicle]["nCallsFirst"] = 0
+            # routeStats[vehicle]["nCallsAfterFirst"] = 0
+            # routeStats[vehicle]["nSwaps"] = 0
+            # routeStats[vehicle]["nSwapsFirst"] = 0
+            # routeStats[vehicle]["nSwapsAfterFirst"] = 0
+            # routeStats[vehicle]["swapped"] = False
+            # routeStats[vehicle]["nTimeouts"] = 0
+            # routeStats[vehicle]["nTeleports"] = 0
+            # routeStats[vehicle]["distance"] = 0
 
             goaledge = currentRoutes[vehicle][-1]
             if not goaledge in hmetadict:
@@ -387,54 +387,54 @@ def run(network, rerouters, pSmart, verbose = True):
 
             #Stats
             avgTime = 0
-            avgLefts = 0
-            bestTime = inf
-            worstTime = 0
+            # avgLefts = 0
+            # bestTime = inf
+            # worstTime = 0
 
-            avgTimeSmart = 0
-            avgLeftsSmart = 0
-            bestTimeSmart = inf
-            worstTimeSmart = 0
-            avgTimeNot = 0
-            avgLeftsNot = 0
-            bestTimeNot = inf
-            worstTimeNot = 0
+            # avgTimeSmart = 0
+            # avgLeftsSmart = 0
+            # bestTimeSmart = inf
+            # worstTimeSmart = 0
+            # avgTimeNot = 0
+            # avgLeftsNot = 0
+            # bestTimeNot = inf
+            # worstTimeNot = 0
 
-            totalcalls = 0
-            totalcallsafterfirst = 0
-            totalcallsfirst = 0
-            totalswaps = 0
-            totalswapsafterfirst = 0
-            totalswapsfirst = 0
-            nswapped = 0
+            # totalcalls = 0
+            # totalcallsafterfirst = 0
+            # totalcallsfirst = 0
+            # totalswaps = 0
+            # totalswapsafterfirst = 0
+            # totalswapsfirst = 0
+            # nswapped = 0
 
-            avgTime2 = 0
-            avgTimeSmart2 = 0
-            avgTimeNot2 = 0
+            # avgTime2 = 0
+            # avgTimeSmart2 = 0
+            # avgTimeNot2 = 0
 
-            avgTime3 = 0
-            avgTimeSmart3 = 0
-            avgTimeNot3 = 0
+            # avgTime3 = 0
+            # avgTimeSmart3 = 0
+            # avgTimeNot3 = 0
 
             avgTime0 = 0
-            avgTimeSmart0 = 0
-            avgTimeNot0 = 0
+            # avgTimeSmart0 = 0
+            # avgTimeNot0 = 0
 
             nCars = 0
             nSmart = 0
-            ntimeouts = 0
-            nsmartteleports = 0
-            nnotsmartteleports = 0
-            nteleports = 0
+            # ntimeouts = 0
+            # nsmartteleports = 0
+            # nnotsmartteleports = 0
+            # nteleports = 0
 
-            avgerror = 0
-            avgabserror = 0
-            avgpcterror = 0
-            avgabspcterror = 0
+            # avgerror = 0
+            # avgabserror = 0
+            # avgpcterror = 0
+            # avgabspcterror = 0
 
-            totaldistance = 0
-            totaldistanceSmart = 0
-            totaldistanceNot = 0
+            # totaldistance = 0
+            # totaldistanceSmart = 0
+            # totaldistanceNot = 0
 
             for id in endDict:
                 if actualStartDict[id] >= 600 and actualStartDict[id] < 3000:
@@ -447,95 +447,17 @@ def run(network, rerouters, pSmart, verbose = True):
                 if actualStartDict[id] < 600 or actualStartDict[id] >= 3000:
                     continue
 
-                ntimeouts += routeStats[id]["nTimeouts"]
-                nteleports += routeStats[id]["nTeleports"]
-                if isSmart[id]:
-                    nsmartteleports += routeStats[id]["nTeleports"]
-                else:
-                    nnotsmartteleports += routeStats[id]["nTeleports"]
-
                 ttemp = (endDict[id] - startDict[id])+delayDict[id]
                 avgTime += ttemp/nCars
-                avgLefts += leftDict[id]/nCars
-                if ttemp > worstTime:
-                    worstTime = ttemp
-                if ttemp < bestTime:
-                    bestTime = ttemp
-
-                if ttemp < 0:
-                    print("Negative ttemp (=delay)?")
-                    print(id)
-
-                if isSmart[id]:
-                    avgTimeSmart += ttemp/nSmart
-                    avgLeftsSmart += leftDict[id]/nSmart
-                    if ttemp > worstTimeSmart:
-                        worstTimeSmart = ttemp
-                    if ttemp < bestTimeSmart:
-                        bestTimeSmart = ttemp
-                else:
-                    avgTimeNot += ttemp/(nCars-nSmart)
-                    avgLeftsNot += leftDict[id]/(nCars-nSmart)
-                    if ttemp > worstTimeNot:
-                        worstTimeNot = ttemp
-                    if ttemp < bestTimeNot:
-                        bestTimeNot = ttemp
-
-                #Delay2 computation (start clock after first intersection)
-                if not id in delay2adjdict:
-                    delay2adjdict[id] = startDict[id]
-                ttemp2 = (endDict[id] - delay2adjdict[id])+delayDict[id]
-                avgTime2 += ttemp2/nCars
-                if isSmart[id]:
-                    avgTimeSmart2 += ttemp2/nSmart
-                else:
-                    avgTimeNot2 += ttemp2/(nCars-nSmart)
-
-                #Delay3 computation (start clock after first routing call)
-                if not id in delay3adjdict:
-                    delay3adjdict[id] = startDict[id]
-                ttemp3 = (endDict[id] - delay3adjdict[id])+delayDict[id]
-                avgTime3 += ttemp3/nCars
-                if isSmart[id]:
-                    avgTimeSmart3 += ttemp3/nSmart
-                else:
-                    avgTimeNot3 += ttemp3/(nCars-nSmart)
 
                 #Delay0 computation (start clock at intended entrance time)
                 ttemp0 = (endDict[id] - actualStartDict[id])+delayDict[id]
                 avgTime0 += ttemp0/nCars
-                if isSmart[id]:
-                    avgTimeSmart0 += ttemp0/nSmart
-                else:
-                    avgTimeNot0 += ttemp0/(nCars-nSmart)
+                # if isSmart[id]:
+                #     avgTimeSmart0 += ttemp0/nSmart
+                # else:
+                #     avgTimeNot0 += ttemp0/(nCars-nSmart)
 
-                totalcalls += routeStats[id]["nCalls"]
-                totalcallsafterfirst += routeStats[id]["nCallsAfterFirst"]
-                totalcallsfirst += routeStats[id]["nCallsFirst"]
-                totalswaps += routeStats[id]["nSwaps"]
-                totalswapsafterfirst += routeStats[id]["nSwapsAfterFirst"]
-                totalswapsfirst += routeStats[id]["nSwapsFirst"]
-                totaldistance += routeStats[id]["distance"]
-                if isSmart[id]:
-                    totaldistanceSmart += routeStats[id]["distance"]
-                else:
-                    totaldistanceNot += routeStats[id]["distance"]
-                #Check which routes don't run into routing decisions at all
-                # if isSmart[id] and routeStats[id]["nSwapsFirst"] == 0:
-                #     print(currentRoutes[id])
-                if routeStats[id]["swapped"] == True:
-                    nswapped += 1
-
-                try:
-                    if isSmart[id]:
-                        avgerror += ((timedata[id][1]-timedata[id][0]) - timedata[id][2])/nSmart
-                        avgabserror += abs((timedata[id][1]-timedata[id][0]) - timedata[id][2])/nSmart
-                        avgpcterror += ((timedata[id][1]-timedata[id][0]) - timedata[id][2])/(timedata[id][1]-timedata[id][0])/nSmart*100
-                        avgabspcterror += abs((timedata[id][1]-timedata[id][0]) - timedata[id][2])/(timedata[id][1]-timedata[id][0])/nSmart*100
-                except:
-                    print("Missing timedata for vehicle " + id)
-                    print(isSmart[id])
-                    print(timedata[id])
 
             if verbose or not traci.simulation.getMinExpectedNumber() > 0 or (appendTrainingData and simtime == 5000):
                 print(pSmart)
@@ -545,113 +467,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 print("Total cars that left the network: %f" % len(endDict))
                 print("Average delay: %f" % avgTime)
                 print("Average delay0: %f" % avgTime0)
-                print("Best delay: %f" % bestTime)
-                print("Worst delay: %f" % worstTime)
-                print("Average number of lefts: %f" % avgLefts)
-                if nCars > 0:
-                    print("Average number of calls to routing: %f" % (totalcalls/nCars))
-                    if totalcalls > 0:
-                        print("Proportion of timeouts in routing: %f" % (ntimeouts/totalcalls))
-                    print("Average number of route changes: %f" % (totalswaps/nCars))
-                    print("Average number of route changes after first routing decision: %f" % (totalswapsafterfirst/nCars))
-                    print("Proportion of cars that changed route at least once: %f" % (nswapped/nCars))
-                    print("Average number of teleports: %f" % (nteleports/nCars))
-                    print("Average distance travelled: %f" % (totaldistance/nCars))
-                print("Among adopters:")
-                print("Average delay: %f" % avgTimeSmart)
-                print("Best delay: %f" % bestTimeSmart)
-                print("Worst delay: %f" % worstTimeSmart)
-                print("Average number of lefts: %f" % avgLeftsSmart)
-                if clusterStats:
-                    if len(clusterNumsStats) > 1:
-                        print("Cluster numbers: %f +/- %f", np.mean(clusterNumsStats), np.std(clusterNumsStats))
-                    if len(clusterLens) > 1:
-                        print("Cluster lengths: %f +/- %f", np.mean(clusterLens), np.std(clusterLens))
-                    if len(clusterGaps) > 1:
-                        print("Cluster gaps: %f +/- %f", np.mean(clusterGaps), np.std(clusterGaps))
-                    if len(firstClusterGaps) > 1:
-                        print("First cluster gaps: %f +/- %f", np.mean(firstClusterGaps), np.std(firstClusterGaps))
-                    if len(clusterWeights) > 1:
-                        print("Cluster weights: %f +/- %f", np.mean(clusterWeights), np.std(clusterWeights))
-
-                if nSmart > 0:
-                    print("Average error (actual minus expected) in predicted travel time: %f" % (avgerror))
-                    print("Average absolute error in predicted travel time: %f" % (avgabserror))
-                    print("Average percent error in predicted travel time: %f" % (avgpcterror))
-                    print("Average absolute percent error in predicted travel time: %f" % (avgabspcterror))
-
-                    if len(routeVerifyData) > 0:
-                        avgVerifyError = 0
-                        avgAbsVerifyError = 0
-                        avgPctVerifyError = 0
-                        avgPctAbsVerifyError = 0
-                        nVerifyPts = 0
-                        for verifytuple in routeVerifyData:
-                            if verifytuple[0] < 0 or verifytuple[1] < 0: #If routing times out, these return -1
-                                continue
-                            avgVerifyError += (verifytuple[0]-verifytuple[1])
-                            avgAbsVerifyError += abs((verifytuple[0]-verifytuple[1]))
-                            avgPctVerifyError += (verifytuple[0]-verifytuple[1])/verifytuple[0]*100
-                            avgPctAbsVerifyError += abs((verifytuple[0]-verifytuple[1]))/verifytuple[0]*100
-                            nVerifyPts += 1
-                        avgVerifyError /= nVerifyPts
-                        avgAbsVerifyError /= nVerifyPts
-                        avgPctVerifyError /= nVerifyPts
-                        avgPctAbsVerifyError /= nVerifyPts
-                        print("Average sim-to-sim error (actual minus expected) in predicted travel time: %f" % (avgVerifyError))
-                        print("Average absolute sim-to-sim error (actual minus expected) in predicted travel time: %f" % (avgAbsVerifyError))
-                        print("Average percent sim-to-sim error (actual minus expected) in predicted travel time: %f" % (avgPctVerifyError))
-                        print("Average absolute percent sim-to-sim error (actual minus expected) in predicted travel time: %f" % (avgPctAbsVerifyError))
-                            
-                    print("Proportion of cars that changed route at least once: %f" % (nswapped/nSmart))
-                    print("Average number of teleports: %f" % (nsmartteleports/nSmart))
-                    print("Average distance travelled: %f" % (totaldistanceSmart/nSmart))
-                    print("Average number of calls to routing: %f" % (totalcalls/nSmart)) #NOTE: This only counts calls done by cars that exited
-                    print("Average number of route changes: %f" % (totalswaps/nSmart))
-                    print("Average number of route changes after first routing decision: %f" % (totalswapsafterfirst/nSmart))
-
-                if totalcalls > 0:
-                    print("Proportion of timeouts in routing: %f" % (ntimeouts/totalcalls))
-                    print("Proportion of routing decisions leading to a route change: %f" % (totalswaps/totalcalls))
-                    if totalcallsfirst > 0:
-                        print("Proportion of first routing decisions leading to a route change: %f" % (totalswapsfirst/totalcallsfirst))
-                    else:
-                        print("WARNING: Some routing calls, but no first routing calls; something's wrong with the stats!")
-                    if totalcallsafterfirst > 0:
-                        print("Proportion of routing decisions after first leading to a route change: %f" % (totalswapsafterfirst/totalcallsafterfirst))
-
-                print("Among non-adopters:")
-                print("Average delay: %f" % avgTimeNot)
-                print("Best delay: %f" % bestTimeNot)
-                print("Worst delay: %f" % worstTimeNot)
-                print("Average number of lefts: %f" % avgLeftsNot)
-                if nCars - nSmart > 0:
-                    print("Average number of teleports: %f" % (nnotsmartteleports/(nCars-nSmart)))
-                    print("Average distance travelled: %f" % (totaldistanceNot/(nCars-nSmart)))
-
-                print("Routing calls (including cars not yet exited): " + str(nRoutingCalls))
-                print("Total routing time: " + str(routingTime))
-                if nRoutingCalls > 0:
-                    print("Average time per call: " + str(routingTime/nRoutingCalls))
-                    print("Proportion of successful routing calls: " + str(nSuccessfulRoutingCalls/nRoutingCalls))
-                if debugMode:
-                    print("Surtrac calls (one for each light): " + str(totalSurtracRuns))
-                    if totalSurtracRuns > 0:
-                        print("Average time per Surtrac call: " + str(totalSurtracTime/totalSurtracRuns))
-                        print("Average number of clusters per Surtrac call: " + str(totalSurtracClusters/totalSurtracRuns))
-                    print("loadClusters calls: " + str(totalLoadRuns))
-                    if totalLoadRuns > 0:
-                        print("Average time per loadClusters call: " + str(totalLoadTime/totalLoadRuns))
-                        print("Average cars per loadClusters call: " + str(totalLoadCars/totalLoadRuns))
-                print("\n")
-
-                for lane in arrivals:
-                    while len(arrivals[lane]) > 0 and arrivals[lane][0] < simtime - maxarrivalwindow:
-                        arrivals[lane] = arrivals[lane][1:]
-
-                for lane in arrivals2:
-                    while len(arrivals2[lane]) > 0 and arrivals2[lane][0] < simtime - maxarrivalwindow2:
-                        arrivals2[lane] = arrivals2[lane][1:]
+                
 
     try:
         os.remove("savestates/teststate_"+savename+".xml") #Delete the savestates file so we don't have random garbage building up over time
@@ -1070,95 +886,95 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     for item in root.findall('./trip'):
         actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
 
-    #Do NN setup
-    testNN = testNNdefault
-    print("testNN="+str(testNN))
-    for light in ["light"]:#lights:
-        if resetTrainingData:
-            trainingdata[light] = []
+    # #Do NN setup
+    # testNN = testNNdefault
+    # print("testNN="+str(testNN))
+    # for light in ["light"]:#lights:
+    #     if resetTrainingData:
+    #         trainingdata[light] = []
 
-        if testNNdefault:
-            #NOTE: These are also hardcoded in the convertToNNInputSurtrac function
-            maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
-            maxnroads = 4 #And assume 4-way intersections for now
-            maxnclusters = 5 #And assume at most 10 clusters per lane
-            ndatapercluster = 3 #Arrival, departure, weight
-            maxnphases = 12 #Should be enough to handle both leading and lagging lefts
+    #     if testNNdefault:
+    #         #NOTE: These are also hardcoded in the convertToNNInputSurtrac function
+    #         maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
+    #         maxnroads = 4 #And assume 4-way intersections for now
+    #         maxnclusters = 5 #And assume at most 10 clusters per lane
+    #         ndatapercluster = 3 #Arrival, departure, weight
+    #         maxnphases = 12 #Should be enough to handle both leading and lagging lefts
             
-            nextra = 1 #Proportion of phase length used
-            ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
+    #         nextra = 1 #Proportion of phase length used
+    #         ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
 
-            if crossEntropyLoss:
-                agents[light] = Net(ninputs, 2, 128)
-            else:
-                agents[light] = Net(ninputs, 1, 128)
-            # if testDumbtrac:
-            #     # agents[light] = Net(26, 1, 32)
-            #     # #agents[light] = Net(2, 1, 32)
-            #     # if FTP:
-            #     agents[light] = Net(182, 1, 64)
-            # else:
-            #     agents[light] = Net(182, 1, 64)
-            optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
-            MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
-            print("Checking if there's a learned model. Currently testNN="+str(testNN))
-            try:
-                checkpoint = torch.load(MODEL_FILES[light], weights_only=True)
-                agents[light].load_state_dict(checkpoint['model_state_dict'])
-            except FileNotFoundError:
-                print("Model doesn't exist - turning off testNN")
-                testNN = False
-    if not resetTrainingData and appendTrainingData:
-        print("LOADING TRAINING DATA, this could take a while")
-        try:
-            with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
-                trainingdata = pickle.load(handle)
-        except FileNotFoundError:
-            print("Training data not found, starting fresh")
-            for light in ["light"]:#lights:
-                trainingdata[light] = []
+    #         if crossEntropyLoss:
+    #             agents[light] = Net(ninputs, 2, 128)
+    #         else:
+    #             agents[light] = Net(ninputs, 1, 128)
+    #         # if testDumbtrac:
+    #         #     # agents[light] = Net(26, 1, 32)
+    #         #     # #agents[light] = Net(2, 1, 32)
+    #         #     # if FTP:
+    #         #     agents[light] = Net(182, 1, 64)
+    #         # else:
+    #         #     agents[light] = Net(182, 1, 64)
+    #         optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
+    #         MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
+    #         print("Checking if there's a learned model. Currently testNN="+str(testNN))
+    #         try:
+    #             checkpoint = torch.load(MODEL_FILES[light], weights_only=True)
+    #             agents[light].load_state_dict(checkpoint['model_state_dict'])
+    #         except FileNotFoundError:
+    #             print("Model doesn't exist - turning off testNN")
+    #             testNN = False
+    # if not resetTrainingData and appendTrainingData:
+    #     print("LOADING TRAINING DATA, this could take a while")
+    #     try:
+    #         with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
+    #             trainingdata = pickle.load(handle)
+    #     except FileNotFoundError:
+    #         print("Training data not found, starting fresh")
+    #         for light in ["light"]:#lights:
+    #             trainingdata[light] = []
     
     outdata = run(network, rerouters, pSmart, verbose)
     
-    if appendTrainingData:
-        print("Saving training data")
-        with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'wb') as handle:
-            pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # if appendTrainingData:
+    #     print("Saving training data")
+    #     with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'wb') as handle:
+    #         pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
     #traci.close()
 
-    p = pSmart
-    newdata = outdata
-    try:
-        with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
-                data = pickle.load(handle)
-    except:
-        #If no data found, start fresh
-        data = dict()
-    if not p in data:
-        data[p] = dict()
-    for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "Runtime", "NTeleports", "TeleportData", "RNGStates"]:
-        if not l in data[p]:
-            data[p][l] = []
+    # p = pSmart
+    # newdata = outdata
+    # try:
+    #     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
+    #             data = pickle.load(handle)
+    # except:
+    #     #If no data found, start fresh
+    #     data = dict()
+    # if not p in data:
+    #     data[p] = dict()
+    # for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "Runtime", "NTeleports", "TeleportData", "RNGStates"]:
+    #     if not l in data[p]:
+    #         data[p][l] = []
 
-    data[p]["All"].append(newdata[0])
-    data[p]["Adopters"].append(newdata[1])
-    data[p]["Non-Adopters"].append(newdata[2])
-    data[p]["All2"].append(newdata[3])
-    data[p]["Adopters2"].append(newdata[4])
-    data[p]["Non-Adopters2"].append(newdata[5])
-    data[p]["All3"].append(newdata[6])
-    data[p]["Adopters3"].append(newdata[7])
-    data[p]["Non-Adopters3"].append(newdata[8])
-    data[p]["All0"].append(newdata[9])
-    data[p]["Adopters0"].append(newdata[10])
-    data[p]["Non-Adopters0"].append(newdata[11])
-    data[p]["Runtime"].append(newdata[12])
-    data[p]["NTeleports"].append(newdata[13])
-    data[p]["TeleportData"].append(newdata[14])
+    # data[p]["All"].append(newdata[0])
+    # data[p]["Adopters"].append(newdata[1])
+    # data[p]["Non-Adopters"].append(newdata[2])
+    # data[p]["All2"].append(newdata[3])
+    # data[p]["Adopters2"].append(newdata[4])
+    # data[p]["Non-Adopters2"].append(newdata[5])
+    # data[p]["All3"].append(newdata[6])
+    # data[p]["Adopters3"].append(newdata[7])
+    # data[p]["Non-Adopters3"].append(newdata[8])
+    # data[p]["All0"].append(newdata[9])
+    # data[p]["Adopters0"].append(newdata[10])
+    # data[p]["Non-Adopters0"].append(newdata[11])
+    # data[p]["Runtime"].append(newdata[12])
+    # data[p]["NTeleports"].append(newdata[13])
+    # data[p]["TeleportData"].append(newdata[14])
     
-    data[p]["RNGStates"].append(rngstate)
-    with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
-        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # data[p]["RNGStates"].append(rngstate)
+    # with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
+    #     pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     return [outdata, rngstate]
 
