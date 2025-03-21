@@ -28,8 +28,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import torch
-from torch import nn
+# import torch
+# from torch import nn
 
 import os
 import sys
@@ -38,12 +38,12 @@ import random
 from numpy import inf
 import numpy as np
 import time
-import matplotlib.pyplot as plt
-import math
-from copy import deepcopy, copy
-from collections import Counter
+#import matplotlib.pyplot as plt
+#import math
+#from copy import deepcopy, copy
+# from collections import Counter
 from heapq import * #priorityqueue
-import threading
+# import threading
 import xml.etree.ElementTree as ET
 
 # we need to import python modules from the $SUMO_HOME/tools directory
@@ -68,85 +68,29 @@ if not useLibsumo:
 import sumolib #To query node/edge stuff about the network
 import pickle #To save/load traffic light states
 
-from Net import Net
-import openpyxl #For writing training data to .xlsx files
+# from Net import Net
+# import openpyxl #For writing training data to .xlsx files
 
-from multiprocessing import Process
-import multiprocessing
+# from multiprocessing import Process
+# import multiprocessing
 
-try:
-    multiprocessing.set_start_method("fork")
-except:
-    pass
+# try:
+#     multiprocessing.set_start_method("fork")
+# except:
+#     pass
 
-manager = multiprocessing.Manager()
 sumoconfig = None
 
 pSmart = 1.0 #Adoption probability
 useLastRNGState = False #To rerun the last simulation without changing the seed on the random number generator
 
-clusterthresh = 5 #Time between cars before we split to separate clusters
-mingap = 2.5 #Minimum allowed space between cars
-timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this #NOTE: I'm pretty sure this used to be the timestep length in routing simulations, but I've since just started using SUMO with the default timestep of 1. timestep clearly is still in the code, but I'm not sure what it does anymore
-detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
-simdetectordist = 0 #How far after the start of a road the detectors for reconstructing initial routing sim traffic state are. TODO I'm not actually using this when making detectors, I just assume they're at start of lane. But then they miss all the cars, so I'm just faking those detectors anyway
-
-#Hyperparameters for multithreading
-multithreadRouting = True #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
-if not useLibsumo:
-    multithreadRouting = False
-multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
-reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
-debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
-simToSimStats = False
-routingSimUsesSUMO = True #Only switch this if we go back to custom routing simulator or something
-mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
-routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
-recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
-disableSurtracComms = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
-predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
-predCutoffRouting = 20 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
-predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
-
-testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
-noNNinMain = False
-debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
-testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
-FTP = True #If false, and testDumbtrac = True, runs actuated control instead of fixed timing plans. If true, runs fixed timing plans (should now be same as SUMO defaults)
-resetTrainingData = False#True
 appendTrainingData = False#True
-crossEntropyLoss = True
 
-detectorModel = False #REMINDER: As currently implemented, turning this on makes even 0% and 100% routing non-deterministic, as we're guessing lanes for vehicles before running Surtrac
-detectorSurtrac = detectorModel
-detectorRouting = detectorModel
-detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
-adopterComms = True
-adopterCommsSurtrac = adopterComms
-adopterCommsRouting = adopterComms
-
-clusterStats = False #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
-clusterNumsStats = []
-clusterWeights = []
-clusterLens = []
-clusterGaps = []
-firstClusterGaps = []
-
-testNNrolls = []
 nVehicles = []
 
-learnYellow = False #False to strictly enforce that yellow lights are always their minimum length (no scheduling clusters during yellow+turn arrow, and ML solution isn't used there)
-learnMinMaxDurations = False #False to strictly enforce min/max duration limits (in particular, don't call ML, just do the right thing)
-
-#Don't change parameters below here
-#For testing durations to see if there's drift between fixed timing plans executed in main simulation and routing simulations.
-simdurations = dict()
-simdurationsUsed = False
-realdurations = dict()
-
-dumpIntersectionData = False
-intersectionData = dict()
-vehicleIntersectionData = dict()
+# dumpIntersectionData = False
+# intersectionData = dict()
+# vehicleIntersectionData = dict()
 
 max_edge_speed = 0.0 #Overwritten when we read the route file
 
@@ -155,68 +99,16 @@ edges = []
 carsOnNetwork = []
 oldids = dict()
 isSmart = dict() #Store whether each vehicle does our routing or not
-lightphasedata = dict()
-lightlinks = dict()
-prioritygreenlightlinks = dict()
-lowprioritygreenlightlinks = dict()
-prioritygreenlightlinksLE = dict()
-lowprioritygreenlightlinksLE = dict()
-lightlanes = dict()
-lightoutlanes = dict()
-notlightlanes = dict()
-notlightoutlanes = dict()
-lights = []
-notLights = []
-lightlinkconflicts = dict()
+
 nLanes = dict()
 speeds = dict()
 fftimes = dict() #Free flow times for each edge/lane (dict contains both) and from each light (min over outlanes)
 links = dict()
 lengths = dict()
 turndata = []
-normprobs = dict()
-timedata = dict()
-surtracdata = dict()
-lanephases = dict()
-mainlastswitchtimes = dict()
 currentRoutes = dict()
-routeStats = dict()
 hmetadict = dict()
-delay3adjdict = dict()
-lightphases = dict()
 laneDict = dict()
-sumoPredClusters = [] #This'll update when we call doSurtrac from sumo things
-rerouterLanes = dict()
-rerouterEdges = dict()
-nonExitEdgeDetections = dict() #nonExitEdgeDetections[road] = array of sections of road, each with a detector in each lane at the start. Store (madeupname, lane, time) for all cars. If new vehicle in first road segment, look up where it came from and steal the oldest car from that lane segment, else the oldest car we can find. If non-first road segment, steal oldest from previous segment disregarding lane
-nonExitLaneDetectors = dict() #nonExitLaneDetections[lane] = [(detectorname1, detectorpos1), ...], should be same length as nonExitEdgeDetections[road]
-wasFull = dict() #We're now using this to store stats for lane transition probabilities (specifically, the times we saw vehicles)
-wasFullWindow = 300
-vehiclesOnNetwork = []
-dontReroute = []
-surtracDict = dict()
-adopterinfo = dict()
-
-#Predict traffic entering network
-arrivals = dict()
-maxarrivalwindow = 300 #Use negative number to not predict new incoming cars during routing
-arrivals2 = dict()
-maxarrivalwindow2 = 60 #Same as maxarrivalwindow if you just want the baseline arrival rate. Go smaller (~0.5-1 light cycles) if you want to predict initial off-network queues based on recent arrival rates being low
-newcarcounter = 0
-
-totalSurtracTime = 0
-totalSurtracClusters = 0
-totalSurtracRuns = 0
-
-totalLoadTime = 0
-totalLoadCars = 0
-totalLoadRuns = 0
-
-#Threading routing
-toReroute = []
-reroutedata = dict()
-threads = dict()
-killSurtracThread = True
 
 nRoutingCalls = 0
 nSuccessfulRoutingCalls = 0
@@ -341,17 +233,6 @@ def run(network, rerouters, pSmart, verbose = True):
                 traci.vehicle.setColor(vehicle, [255, 0, 0, 255])
             timedata[vehicle] = [simtime, -1, -1, 'unknown', 'unknown']
             currentRoutes[vehicle] = traci.vehicle.getRoute(vehicle)
-            # routeStats[vehicle] = dict()
-            # routeStats[vehicle]["nCalls"] = 0
-            # routeStats[vehicle]["nCallsFirst"] = 0
-            # routeStats[vehicle]["nCallsAfterFirst"] = 0
-            # routeStats[vehicle]["nSwaps"] = 0
-            # routeStats[vehicle]["nSwapsFirst"] = 0
-            # routeStats[vehicle]["nSwapsAfterFirst"] = 0
-            # routeStats[vehicle]["swapped"] = False
-            # routeStats[vehicle]["nTimeouts"] = 0
-            # routeStats[vehicle]["nTeleports"] = 0
-            # routeStats[vehicle]["distance"] = 0
 
             goaledge = currentRoutes[vehicle][-1]
             if not goaledge in hmetadict:
@@ -374,67 +255,12 @@ def run(network, rerouters, pSmart, verbose = True):
 
         #Plot and print stats
         if simtime%100 == 0 or not traci.simulation.getMinExpectedNumber() > 0:
-            #After we're done simulating... 
-            plt.figure()
-            plt.plot(carsOnNetwork)
-            plt.xlabel("Time (s)")
-            plt.ylabel("Cars on Network")
-            plt.title("Congestion, Adoption Prob=" + str(pSmart))
-            #plt.show() #NOTE: Blocks code execution until you close the plot
-            plt.savefig("Plots/Congestion, AP=" + str(pSmart)+".png")
-            plt.close()
-
-
+            
             #Stats
             avgTime = 0
-            # avgLefts = 0
-            # bestTime = inf
-            # worstTime = 0
-
-            # avgTimeSmart = 0
-            # avgLeftsSmart = 0
-            # bestTimeSmart = inf
-            # worstTimeSmart = 0
-            # avgTimeNot = 0
-            # avgLeftsNot = 0
-            # bestTimeNot = inf
-            # worstTimeNot = 0
-
-            # totalcalls = 0
-            # totalcallsafterfirst = 0
-            # totalcallsfirst = 0
-            # totalswaps = 0
-            # totalswapsafterfirst = 0
-            # totalswapsfirst = 0
-            # nswapped = 0
-
-            # avgTime2 = 0
-            # avgTimeSmart2 = 0
-            # avgTimeNot2 = 0
-
-            # avgTime3 = 0
-            # avgTimeSmart3 = 0
-            # avgTimeNot3 = 0
-
             avgTime0 = 0
-            # avgTimeSmart0 = 0
-            # avgTimeNot0 = 0
-
             nCars = 0
             nSmart = 0
-            # ntimeouts = 0
-            # nsmartteleports = 0
-            # nnotsmartteleports = 0
-            # nteleports = 0
-
-            # avgerror = 0
-            # avgabserror = 0
-            # avgpcterror = 0
-            # avgabspcterror = 0
-
-            # totaldistance = 0
-            # totaldistanceSmart = 0
-            # totaldistanceNot = 0
 
             for id in endDict:
                 if actualStartDict[id] >= 600 and actualStartDict[id] < 3000:
@@ -477,132 +303,12 @@ def run(network, rerouters, pSmart, verbose = True):
 
     return []#[avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart, nteleports, teleportdata]  
 
-
-def LAISB(a, b):
-    #Line a intersects segment b
-    #a is a tuple of points on the line; b is endpoints of segment
-    #Negative if they intersect, positive if they don't, zero if an endpoint touches
-    va = [ a[1][0] - a[0][0], a[1][1]-a[0][1] ]
-    vb0 = [ b[0][0] - a[0][0], b[0][1]-a[0][1] ]
-    vb1 = [ b[1][0] - a[0][0], b[1][1]-a[0][1] ]
-    return np.cross(vb0, va) * np.cross(vb1, va)
-
-def isIntersecting(a, b):
-    #a and b are tuples of endpoints of line segments
-    iab = LAISB(a, b)
-    iba = LAISB(b, a)
-    if iab > 0 or iba > 0:
-        return False
-    if iab == 0 and iba == 0:
-        #Colinear, yuck
-        return (min(a[0][0], a[1][0]) <= max(b[0][0], b[1][0]) and min(b[0][0], b[1][0]) <= max(a[0][0], a[1][0]) and
-        min(a[0][1], a[1][1]) <= max(b[0][1], b[1][1]) and min(b[0][1], b[1][1]) <= max(a[0][1], a[1][1]))
-    #Each segment either touches or crosses the other line, so we're good
-    return True
-
 def get_options():
     optParser = optparse.OptionParser()
     optParser.add_option("--nogui", action="store_true",
                          default=False, help="run the commandline version of sumo")
     options, args = optParser.parse_args()
     return options
-
-#Generates induction loops on all the edges
-def generate_additionalfile(sumoconfig, networkfile):
-    #Create a third instance of a simulator so I can query the network
-
-    if useLibsumo:
-        traci.start([checkBinary('sumo'), "-c", sumoconfig,
-                                    "--start", "--no-step-log", "true",
-                                    "--xml-validation", "never", "--quit-on-end"])
-    else:
-        try:
-            traci.start([checkBinary('sumo'), "-c", sumoconfig,
-                                    "--start", "--no-step-log", "true",
-                                    "--xml-validation", "never", "--quit-on-end"], label="setup")
-        except:
-            #Worried about re-calling this without old setup instance being removed
-
-            #Need to reload in case we're training over multiple networks
-            traci.switch("setup")
-            traci.load(["-c", sumoconfig,
-                                    "--start", "--no-step-log", "true",
-                                    "--xml-validation", "never", "--quit-on-end"])
-            pass
-
-    net = sumolib.net.readNet(networkfile)
-    rerouters = dict()
-    global max_edge_speed
-
-    #Copying this from run() so I can use these in here too. Annoyingly, lengths needs a SUMO simulation to compute, and the SUMO sim needs to know about the additional file, so ordering these is annoying
-    #Edges have speeds, but lanes have lengths, so it's a little annoying to get fftimes...
-    edges = traci.edge.getIDList()
-    lanes = traci.lane.getIDList()
-
-    for lane in lanes:
-        if not lane[0] == ":":
-            links[lane] = traci.lane.getLinks(lane)
-            lengths[lane] = traci.lane.getLength(lane)
-
-    for edge in edges:
-        nLanes[edge] = traci.edge.getLaneNumber(edge)
-        if not edge[0] == ":":
-            speeds[edge] = net.getEdge(edge).getSpeed()
-            fftimes[edge] = lengths[edge+"_0"]/speeds[edge]
-
-    with open("additional_autogen.xml", "w") as additional:
-        print("""<additional>""", file=additional)
-        if not useLibsumo:
-            print('    <edgeData id="%s" file="%s" period="%i"/>' % (savename, "edgedata/"+savename+".xml", 1e6), file=additional)
-            print('    <laneData id="%s" file="%s" period="%i"/>' % (savename, "lanedata/"+savename+".xml", 1e6), file=additional)
-        for edge in traci.edge.getIDList():
-            if edge[0] == ":":
-                #Skip internal edges (=edges for the inside of each intersection)
-                continue
-
-            if (net.getEdge(edge).getSpeed() > max_edge_speed):
-                max_edge_speed = net.getEdge(edge).getSpeed()
-
-            for lanenum in range(traci.edge.getLaneNumber(edge)):
-                lane = edge+"_"+str(lanenum)
-                print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
-                      % (lane, lane, detectordist), file=additional)
-                if len(net.getEdge(edge).getOutgoing()) > 1:
-                    rerouters["IL_"+lane] = lane
-                    rerouterLanes["IL_"+lane] = lane
-                    rerouterEdges["IL_"+lane] = edge
-
-                if len(net.getEdge(edge).getOutgoing()) > 0:
-                    nonExitEdgeDetections[edge] = []
-                    nonExitLaneDetectors[lane] = []
-                    for dist in [0, lengths[lane]-2]: #Add to this if we need more detectors, remember to update it both here and below in additionalrouting_autogen
-                        name = "ILd_" + lane + "_" + str(dist)
-                        print('    <inductionLoop id="%s" freq="1" file="outputAuto.xml" lane="%s" pos="%i" friendlyPos="true" />' \
-                        % (name, lane, dist), file=additional)
-                        nonExitEdgeDetections[edge].append([]) #This is inefficient since we keep clearing and rebuilding nonExitEdgeDetections[edge] once per lane, but shouldn't be that terrible
-                        nonExitLaneDetectors[lane].append((name, dist))
-                        wasFull[name] = []
-        print("</additional>", file=additional)
-
-    with open("additionalrouting_autogen.xml", "w") as additional:
-        print("""<additional>""", file=additional)
-        for edge in traci.edge.getIDList():
-            if edge[0] == ":":
-                #Skip internal edges (=edges for the inside of each intersection)
-                continue
-
-            for lanenum in range(traci.edge.getLaneNumber(edge)):
-                lane = edge+"_"+str(lanenum)
-                print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
-                      % (lane, lane, detectordist), file=additional)
-                if len(net.getEdge(edge).getOutgoing()) > 0:
-                    for dist in [0, lengths[lane]-2]: #Add to this if we need more detectors, remember to update it both here and above in additional_autogen
-                        name = "ILd_" + lane + "_" + str(dist)
-                        print('    <inductionLoop id="%s" freq="1" file="outputAuto.xml" lane="%s" pos="%i" friendlyPos="true" />' \
-                        % (name, lane, dist), file=additional)
-        print("</additional>", file=additional)
-    
-    return rerouters
 
 def readSumoCfg(sumocfg):
     netfile = ""
@@ -661,26 +367,24 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 
     network = sumolib.net.readNet(netfile)
     net = network
-    rerouters = generate_additionalfile(sumoconfig, netfile)
-
 
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
     if useLibsumo:
         traci.load(["-c", sumoconfig,
-                                "--additional-files", "additional_autogen.xml",
+                                #"--additional-files", "additional_autogen.xml",
                                 "--no-step-log", "true",
                                 "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
     else:
         try:
             traci.start([sumoBinary, "-c", sumoconfig,
-                                    "--additional-files", "additional_autogen.xml",
+                                    #"--additional-files", "additional_autogen.xml",
                                     "--no-step-log", "true",
                                     "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
             #Second simulator for running tests. No GUI
             #traci.start([sumoBinary, "-c", sumoconfig, #GUI in case we need to debug
             traci.start([checkBinary('sumo'), "-c", sumoconfig, #No GUI
-                                    "--additional-files", "additionalrouting_autogen.xml",
+                                    #"--additional-files", "additionalrouting_autogen.xml",
                                     "--start", "--no-step-log", "true",
                                     "--xml-validation", "never", "--quit-on-end",
                                     "--step-length", "1"], label="test")
@@ -703,27 +407,6 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
                                     "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
             dontBreakEverything()
 
-    
-
-    for node in sumolib.xml.parse(netfile, ['junction']):
-        if node.type == "traffic_light":
-            lights.append(node.id)
-        else:
-            notLights.append(node.id)
-            notlightlanes[node.id] = []
-            notlightoutlanes[node.id] = []
-
-    for lane in sumolib.xml.parse(netfile, ['lane']):
-        edge = lane.id.split("_")[0]
-        if len(edge) == 0 or edge[0] == ":":
-            continue
-        toNode = network.getEdge(edge).getToNode()
-        if toNode.getType() != "traffic_light":
-            notlightlanes[toNode.getID()].append(lane.id)
-        fromNode = network.getEdge(edge).getFromNode()
-        if fromNode.getType() != "traffic_light":
-            notlightoutlanes[fromNode.getID()].append(lane.id)
-
     #Grab stuff once at the start to avoid slow calls to traci in the routing
     edges = traci.edge.getIDList()
     lanes = traci.lane.getIDList()
@@ -744,133 +427,6 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
         if not lane[0] == ":":
             fftimes[lane] = fftimes[lane.split("_")[0]]
 
-    lowprioritygreenlightlinks = dict()
-    prioritygreenlightlinks = dict()
-
-    for light in lights:
-        lightlinkconflicts[light] = dict()
-        lightphasedata[light] = traci.trafficlight.getAllProgramLogics(light)[0].phases
-        lightlinks[light] = traci.trafficlight.getControlledLinks(light)
-        lightphases[light] = traci.trafficlight.getPhase(light)
-        fftimes[light] = np.inf
-
-        lightlanes[light] = []
-        lightoutlanes[light] = []
-
-        linklistlist = lightlinks[light]
-        for linklist in linklistlist:
-
-            for linktuple in linklist:
-                inlane = linktuple[0]
-                if not inlane in lightlanes[light]:
-                    lightlanes[light].append(inlane)
-                outlane = linktuple[1]
-                if not outlane in lightoutlanes[light]:
-                    lightoutlanes[light].append(outlane)
-                    if fftimes[light] > fftimes[outlane]:
-                        fftimes[light] = fftimes[outlane]
-
-                lightlinkconflicts[light][linktuple] = dict()
-                for linklist2 in linklistlist:
-                    for linktuple2 in linklist2:
-                        lightlinkconflicts[light][linktuple][linktuple2] = isIntersecting( (network.getLane(linktuple[0]).getShape()[1], (net.getLane(linktuple[1]).getShape()[0])), 
-                        (net.getLane(linktuple2[0]).getShape()[1], (network.getLane(linktuple2[1]).getShape()[0])) )
-
-    #Surtrac data
-    for light in lights:
-        surtracdata[light] = []
-        mainlastswitchtimes[light] = 0
-        lowprioritygreenlightlinks[light] = []
-        prioritygreenlightlinks[light] = []
-        lowprioritygreenlightlinksLE[light] = []
-        prioritygreenlightlinksLE[light] = []
-
-        n = len(lightphasedata[light])
-        for i in range(n):
-            surtracdata[light].append(dict())
-            surtracdata[light][i]["minDur"] = 7#5#lightphasedata[light][i].minDur #Min duration of yellow
-            surtracdata[light][i]["maxDur"] = 120#lightphasedata[light][i].maxDur #Max duration of everything
-
-            if "G" in lightphasedata[light][i].state or "g" in lightphasedata[light][i].state:
-                surtracdata[light][i]["minDur"] = 5 #1#3.5#5#lightphasedata[light][i].minDur #Min duration of green
-            # if "y" in lightphasedata[light][i].state:
-            #     surtracdata[light][i]["minDur"] = 7 #1#3.5#5#lightphasedata[light][i].minDur #Min duration of yellow
-            # if "Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state:
-            #     surtracdata[light][i]["minDur"] = 2#5#lightphasedata[light][i].minDur #There is no all-red phase, keep this long
-            
-            #Force yellow to be the min length - not doing this since it messes with the training data (triggers the min-max <= maxfreq condition where we'll break stuff with discretization)
-            # if "Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state:
-            #     surtracdata[light][i]["maxDur"] = surtracdata[light][i]["minDur"] #Force this to be the correct length. Don't think this matters though...
-
-            surtracdata[light][i]["lanes"] = []
-            lightstate = lightphasedata[light][i].state
-            lowprioritygreenlightlinks[light].append([])
-            prioritygreenlightlinks[light].append([])
-            lowprioritygreenlightlinksLE[light].append(dict())
-            prioritygreenlightlinksLE[light].append(dict())
-            
-            linklistlist = lightlinks[light]
-            for linklistind in range(len(linklistlist)):
-                linkstate = lightstate[linklistind]
-                for linktuple in linklistlist[linklistind]:
-                    if not linktuple[0] in lanephases:
-                        lanephases[linktuple[0]] = []
-
-                    if linkstate == "G" and not linktuple[0] in surtracdata[light][i]["lanes"]:
-                        surtracdata[light][i]["lanes"].append(linktuple[0]) #[0][x]; x=0 is from, x=1 is to, x=2 is via
-                        
-                        lanephases[linktuple[0]].append(i)
-
-                linklist = linklistlist[linklistind]
-                for link in linklist:
-                    if linkstate == "G":
-                        prioritygreenlightlinks[light][i].append(link)
-                        #Make sure lane->edge dictionary knows about this lane->edge pair
-                        if not link[0] in prioritygreenlightlinksLE[light][i]:
-                            prioritygreenlightlinksLE[light][i][link[0]] = dict()
-                        if not link[1].split("_")[0] in prioritygreenlightlinksLE[light][i][link[0]]:
-                            prioritygreenlightlinksLE[light][i][link[0]][link[1].split("_")[0]] = []
-                        #Add to lane->edge dictionary
-                        prioritygreenlightlinksLE[light][i][link[0]][link[1].split("_")[0]].append(link)
-                    if linkstate == "g":
-                        lowprioritygreenlightlinks[light][i].append(link)
-                        #Make sure lane->edge dictionary knows about this lane->edge pair
-                        if not link[0] in lowprioritygreenlightlinksLE[light][i]:
-                            lowprioritygreenlightlinksLE[light][i][link[0]] = dict()
-                        if not link[1].split("_")[0] in lowprioritygreenlightlinksLE[light][i][link[0]]:
-                            lowprioritygreenlightlinksLE[light][i][link[0]][link[1].split("_")[0]] = []
-                        #Add to lane->edge dictionary
-                        lowprioritygreenlightlinksLE[light][i][link[0]][link[1].split("_")[0]].append(link)
-                
-            #Remove lanes if there's any direction that gets a non-green light ("g" is fine, single-lane left turns are just sad)
-            for linklistind in range(len(linklistlist)):
-                linkstate = lightstate[linklistind]
-                for linktuple in linklistlist[linklistind]:
-
-                    if not (linkstate == "G" or linkstate == "g") and linktuple[0] in surtracdata[light][i]["lanes"]: #NOTE: I'm being sloppy and assuming one-element lists of tuples, but I've yet to see a multi-element list here
-                        surtracdata[light][i]["lanes"].remove(linktuple[0])
-                        lanephases[linktuple[0]].remove(i)
-                
-        for i in range(n):
-            #Compute min transition time between the start of any two phases
-            surtracdata[light][i]["timeTo"] = [0]*n
-            for joffset in range(1, n):
-                j = (i + joffset) % n
-                jprev = (j-1) % n
-                surtracdata[light][i]["timeTo"][j] = surtracdata[light][i]["timeTo"][jprev] + surtracdata[light][jprev]["minDur"]
-
-    if pSmart < 1 or True:
-        with open("Lturndata_"+routefile.split(".")[0]+".pickle", 'rb') as handle:
-            turndata = pickle.load(handle) #This is lane-to-lane normalized turndata in the format turndata[lane][nextlane]
-            #When predicting adopters ahead, we know their next edge, but not the specific lane on that edge. Calculate probability of that edge so we can normalize
-            for lane in turndata:
-                normprobs[lane] = dict()
-                for nextlane in turndata[lane]:
-                    nextedge = nextlane.split("_")[0]
-                    if not nextedge in normprobs[lane]:
-                        normprobs[lane][nextedge] = 0
-                    normprobs[lane][nextedge] += turndata[lane][nextlane]
-
     #Parse route file to get intended departure times (to account for delayed SUMO insertions due to lack of space)
     #Based on: https://www.geeksforgeeks.org/xml-parsing-python/
     # create element tree object
@@ -886,96 +442,8 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     for item in root.findall('./trip'):
         actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
 
-    # #Do NN setup
-    # testNN = testNNdefault
-    # print("testNN="+str(testNN))
-    # for light in ["light"]:#lights:
-    #     if resetTrainingData:
-    #         trainingdata[light] = []
-
-    #     if testNNdefault:
-    #         #NOTE: These are also hardcoded in the convertToNNInputSurtrac function
-    #         maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
-    #         maxnroads = 4 #And assume 4-way intersections for now
-    #         maxnclusters = 5 #And assume at most 10 clusters per lane
-    #         ndatapercluster = 3 #Arrival, departure, weight
-    #         maxnphases = 12 #Should be enough to handle both leading and lagging lefts
-            
-    #         nextra = 1 #Proportion of phase length used
-    #         ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
-
-    #         if crossEntropyLoss:
-    #             agents[light] = Net(ninputs, 2, 128)
-    #         else:
-    #             agents[light] = Net(ninputs, 1, 128)
-    #         # if testDumbtrac:
-    #         #     # agents[light] = Net(26, 1, 32)
-    #         #     # #agents[light] = Net(2, 1, 32)
-    #         #     # if FTP:
-    #         #     agents[light] = Net(182, 1, 64)
-    #         # else:
-    #         #     agents[light] = Net(182, 1, 64)
-    #         optimizers[light] = torch.optim.Adam(agents[light].parameters(), lr=learning_rate)
-    #         MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
-    #         print("Checking if there's a learned model. Currently testNN="+str(testNN))
-    #         try:
-    #             checkpoint = torch.load(MODEL_FILES[light], weights_only=True)
-    #             agents[light].load_state_dict(checkpoint['model_state_dict'])
-    #         except FileNotFoundError:
-    #             print("Model doesn't exist - turning off testNN")
-    #             testNN = False
-    # if not resetTrainingData and appendTrainingData:
-    #     print("LOADING TRAINING DATA, this could take a while")
-    #     try:
-    #         with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'rb') as handle:
-    #             trainingdata = pickle.load(handle)
-    #     except FileNotFoundError:
-    #         print("Training data not found, starting fresh")
-    #         for light in ["light"]:#lights:
-    #             trainingdata[light] = []
+    outdata = run(network, [], pSmart, verbose)
     
-    outdata = run(network, rerouters, pSmart, verbose)
-    
-    # if appendTrainingData:
-    #     print("Saving training data")
-    #     with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'wb') as handle:
-    #         pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    #traci.close()
-
-    # p = pSmart
-    # newdata = outdata
-    # try:
-    #     with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'rb') as handle:
-    #             data = pickle.load(handle)
-    # except:
-    #     #If no data found, start fresh
-    #     data = dict()
-    # if not p in data:
-    #     data[p] = dict()
-    # for l in ["All", "Adopters", "Non-Adopters", "All2", "Adopters2", "Non-Adopters2", "All3", "Adopters3", "Non-Adopters3", "All0", "Adopters0", "Non-Adopters0", "Runtime", "NTeleports", "TeleportData", "RNGStates"]:
-    #     if not l in data[p]:
-    #         data[p][l] = []
-
-    # data[p]["All"].append(newdata[0])
-    # data[p]["Adopters"].append(newdata[1])
-    # data[p]["Non-Adopters"].append(newdata[2])
-    # data[p]["All2"].append(newdata[3])
-    # data[p]["Adopters2"].append(newdata[4])
-    # data[p]["Non-Adopters2"].append(newdata[5])
-    # data[p]["All3"].append(newdata[6])
-    # data[p]["Adopters3"].append(newdata[7])
-    # data[p]["Non-Adopters3"].append(newdata[8])
-    # data[p]["All0"].append(newdata[9])
-    # data[p]["Adopters0"].append(newdata[10])
-    # data[p]["Non-Adopters0"].append(newdata[11])
-    # data[p]["Runtime"].append(newdata[12])
-    # data[p]["NTeleports"].append(newdata[13])
-    # data[p]["TeleportData"].append(newdata[14])
-    
-    # data[p]["RNGStates"].append(rngstate)
-    # with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
-    #     pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
     return [outdata, rngstate]
 
 #Magically makes the vehicle lists stop deleting themselves somehow???
