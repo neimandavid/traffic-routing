@@ -28,9 +28,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-# import torch
-# from torch import nn
-
 import os
 import sys
 import optparse
@@ -38,12 +35,7 @@ import random
 from numpy import inf
 import numpy as np
 import time
-#import matplotlib.pyplot as plt
-#import math
-#from copy import deepcopy, copy
-# from collections import Counter
 from heapq import * #priorityqueue
-# import threading
 import xml.etree.ElementTree as ET
 
 # we need to import python modules from the $SUMO_HOME/tools directory
@@ -66,18 +58,6 @@ if not useLibsumo:
     import traci  #To interface with SUMO simulations
 
 import sumolib #To query node/edge stuff about the network
-import pickle #To save/load traffic light states
-
-# from Net import Net
-# import openpyxl #For writing training data to .xlsx files
-
-# from multiprocessing import Process
-# import multiprocessing
-
-# try:
-#     multiprocessing.set_start_method("fork")
-# except:
-#     pass
 
 sumoconfig = None
 
@@ -86,29 +66,13 @@ useLastRNGState = False #To rerun the last simulation without changing the seed 
 
 appendTrainingData = False#True
 
-nVehicles = []
-
-# dumpIntersectionData = False
-# intersectionData = dict()
-# vehicleIntersectionData = dict()
-
-max_edge_speed = 0.0 #Overwritten when we read the route file
-
 lanes = []
 edges = []
-carsOnNetwork = []
 oldids = dict()
 isSmart = dict() #Store whether each vehicle does our routing or not
-
-nLanes = dict()
-speeds = dict()
-fftimes = dict() #Free flow times for each edge/lane (dict contains both) and from each light (min over outlanes)
-links = dict()
 lengths = dict()
-turndata = []
 currentRoutes = dict()
 hmetadict = dict()
-laneDict = dict()
 
 nRoutingCalls = 0
 nSuccessfulRoutingCalls = 0
@@ -116,38 +80,8 @@ routingTime = 0
 routeVerifyData = []
 
 AStarCutoff = inf
-
-oldids = dict()
-timedata = dict()
-
-savename = "MAIN_" + str(time.time())
 netfile = "UNKNOWN_FILENAME_OOPS"
 
-#Neural net things
-import torch
-from torch import nn
-LOG_FILE = 'imitate.log' # Logs will be appended every time the code is run.
-MODEL_FILES = dict()
-def log(*args, **kwargs):
-    if LOG_FILE:
-        with open(LOG_FILE, 'a+') as f:
-            print(*args, file=f, **kwargs)
-    print(*args, **kwargs)
-
-agents = dict()
-optimizers = dict()
-trainingdata = dict() #Going to be a list of 2-elt tuples (in, out) = ([in1, in2, ...], out)
-
-actions = [0, 1]
-learning_rate = 0.0005
-avgloss = 0
-nlosses = 0
-nLossesBeforeReset = 1000
-
-ndumbtrac = 0
-ndumbtracerr = 0
-
-teleportdata = []
 
 #For computing free-flow time, which is used for computing delay. Stolen from my old A* code, where it was a heuristic function.
 def backwardDijkstra(network, goal):
@@ -193,29 +127,13 @@ def backwardDijkstra(network, goal):
 
 #@profile
 def run(network, rerouters, pSmart, verbose = True):
-    global sumoPredClusters
+    #global sumoPredClusters
     global currentRoutes
     global hmetadict
-    global delay3adjdict
     global actualStartDict
-    global edgeDict
-    global laneDict
-    global clustersCache
-    global teleportdata
-    global adopterinfo
-    #netfile is the filepath to the network file, so we can call sumolib to get successors
-    #rerouters is the list of induction loops on edges with multiple successor edges
-    
     startDict = dict()
     endDict = dict()
     delayDict = dict()
-    delay2adjdict = dict()
-    delay3adjdict = dict()
-    edgeDict = dict()
-    laneDict = dict()
-    leftDict = dict()
-    carsOnNetwork = []
-    remainingDuration = dict()
 
     tstart = time.time()
     simtime = 0
@@ -227,31 +145,17 @@ def run(network, rerouters, pSmart, verbose = True):
         #Decide whether new vehicles use our routing
         for vehicle in traci.simulation.getDepartedIDList():
             isSmart[vehicle] = random.random() < pSmart
-            if isSmart[vehicle]:
-                traci.vehicle.setColor(vehicle, [0, 255, 0, 255])
-            else:
-                traci.vehicle.setColor(vehicle, [255, 0, 0, 255])
-            timedata[vehicle] = [simtime, -1, -1, 'unknown', 'unknown']
             currentRoutes[vehicle] = traci.vehicle.getRoute(vehicle)
 
             goaledge = currentRoutes[vehicle][-1]
             if not goaledge in hmetadict:
                 hmetadict[goaledge] = backwardDijkstra(network, goaledge)
             delayDict[vehicle] = -hmetadict[goaledge][currentRoutes[vehicle][0]] #I'll add the actual travel time once the vehicle arrives
-            laneDict[vehicle] = traci.vehicle.getLaneID(vehicle)
-            edgeDict[vehicle] = traci.vehicle.getRoadID(vehicle)
-
             startDict[vehicle] = simtime
-            leftDict[vehicle] = 0
 
         #Check predicted vs. actual travel times
         for vehicle in traci.simulation.getArrivedIDList():
-            if isSmart[vehicle]:
-                timedata[vehicle][1] = simtime
             endDict[vehicle] = simtime
-
-        vehiclesOnNetwork = traci.vehicle.getIDList()
-        carsOnNetwork.append(len(vehiclesOnNetwork)) #Store number of cars on network (for plotting)
 
         #Plot and print stats
         if simtime%100 == 0 or not traci.simulation.getMinExpectedNumber() > 0:
@@ -294,21 +198,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 print("Average delay: %f" % avgTime)
                 print("Average delay0: %f" % avgTime0)
                 
-
-    try:
-        os.remove("savestates/teststate_"+savename+".xml") #Delete the savestates file so we don't have random garbage building up over time
-    except FileNotFoundError:
-        print("Warning: Trying to clean up savestates file, but no file found. This is weird - did you comment out routing or something? Ignoring for now.")
-        pass
-
-    return []#[avgTime, avgTimeSmart, avgTimeNot, avgTime2, avgTimeSmart2, avgTimeNot2, avgTime3, avgTimeSmart3, avgTimeNot3, avgTime0, avgTimeSmart0, avgTimeNot0, time.time()-tstart, nteleports, teleportdata]  
-
-def get_options():
-    optParser = optparse.OptionParser()
-    optParser.add_option("--nogui", action="store_true",
-                         default=False, help="run the commandline version of sumo")
-    options, args = optParser.parse_args()
-    return options
+    return []
 
 def readSumoCfg(sumocfg):
     netfile = ""
@@ -325,36 +215,13 @@ def readSumoCfg(sumocfg):
     return (netfile, roufile)
 
 def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTrainingDataIn = False):
-    global lowprioritygreenlightlinks
-    global prioritygreenlightlinks
-    global edges
     global lanes
-    global turndata
     global actualStartDict
-    global trainingdata
-    global testNN
-    global appendTrainingData
-    global noNNinMain
     global sumoconfig
     global netfile
 
     sumoconfig = sumoconfigin
-    #options = get_options()
-
-    if useLastRNGState:
-        with open("lastRNGstate.pickle", 'rb') as handle:
-            rngstate = pickle.load(handle)
-            random.setstate(rngstate)
-    else:
-        rngstate = random.getstate()
-        with open("lastRNGstate.pickle", 'wb') as handle:
-            pickle.dump(rngstate, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    
-    appendTrainingData = appendTrainingDataIn
-    if appendTrainingDataIn:
-        #We're training, so overwrite whatever else we're doing
-        noNNinMain = False
-        debugNNslowness = False
+    rngstate = random.getstate()
 
     # this script has been called from the command line. It will start sumo as a
     # server, then connect and run
@@ -408,24 +275,12 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             dontBreakEverything()
 
     #Grab stuff once at the start to avoid slow calls to traci in the routing
-    edges = traci.edge.getIDList()
     lanes = traci.lane.getIDList()
 
     #Edges have speeds, but lanes have lengths, so it's a little annoying to get fftimes...
     for lane in lanes:
         if not lane[0] == ":":
-            links[lane] = traci.lane.getLinks(lane)
             lengths[lane] = traci.lane.getLength(lane)
-
-    for edge in edges:
-        nLanes[edge] = traci.edge.getLaneNumber(edge)
-        if not edge[0] == ":":
-            speeds[edge] = network.getEdge(edge).getSpeed()
-            fftimes[edge] = lengths[edge+"_0"]/speeds[edge]
-
-    for lane in lanes:
-        if not lane[0] == ":":
-            fftimes[lane] = fftimes[lane.split("_")[0]]
 
     #Parse route file to get intended departure times (to account for delayed SUMO insertions due to lack of space)
     #Based on: https://www.geeksforgeeks.org/xml-parsing-python/
