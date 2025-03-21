@@ -28,22 +28,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import os
 import sys
-import optparse
-import random
-from numpy import inf
-import numpy as np
-import time
-from heapq import * #priorityqueue
 import xml.etree.ElementTree as ET
-
-# we need to import python modules from the $SUMO_HOME/tools directory
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("please declare environment variable 'SUMO_HOME'")
 
 from sumolib import checkBinary
 
@@ -63,79 +49,22 @@ sumoconfig = None
 
 pSmart = 1.0 #Adoption probability
 useLastRNGState = False #To rerun the last simulation without changing the seed on the random number generator
-
 appendTrainingData = False#True
 
-lanes = []
-edges = []
-oldids = dict()
 isSmart = dict() #Store whether each vehicle does our routing or not
-lengths = dict()
-currentRoutes = dict()
-hmetadict = dict()
 
 nRoutingCalls = 0
 nSuccessfulRoutingCalls = 0
 routingTime = 0
-routeVerifyData = []
 
-AStarCutoff = inf
 netfile = "UNKNOWN_FILENAME_OOPS"
 
-
-#For computing free-flow time, which is used for computing delay. Stolen from my old A* code, where it was a heuristic function.
-def backwardDijkstra(network, goal):
-    goalcost = lengths[goal+"_0"]/network.getEdge(goal).getSpeed()
-    gvals = dict()
-    gvals[goal] = goalcost
-    pq = []
-    heappush(pq, (goalcost, goal)) #Cost to traverse from start of goal to end of goal is goalcost, not 0
-
-    prevgval = goalcost
-    while len(pq) > 0: #When the queue is empty, we're done
-        #print(pq)
-        stateToExpand = heappop(pq)
-        #Sanity check: Things we pop off the heap should keep getting bigger
-        assert(prevgval <= stateToExpand[0])
-        prevgval = stateToExpand[0]
-        #fval = stateToExpand[0]
-        edge = stateToExpand[1]
-        gval = gvals[edge]
-
-        #Get predecessor IDs
-        succs = []
-        for succ in list(network.getEdge(edge).getIncoming()):
-            succs.append(succ.getID())
-        
-        for succ in succs:
-            c = lengths[edge+"_0"]/network.getEdge(edge).getSpeed()
-
-            h = 0 #Heuristic not needed here - search is fast
-            if succ in gvals and gvals[succ] <= gval+c:
-                #Already saw this state, don't requeue
-                continue
-
-            #If we found a better way to reach succ, the old way is still in the queue; delete it
-            if succ in gvals and gvals[succ] > gval+c:
-                pq.remove((gvals[succ], succ))
-                heapify(pq)
-
-            #Otherwise it's new or we're now doing better, so requeue it
-            gvals[succ] = gval+c
-            heappush(pq, (gval+c+h, succ))
-    return gvals
-
-#@profile
 def run(network, rerouters, pSmart, verbose = True):
-    #global sumoPredClusters
-    global currentRoutes
-    global hmetadict
     global actualStartDict
     startDict = dict()
     endDict = dict()
     delayDict = dict()
 
-    tstart = time.time()
     simtime = 0
 
     while traci.simulation.getMinExpectedNumber() > 0 and (not appendTrainingData or simtime < 5000):
@@ -144,13 +73,9 @@ def run(network, rerouters, pSmart, verbose = True):
 
         #Decide whether new vehicles use our routing
         for vehicle in traci.simulation.getDepartedIDList():
-            isSmart[vehicle] = random.random() < pSmart
-            currentRoutes[vehicle] = traci.vehicle.getRoute(vehicle)
+            isSmart[vehicle] = False
 
-            goaledge = currentRoutes[vehicle][-1]
-            if not goaledge in hmetadict:
-                hmetadict[goaledge] = backwardDijkstra(network, goaledge)
-            delayDict[vehicle] = -hmetadict[goaledge][currentRoutes[vehicle][0]] #I'll add the actual travel time once the vehicle arrives
+            delayDict[vehicle] = 0#-hmetadict[goaledge][currentRoutes[vehicle][0]] #I'll add the actual travel time once the vehicle arrives
             startDict[vehicle] = simtime
 
         #Check predicted vs. actual travel times
@@ -183,16 +108,12 @@ def run(network, rerouters, pSmart, verbose = True):
                 #Delay0 computation (start clock at intended entrance time)
                 ttemp0 = (endDict[id] - actualStartDict[id])+delayDict[id]
                 avgTime0 += ttemp0/nCars
-                # if isSmart[id]:
-                #     avgTimeSmart0 += ttemp0/nSmart
-                # else:
-                #     avgTimeNot0 += ttemp0/(nCars-nSmart)
 
 
             if verbose or not traci.simulation.getMinExpectedNumber() > 0 or (appendTrainingData and simtime == 5000):
                 print(pSmart)
                 print("\nCurrent simulation time: %f" % simtime)
-                print("Total run time: %f" % (time.time() - tstart))
+                #print("Total run time: %f" % (time.time() - tstart))
                 print("Number of vehicles in network: %f" % traci.vehicle.getIDCount())
                 print("Total cars that left the network: %f" % len(endDict))
                 print("Average delay: %f" % avgTime)
@@ -221,7 +142,6 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     global netfile
 
     sumoconfig = sumoconfigin
-    rngstate = random.getstate()
 
     # this script has been called from the command line. It will start sumo as a
     # server, then connect and run
@@ -274,13 +194,6 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
                                     "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
             dontBreakEverything()
 
-    #Grab stuff once at the start to avoid slow calls to traci in the routing
-    lanes = traci.lane.getIDList()
-
-    #Edges have speeds, but lanes have lengths, so it's a little annoying to get fftimes...
-    for lane in lanes:
-        if not lane[0] == ":":
-            lengths[lane] = traci.lane.getLength(lane)
 
     #Parse route file to get intended departure times (to account for delayed SUMO insertions due to lack of space)
     #Based on: https://www.geeksforgeeks.org/xml-parsing-python/
@@ -299,7 +212,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
 
     outdata = run(network, [], pSmart, verbose)
     
-    return [outdata, rngstate]
+    #return [outdata, rngstate]
 
 #Magically makes the vehicle lists stop deleting themselves somehow???
 def dontBreakEverything():
