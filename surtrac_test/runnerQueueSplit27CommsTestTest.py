@@ -332,12 +332,6 @@ def run(network, rerouters, pSmart, verbose = True):
         simtime += 1
         traci.simulationStep() #Tell the simulator to simulate the next time step
 
-        if debugMode:
-            assert(simtime == traci.simulation.getTime())
-        clustersCache = None #Clear stored clusters list
-
-        dontReroute = []
-
         #Decide whether new vehicles use our routing
         for vehicle in traci.simulation.getDepartedIDList():
             isSmart[vehicle] = random.random() < pSmart
@@ -369,128 +363,14 @@ def run(network, rerouters, pSmart, verbose = True):
             startDict[vehicle] = simtime
             leftDict[vehicle] = 0
 
-            lane = laneDict[vehicle]
-            if not lane in arrivals:
-                arrivals[lane] = []
-                arrivals2[lane] = []
-            arrivals[lane].append(simtime) #Don't care who arrived, just when they arrived - this is for estimating future inflows if we turn that on in routing
-            arrivals2[lane].append(simtime)
-
-            #Manually pretend to be a detector at the start of the input lanes, since newly added vehicles have issues triggering those
-            temp = lane.split("_")
-            edge = temp[0]
-            lanenum = int(temp[-1])
-            if edge in nonExitEdgeDetections: #If it's an exit lane we hopefully don't care
-                if isSmart[vehicle]:
-                    nonExitEdgeDetections[edge][0].append((vehicle, lane, simtime))
-                else:
-                    nonExitEdgeDetections[edge][0].append((lane+"."+str(simtime), lane, simtime))
-
         #Check predicted vs. actual travel times
         for vehicle in traci.simulation.getArrivedIDList():
             if isSmart[vehicle]:
                 timedata[vehicle][1] = simtime
-                # print("Actual minus expected: %f" % ((timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2]))
-                # print("Actual : %f" % (timedata[vehicle][1]-timedata[vehicle][0]))
-                # print("Expected : %f" % (timedata[vehicle][2]))
-                # print("Percent error : %f" % ( ((timedata[vehicle][1]-timedata[vehicle][0]) - timedata[vehicle][2]) / (timedata[vehicle][1]-timedata[vehicle][0]) * 100))
-                # print("Route from " + timedata[vehicle][3] + " to " + timedata[vehicle][4])
             endDict[vehicle] = simtime
-
-            #In case the target was a non-exit road, delete from old road detections
-            # if edgeDict[vehicle] in nonExitEdgeDetections:
-            #     oldEdgeStuff = nonExitEdgeDetections[edgeDict[vehicle]][0] #Since we're only storing stuff in index 0 anyway
-            #     if len(oldEdgeStuff) > 0:
-            #         oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane. Might not actually be the adopter in question
-            #     else:
-            #         print("Warning: Ran out of cars to remove on edge " + edgeDict[vehicle] + "!!!!!!!!!!!!!!!!!")
-
-            #     #Make sure we don't have a duplicate of this adopter on the last edge. If we do, make it a random car instead
-            #     if isSmart[vehicle]:
-            #         for vehicletupleind in range(len(nonExitEdgeDetections[edgeDict[vehicle]][0])):
-            #             vehicletuple = nonExitEdgeDetections[edgeDict[vehicle]][0][vehicletupleind]
-            #             if vehicletuple[0] == vehicle:
-            #                 nonExitEdgeDetections[edgeDict[vehicle]][0][vehicletupleind] = (edgeDict[vehicle]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
-
-            edgeDict.pop(vehicle)
-            laneDict.pop(vehicle)
-            dontReroute.append(vehicle) #Vehicle has left network and does not need to be rerouted
 
         vehiclesOnNetwork = traci.vehicle.getIDList()
         carsOnNetwork.append(len(vehiclesOnNetwork)) #Store number of cars on network (for plotting)
-
-        #Count left turns
-        for id in laneDict:
-            newlane = traci.vehicle.getLaneID(id)
-            if len(newlane) == 0 or newlane[0] == ":":
-                dontReroute.append(id) #Vehicle is mid-intersection or off network, don't try to reroute them
-            if newlane != laneDict[id] and len(newlane) > 0 and  newlane[0] != ":":
-                newloc = traci.vehicle.getRoadID(id)
-
-                # #Pretend to be detectors at the start of each road (need to know where we came from so we can steal from the correct previous lane)
-                # if newloc != edgeDict[id]: #Moved to a new road
-                #     #Delete from old road detections
-                #     if edgeDict[id] in nonExitEdgeDetections:
-                #         oldEdgeStuff = nonExitEdgeDetections[edgeDict[id]][0] #Since we're only storing stuff in index 0 anyway
-                #         if len(oldEdgeStuff) > 0:
-                #             oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane. Might not actually be the adopter in question
-                #         else:
-                #             print("Warning: Ran out of cars to remove on edge " + edgeDict[id] + "!!!!!!!!!!!!!!!!!")
-
-                #         #Make sure we don't have a duplicate of this adopter on the last edge. If we do, make it a random car instead
-                #         if isSmart[id]:
-                #             for vehicletupleind in range(len(nonExitEdgeDetections[edgeDict[id]][0])):
-                #                 vehicletuple = nonExitEdgeDetections[edgeDict[id]][0][vehicletupleind]
-                #                 if vehicletuple[0] == id:
-                #                     nonExitEdgeDetections[edgeDict[id]][0][vehicletupleind] = (edgeDict[id]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
-
-                #     #Add to new road detections
-                #     if newloc in nonExitEdgeDetections:
-                #         assert(newlane.split("_")[0] == newloc)
-                #         if isSmart[id]:
-                #             nonExitEdgeDetections[newloc][0].append((id, newlane, simtime))
-                #         else:
-                #             nonExitEdgeDetections[newloc][0].append((newlane+".0maindetect."+str(simtime), newlane, simtime))
-
-                # #Remove vehicle from predictions, since the next intersection should actually see it now
-                # if not disableSurtracComms:
-                #     removeVehicleFromPredictions(sumoPredClusters, edgeDict[id])
-
-                c0 = network.getEdge(edgeDict[id]).getFromNode().getCoord()
-                c1 = network.getEdge(edgeDict[id]).getToNode().getCoord()
-                theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
-
-                c2 = network.getEdge(newloc).getToNode().getCoord()
-                theta1 = math.atan2(c2[1]-c1[1], c2[0]-c1[0])
-
-                if (theta1-theta0+math.pi)%(2*math.pi)-math.pi > 0:
-                    leftDict[id] += 1
-                laneDict[id] = newlane
-                edgeDict[id] = newloc
-                #assert(laneDict[id] == traci.vehicle.getLaneID(id))
-                try:
-                    assert(laneDict[id].split("_")[0] in currentRoutes[id])
-                except Exception as e:
-                    print("Vehicle got off route somehow?")
-                    #print(traci.getLabel()) #Should be main
-                    print(id)
-                    print(laneDict[id])
-                    print(traci.vehicle.getLaneID(id))
-                    print(currentRoutes[id])
-                    print(traci.vehicle.getRoute(id))
-                    #assert(traci.getLabel() == "main")
-                    #raise(e)
-                    laneDict[id] = traci.vehicle.getLaneID(id)
-                    currentRoutes[id] = traci.vehicle.getRoute(id)
-                    assert(laneDict[id].split("_")[0] in currentRoutes[id])
-
-                #Store data to compute delay after first intersection
-                if not id in delay2adjdict:
-                    delay2adjdict[id] = simtime
-
-                #Compute distance travelled if on last edge of route (since we can't do this once we leave the network)
-                if newlane.split("_")[0] == currentRoutes[id][-1]:
-                    routeStats[id]["distance"] = traci.vehicle.getDistance(id) + lengths[newlane]
 
         #Plot and print stats
         if simtime%100 == 0 or not traci.simulation.getMinExpectedNumber() > 0:
@@ -773,10 +653,6 @@ def run(network, rerouters, pSmart, verbose = True):
                     while len(arrivals2[lane]) > 0 and arrivals2[lane][0] < simtime - maxarrivalwindow2:
                         arrivals2[lane] = arrivals2[lane][1:]
 
-    #Dump intersection data to Excel
-    if dumpIntersectionData:
-        dumpIntersectionDataFun(intersectionData, network)
-
     try:
         os.remove("savestates/teststate_"+savename+".xml") #Delete the savestates file so we don't have random garbage building up over time
     except FileNotFoundError:
@@ -911,40 +787,6 @@ def generate_additionalfile(sumoconfig, networkfile):
         print("</additional>", file=additional)
     
     return rerouters
-
-def sampleRouteFromTurnData(startlane, turndata):
-    lane = startlane
-    route = [lane.split("_")[0]]
-    while lane in turndata:
-        r = random.random()
-
-        oops = True
-        for nextlane in turndata[lane]:
-            r -= turndata[lane][nextlane]
-            if r <= 0:
-                if nextlane.split("_")[0] == lane.split("_")[0]:
-                    print("Warning: Sampling is infinite looping, stopping early")
-                    return route
-
-                #Check if lane connects to nextlane
-                for nextlinktuple in links[lane]:
-                    tempnextedge = nextlinktuple[0].split("_")[0]
-                    if nextlane.split("_")[0] == tempnextedge:
-                        oops = False
-                        break
-                if oops:
-                    print("sampleRouteFromTurnData found an invalid connection??? Trying again...")
-                    print(lane + " -> " + nextlane)
-                    break
-                # else:
-                #     print("Yay, did a thing!!!")
-                #     print(lane + " -> " + nextlane)
-                lane = nextlane
-                break
-        if not oops:
-            route.append(lane.split("_")[0])
-        #print(route)
-    return route
 
 def readSumoCfg(sumocfg):
     netfile = ""
@@ -1319,149 +1161,6 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
         pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     return [outdata, rngstate]
-
-def getDTheta(startedge, nextedge, network):
-    #Preprocess in case we accidentally pass in lanes instead of edges
-    startedge = startedge.split("_")[0]
-    nextedge = nextedge.split("_")[0]
-
-    c0 = network.getEdge(startedge).getFromNode().getCoord()
-    c1 = network.getEdge(startedge).getToNode().getCoord()
-    theta0 = math.atan2(c1[1]-c0[1], c1[0]-c0[0])
-
-    c2 = network.getEdge(nextedge).getToNode().getCoord()
-    theta1 = math.atan2(c2[1]-c1[1], c2[0]-c1[0])
-
-    dtheta = (theta1-theta0+math.pi)%(2*math.pi)-math.pi
-    return dtheta
-
-def getLeftEdge(startlane, network):
-    #Returns the leftmost edge with a connection from startlane
-    startedge = startlane.split("_")[0]
-    leftedge = None
-    maxleft = -np.inf
-    for nextlinktuple in links[startlane]:
-        #Add to all lanes on that edge
-        nextedge = nextlinktuple[0].split("_")[0]
-
-        dtheta = getDTheta(startedge, nextedge, network)
-        if dtheta > maxleft:
-            leftedge = nextedge
-            maxleft = dtheta
-    return leftedge
-
-#@profile
-#NOTE: Profiling says this function isn't terrible, probably don't need to speed it up right now
-def removeVehicleFromPredictions(sumoPredClusters, lastedge):
-    for predlane in sumoPredClusters.keys():
-        #Don't bother checking lanes on edges that weren't the last edge
-        if not predlane.split("_")[0] == lastedge:
-            continue
-
-        predclusterind = 0
-        while predclusterind < len(sumoPredClusters[predlane]):
-            predcluster = sumoPredClusters[predlane][predclusterind]
-
-            predcarind = 0
-            minarr = inf
-            maxarr = -inf
-            while predcarind < len(predcluster["cars"]):
-                predcartuple = predcluster["cars"][predcarind]
-                if predcartuple[0] == id:
-                    predcluster["cars"].pop(predcarind)
-                    predcluster["weight"] -= predcartuple[2]
-                else:
-                    predcarind += 1
-                    if predcartuple[1] < minarr:
-                        minarr = predcartuple[1]
-                    if predcartuple[1] > maxarr:
-                        maxarr = predcartuple[1]
-
-            #Sanity check
-            if debugMode:
-                weightsum = 0
-                for predcarind in range(len(predcluster["cars"])):
-                    weightsum += predcluster["cars"][predcarind][2]
-                assert(abs(weightsum - predcluster["weight"]) < 1e-10)
-
-            #Remove empty clusters
-            if len(predcluster["cars"]) == 0:
-#                                sumoPredClusters[predlane].remove(predcluster)
-                #sumoPredClusters[predlane].pop(predclusterind)
-                sumoPredClusters[predlane] = sumoPredClusters[predlane][0:predclusterind]+sumoPredClusters[predlane][predclusterind+1:] #Apparently this is necessary when working with manager dict stuff? Maybe it's immutable??
-            else:
-                predcluster["arrival"] = minarr #predcluster["cars"][0][1]
-                predcluster["departure"] = maxarr #predcluster["cars"][-1][1]
-                predclusterind += 1
-
-
-# Gets successor edges of a given edge in a given network
-# Parameters:
-#   edge: an edge ID string
-#   network: the network object from sumolib.net.readNet(netfile)
-# Returns:
-#   successors: a list of edge IDs for the successor edges (outgoing edges from the next intersection)
-def getSuccessors(edge, network):
-    ids = []
-    for succ in list(network.getEdge(edge).getOutgoing()):
-        ids.append(succ.getID())
-    return ids
-
-def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases):
-    #Copy state from main sim to test sim
-    traci.simulation.saveState("savestates/teststate_"+edge+".xml")
-    #saveState apparently doesn't save traffic light states despite what the docs say
-    #So save all the traffic light states and copy them over
-    lightStates = dict()
-    for light in traci.trafficlight.getIDList():
-        lightStates[light] = [traci.trafficlight.getPhase(light), traci.trafficlight.getPhaseDuration(light)]
-        #Why do the built-in functions have such terrible names?!
-        lightStates[light][1] = traci.trafficlight.getNextSwitch(light) - traci.simulation.getTime()
-    #Save lightStates to a file
-    with open("savestates/lightstate_"+edge+".pickle", 'wb') as handle:
-        pickle.dump(lightStates, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open("savestates/lightstate_"+edge+"_remainingDuration.pickle", 'wb') as handle:
-        pickle.dump(remainingDuration, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open("savestates/lightstate_"+edge+"_lastSwitchTimes.pickle", 'wb') as handle:
-        pickle.dump(lastSwitchTimes, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open("savestates/lightstate_"+edge+"_sumoPredClusters.pickle", 'wb') as handle:
-        pickle.dump(sumoPredClusters, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open("savestates/lightstate_"+edge+"_lightphases.pickle", 'wb') as handle:
-        pickle.dump(lightphases, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-#prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
-def loadStateInfo(prevedge, simtime, network): #simtime is just so I can pass it into loadStateInfoDetectors...
-    if detectorRouting:
-        return loadStateInfoDetectors(prevedge, simtime, network)
-
-    #Load traffic state
-    traci.simulation.loadState("savestates/teststate_"+prevedge+".xml")
-    #Load light state
-    with open("savestates/lightstate_"+prevedge+".pickle", 'rb') as handle:
-        lightStates = pickle.load(handle)
-
-    #Randomize non-adopter routes
-    for lane in lanes:
-        if len(lane) == 0 or lane[0] == ":":
-            continue
-        for vehicle in traci.lane.getLastStepVehicleIDs(lane):
-            if not vehicle in isSmart or not isSmart[vehicle]:
-                traci.vehicle.setRoute(vehicle, sampleRouteFromTurnData(lane, turndata))
-
-    #Copy traffic light timings
-    for light in traci.trafficlight.getIDList():
-        traci.trafficlight.setPhase(light, lightStates[light][0])
-        traci.trafficlight.setPhaseDuration(light, lightStates[light][1])
-        #print(lightStates[light][1])
-    with open("savestates/lightstate_"+prevedge+"_remainingDuration.pickle", 'rb') as handle:
-        remainingDuration = pickle.load(handle)
-    with open("savestates/lightstate_"+prevedge+"_lastSwitchTimes.pickle", 'rb') as handle:
-        lastSwitchTimes = pickle.load(handle)
-    with open("savestates/lightstate_"+prevedge+"_sumoPredClusters.pickle", 'rb') as handle:
-        sumoPredClusters2 = pickle.load(handle)
-    with open("savestates/lightstate_"+prevedge+"_lightphases.pickle", 'rb') as handle:
-        lightphases = pickle.load(handle)
-    return (remainingDuration, lastSwitchTimes, sumoPredClusters2, lightphases, deepcopy(edgeDict), deepcopy(laneDict))
 
 #Magically makes the vehicle lists stop deleting themselves somehow???
 def dontBreakEverything():
