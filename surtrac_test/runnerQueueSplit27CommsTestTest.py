@@ -31,7 +31,6 @@ from __future__ import print_function
 import sys
 import xml.etree.ElementTree as ET
 import os
-import xml.etree.ElementTree as ET
 
 # we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -55,19 +54,13 @@ import sumolib #To query node/edge stuff about the network
 
 sumoconfig = None
 
-pSmart = 1.0 #Adoption probability
-useLastRNGState = False #To rerun the last simulation without changing the seed on the random number generator
 appendTrainingData = False#True
 
 isSmart = dict() #Store whether each vehicle does our routing or not
 
-nRoutingCalls = 0
-nSuccessfulRoutingCalls = 0
-routingTime = 0
-
 netfile = "UNKNOWN_FILENAME_OOPS"
 
-def run(network, rerouters, pSmart, verbose = True):
+def run(network, verbose = True):
     global actualStartDict
     startDict = dict()
     endDict = dict()
@@ -79,53 +72,52 @@ def run(network, rerouters, pSmart, verbose = True):
         simtime += 1
         traci.simulationStep() #Tell the simulator to simulate the next time step
 
-        #Decide whether new vehicles use our routing
-        for vehicle in traci.simulation.getDepartedIDList():
-            isSmart[vehicle] = False
+        # #Decide whether new vehicles use our routing
+        # for vehicle in traci.simulation.getDepartedIDList():
+        #     isSmart[vehicle] = False
 
-            delayDict[vehicle] = 0#-hmetadict[goaledge][currentRoutes[vehicle][0]] #I'll add the actual travel time once the vehicle arrives
-            startDict[vehicle] = simtime
+        #     delayDict[vehicle] = 0#-hmetadict[goaledge][currentRoutes[vehicle][0]] #I'll add the actual travel time once the vehicle arrives
+        #     startDict[vehicle] = simtime
 
-        #Check predicted vs. actual travel times
-        for vehicle in traci.simulation.getArrivedIDList():
-            endDict[vehicle] = simtime
+        # #Check predicted vs. actual travel times
+        # for vehicle in traci.simulation.getArrivedIDList():
+        #     endDict[vehicle] = simtime
 
-        #Plot and print stats
+        # #Plot and print stats
         if simtime%100 == 0 or not traci.simulation.getMinExpectedNumber() > 0:
             
-            #Stats
-            avgTime = 0
-            avgTime0 = 0
-            nCars = 0
-            nSmart = 0
+        #     #Stats
+        #     avgTime = 0
+        #     avgTime0 = 0
+        #     nCars = 0
+        #     nSmart = 0
 
-            for id in endDict:
-                if actualStartDict[id] >= 600 and actualStartDict[id] < 3000:
-                    nCars += 1
-                    if isSmart[id]:
-                        nSmart += 1
+        #     for id in endDict:
+        #         if actualStartDict[id] >= 600 and actualStartDict[id] < 3000:
+        #             nCars += 1
+        #             if isSmart[id]:
+        #                 nSmart += 1
 
-            for id in endDict:
-                #Only look at steady state - ignore first and last 10 minutes of cars
-                if actualStartDict[id] < 600 or actualStartDict[id] >= 3000:
-                    continue
+        #     for id in endDict:
+        #         #Only look at steady state - ignore first and last 10 minutes of cars
+        #         if actualStartDict[id] < 600 or actualStartDict[id] >= 3000:
+        #             continue
 
-                ttemp = (endDict[id] - startDict[id])+delayDict[id]
-                avgTime += ttemp/nCars
+        #         ttemp = (endDict[id] - startDict[id])+delayDict[id]
+        #         avgTime += ttemp/nCars
 
-                #Delay0 computation (start clock at intended entrance time)
-                ttemp0 = (endDict[id] - actualStartDict[id])+delayDict[id]
-                avgTime0 += ttemp0/nCars
+        #         #Delay0 computation (start clock at intended entrance time)
+        #         ttemp0 = (endDict[id] - actualStartDict[id])+delayDict[id]
+        #         avgTime0 += ttemp0/nCars
 
 
             if verbose or not traci.simulation.getMinExpectedNumber() > 0 or (appendTrainingData and simtime == 5000):
-                print(pSmart)
                 print("\nCurrent simulation time: %f" % simtime)
                 #print("Total run time: %f" % (time.time() - tstart))
-                print("Number of vehicles in network: %f" % traci.vehicle.getIDCount())
-                print("Total cars that left the network: %f" % len(endDict))
-                print("Average delay: %f" % avgTime)
-                print("Average delay0: %f" % avgTime0)
+                # print("Number of vehicles in network: %f" % traci.vehicle.getIDCount())
+                # print("Total cars that left the network: %f" % len(endDict))
+                # print("Average delay: %f" % avgTime)
+                # print("Average delay0: %f" % avgTime0)
                 
     return []
 
@@ -143,7 +135,7 @@ def readSumoCfg(sumocfg):
                 roufile = data[1]
     return (netfile, roufile)
 
-def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTrainingDataIn = False):
+def main(sumoconfigin, verbose = True):
     global lanes
     global actualStartDict
     global sumoconfig
@@ -218,9 +210,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     for item in root.findall('./trip'):
         actualStartDict[item.attrib["id"]] = float(item.attrib["depart"])
 
-    outdata = run(network, [], pSmart, verbose)
-    
-    #return [outdata, rngstate]
+    outdata = run(network, verbose)
 
 #Magically makes the vehicle lists stop deleting themselves somehow???
 def dontBreakEverything():
@@ -232,10 +222,4 @@ def dontBreakEverything():
 
 # this is the main entry point of this script
 if __name__ == "__main__":
-    if len(sys.argv) >= 3:
-        pSmart = float(sys.argv[2])
-    if len(sys.argv) >= 4:
-        useLastRNGState = sys.argv[3]
-    if len(sys.argv) >= 5:
-        appendTrainingData = sys.argv[4]
-    main(sys.argv[1], pSmart, True, useLastRNGState, appendTrainingData)
+    main(sys.argv[1])
