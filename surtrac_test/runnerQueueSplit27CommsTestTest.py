@@ -30,7 +30,15 @@ from __future__ import print_function
 
 import sys
 import xml.etree.ElementTree as ET
+import os
+import xml.etree.ElementTree as ET
 
+# we need to import python modules from the $SUMO_HOME/tools directory
+if 'SUMO_HOME' in os.environ:
+    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
+    sys.path.append(tools)
+else:
+    sys.exit("please declare environment variable 'SUMO_HOME'")
 from sumolib import checkBinary
 
 useLibsumo = True
