@@ -34,8 +34,16 @@ else:
     sys.exit("please declare environment variable 'SUMO_HOME'")
 
 from sumolib import checkBinary  # noqa
-import traci  # noqa
-
+#import traci  # noqa
+useLibsumo = True
+if useLibsumo:
+    try:
+        import libsumo as traci
+    except:
+        print("Error using libsumo. Dropping back to traci instead. Hopefully this is fine")
+        useLibsumo = False
+if not useLibsumo:
+    import traci  #To interface with SUMO simulations
 
 def generate_routefile():
     random.seed(42)  # make tests reproducible
