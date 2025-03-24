@@ -48,3 +48,6 @@ surtrac_test/imitate.log
 surtrac_test/imitate.log
 *.log
 surtrac_test/Losses, light=light.png
+traci_tls/data/cross.out
+traci_tls/data/cross.out
+traci_tls/data/cross.out
