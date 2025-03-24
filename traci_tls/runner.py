@@ -134,7 +134,7 @@ if __name__ == "__main__":
     # subprocess and then the python script connects and runs
     # traci.start([sumoBinary, "-c", "data/cross.sumocfg",
     #                          "--tripinfo-output", "tripinfo.xml", "--start", "--quit-on-end"]) #Added last 2 args
-    traci.start([sumoBinary, "-c", "data/cross.sumocfg",
+    traci.start([sumoBinary, "-c", "PittsburghPMDataSmallerLongIn+10_fixedroutes_auto.sumocfg",
                                 #"--additional-files", "additional_autogen.xml",
                                 "--no-step-log", "true",
                                 "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
