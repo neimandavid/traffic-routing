@@ -35,7 +35,7 @@ else:
 
 from sumolib import checkBinary  # noqa
 #import traci  # noqa
-useLibsumo = True
+useLibsumo = False
 if useLibsumo:
     try:
         import libsumo as traci
