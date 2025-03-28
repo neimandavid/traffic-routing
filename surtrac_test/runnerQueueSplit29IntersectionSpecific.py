@@ -883,7 +883,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                 bestLastSwitch = np.inf
                                 newFirstSwitch = max(newschedule[6] + surtracdata[light][newphase]["minDur"], newschedule[4]-mingap, simtime) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed. Except for first phase, which usually wants to switch 2.5s in the past if there's no clusters
                                 for newi in lanephases[lane2]:
-                                    if not learnYellow and ("Y" in lightphasedata[light][newi].state or "y" in lightphasedata[light][newi].state):
+                                    if not learnYellow and ("Y" in lightphasedata[light][newi].state or "y" in lightphasedata[light][newi].state): #TODO should we just never schedule stuff on yellow (in which case drop the learnYellow condition)?
                                         continue
                                     testLastSwitch = newFirstSwitch + surtracdata[light][(newphase+1)%nPhases]["timeTo"][newi]
                                     if testLastSwitch < bestLastSwitch:

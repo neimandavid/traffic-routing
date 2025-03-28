@@ -206,7 +206,10 @@ def run(netfile, rerouters, sumoconfig):
                     print("Warning: prevLaneDict[id] isn't in lanetransitiondata, this shouldn't happen")
                     lanetransitiondata[prevLaneDict[id]] = []
                 if not id in traci.simulation.getEndingTeleportIDList():
-                    lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
+                    if laneDict[id].split("_")[0] in getSuccessors(prevLaneDict[id].split("_")[0], network):
+                        lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
+                    else:
+                        print("We think we didn't teleport, but we ended up on a non-successor road?")
 
                 laneDict.pop(id)
                 prevLaneDict.pop(id)
@@ -231,10 +234,10 @@ def run(netfile, rerouters, sumoconfig):
 
                     #Track lane-by-lane turn data
                     if not id in traci.simulation.getEndingTeleportIDList():
-                        if prevLaneDict[id] in lanetransitiondata:
-                            lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
-                        else:
-                            lanetransitiondata[prevLaneDict[id]] = [laneDict[id]]
+                        if not prevLaneDict[id] in lanetransitiondata:
+                            lanetransitiondata[prevLaneDict[id]] = []
+                        lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
+                            
                     prevLaneDict[id] = laneDict[id]
                     
                     if not road in roadcarcounter:
@@ -377,6 +380,18 @@ def generate_additionalfile(sumoconfig, networkfile):
         print("</additional>", file=additional)
     
     return rerouters
+
+# Gets successor edges of a given edge in a given network
+# Parameters:
+#   edge: an edge ID string
+#   network: the network object from sumolib.net.readNet(netfile)
+# Returns:
+#   successors: a list of edge IDs for the successor edges (outgoing edges from the next intersection)
+def getSuccessors(edge, network):
+    ids = []
+    for succ in list(network.getEdge(edge).getOutgoing()):
+        ids.append(succ.getID())
+    return ids
 
 def main(netfile, sumoconfig):
 

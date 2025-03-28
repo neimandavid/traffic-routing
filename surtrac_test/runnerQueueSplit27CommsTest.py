@@ -3093,13 +3093,11 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     remainingDuration = pickle.loads(pickle.dumps(remainingDurationIn)) #This is apparently important, not sure why. It's especially weird given the next time we see remainingDuration is as the output of a loadClusters call
 
     nRoutingCalls += 1
-    vehicle = startvehicle
     routestartwctime = time.time() #For timeouts and maybe stats
     timeout = 60
 
     ghostcardata = dict()
 
-    startedge = startlane.split("_")[0]
     VOIs = dict()
     #VOIs[vehicle] stores current lane, current speed, current position, route to now, left turn edge (if any), and whether we still need to spawn non-left copies
     VOIs[vehicle] = [startlane, traci.vehicle.getSpeed(vehicle), traci.vehicle.getLanePosition(vehicle), [startedge], getLeftEdge(startlane, network), True]
@@ -3111,12 +3109,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     #Unless it reached the end of the goal road, in which case great, we're done
     #Hopefully those new inserts take priority over standard cars and it all works?
     #assert(traci.getLabel() == "main")
-
-    #Get goal
-    startroute = traci.vehicle.getRoute(vehicle)
-    startind = startroute.index(startedge)
-    startroute = startroute[startind:]
-    goaledge = startroute[-1]
 
     if startedge == goaledge:
         #No rerouting needed, we're basically done
@@ -3616,19 +3608,6 @@ def removeVehicleFromPredictions(sumoPredClusters, lastedge):
                 predcluster["arrival"] = minarr #predcluster["cars"][0][1]
                 predcluster["departure"] = maxarr #predcluster["cars"][-1][1]
                 predclusterind += 1
-
-
-# Gets successor edges of a given edge in a given network
-# Parameters:
-#   edge: an edge ID string
-#   network: the network object from sumolib.net.readNet(netfile)
-# Returns:
-#   successors: a list of edge IDs for the successor edges (outgoing edges from the next intersection)
-def getSuccessors(edge, network):
-    ids = []
-    for succ in list(network.getEdge(edge).getOutgoing()):
-        ids.append(succ.getID())
-    return ids
 
 def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, lightphases):
     #Copy state from main sim to test sim
