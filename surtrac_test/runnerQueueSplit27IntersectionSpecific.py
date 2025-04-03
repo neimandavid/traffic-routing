@@ -107,6 +107,7 @@ disableSurtracComms = False #Speeds up code by having Surtrac no longer predict 
 predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 20 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
+intersectionTime = 2 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
@@ -280,6 +281,7 @@ def consolidateClusters(clusters):
                 clusters[i]["weight"] += clusters[j]["weight"]
                 clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
                 clusters.pop(j)
+                continue
             else:
                 if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
                     #Merge i into j
@@ -288,6 +290,7 @@ def consolidateClusters(clusters):
                     clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
                     clusters[i] = clusters[j]
                     clusters.pop(j)
+                    continue
             j+=1
         i+=1
 
@@ -915,7 +918,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                 #Regardless, skip it and hope it's fine?
                                 continue
 
-                            arr = nextSendTime + fftimes[nextlane]
+                            arr = nextSendTime + fftimes[nextlane] + intersectionTime
                             if arr > simtime + predictionCutoff:
                                 #Don't add to prediction; it's too far in the future. And it'll be too far into the future for all other lanes on this edge too, so just stop
                                 break
@@ -946,10 +949,11 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                 #Something's weird and our data says vehicles are skipping lanes
                                 #Might be a teleport in the initial turn data
                                 #Regardless, skip it and hope it's fine?
+                                #TODO is this fixed now (for PittsburghLongIn+10New...)?
                                 continue
                             
                             #Copy-paste previous logic for creating a new cluster
-                            arr = nextSendTime + fftimes[nextlane]
+                            arr = nextSendTime + fftimes[nextlane] + intersectionTime
                             if arr > simtime + predictionCutoff:
                                 #Don't add to prediction; it's too far in the future. Other lanes may differ though
                                 continue
@@ -969,7 +973,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                 newPredCluster["weight"] = 0
                                 newPredClusters[nextlane].append(newPredCluster)
 
-                            modcartuple = (cartuple[0], arr, cartuple[2]*turndata[lane][nextlane], cartuple[3])
+                            modcartuple = (cartuple[0], arr, cartuple[2]*predDiscount*turndata[lane][nextlane], cartuple[3])
                             newPredClusters[nextlane][-1]["cars"].append(modcartuple)
                             newPredClusters[nextlane][-1]["weight"] += modcartuple[2]
                             newPredClusters[nextlane][-1]["departure"] = arr
@@ -1197,7 +1201,7 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                         ist = clusters[lane][clusterind]["arrival"] #Intended start time = cluster arrival time
                         dur = clusters[lane][clusterind]["departure"] - ist
                         
-                        arr = ist + fftimes[outlane]
+                        arr = ist + fftimes[outlane] + intersectionTime
                         if arr > simtime + predictionCutoff:
                             #Cluster is farther in the future than we want to predict; skip it
                             continue
@@ -1248,7 +1252,7 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
 
                             for nextlaneind in range(nLanes[nextedge]):
                                 nextlane = nextedge+"_"+str(nextlaneind)
-                                modcartuple = (cartuple[0], cartuple[1]+fftimes[nextlane], cartuple[2]*turndata[lane][nextlane] / normprobs[lane][nextedge], cartuple[3])
+                                modcartuple = (cartuple[0], cartuple[1]+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane] / normprobs[lane][nextedge], cartuple[3])
                                 if nextlane in predLanes:
                                     #Make sure we're predicting this cluster
                                     catpreds[nextlane][-1]["cars"].append(modcartuple)
@@ -1256,7 +1260,7 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
 
                         else:
                             for nextlane in predLanes:
-                                modcartuple = (cartuple[0], cartuple[1]+fftimes[nextlane], cartuple[2]*turndata[lane][nextlane], cartuple[3])
+                                modcartuple = (cartuple[0], cartuple[1]+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane], cartuple[3])
                                 catpreds[nextlane][-1]["cars"].append(modcartuple)
                                 catpreds[nextlane][-1]["weight"] += modcartuple[2]
 
@@ -2570,6 +2574,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
                 outlane = linktuple[1]
                 if not outlane in lightoutlanes[light]:
                     lightoutlanes[light].append(outlane)
+                    #fftimes[light] = min(fftimes[lane]) over all lanes leaving that light, to be used for early stopping on comms
                     if fftimes[light] > fftimes[outlane]:
                         fftimes[light] = fftimes[outlane]
 
@@ -2884,38 +2889,6 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
                 print(e)
         else:
             print("newroute == None, likely a problem in routing")        
-
-
-def backwardDijkstraAStar(network, goal):
-    gvals = dict()
-    gvals[goal] = 0
-    pq = []
-    heappush(pq, (0, goal))
-
-    while len(pq) > 0: #When the queue is empty, we're done
-        #print(pq)
-        stateToExpand = heappop(pq)
-        #fval = stateToExpand[0]
-        edge = stateToExpand[1]
-        gval = gvals[edge]
-
-        #Get predecessor IDs
-        succs = []
-        for succ in list(network.getEdge(edge).getIncoming()):
-            succs.append(succ.getID())
-        
-        for succ in succs:
-            c = traci.lane.getLength(edge+"_0")/network.getEdge(edge).getSpeed()
-
-            h = 0 #Heuristic not needed here - search is fast
-            if succ in gvals and gvals[succ] <= gval+c:
-                #Already saw this state, don't requeue
-                continue
-
-            #Otherwise it's new or we're now doing better, so requeue it
-            gvals[succ] = gval+c
-            heappush(pq, (gval+c+h, succ))
-    return gvals
 
 def getDTheta(startedge, nextedge):
     #Preprocess in case we accidentally pass in lanes instead of edges
