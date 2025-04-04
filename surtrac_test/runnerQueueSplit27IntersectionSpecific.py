@@ -106,7 +106,7 @@ recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedu
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 20 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
-predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
+predDiscount = 0.5 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 2 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
@@ -2574,7 +2574,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
                 outlane = linktuple[1]
                 if not outlane in lightoutlanes[light]:
                     lightoutlanes[light].append(outlane)
-                    #fftimes[light] = min(fftimes[lane]) over all lanes leaving that light, to be used for early stopping on comms
+                    #fftimes[light] is min(fftimes[lane]) over all lanes leaving that light, to be used for early stopping on comms
                     if fftimes[light] > fftimes[outlane]:
                         fftimes[light] = fftimes[outlane]
 
