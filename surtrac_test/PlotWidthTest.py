@@ -48,17 +48,17 @@ if filterNonzeroTeleports:
             else:
                 i+=1
 
-# for p in data:
-#     print(p)
-#     print("Delay")
-#     print(data[p]["All"])
-#     #print(data[p]["All2"])
-#     if "NTeleports" in data[p]:
-#         print("NTeleports")
-#         print(data[p]["NTeleports"])
-#     if "TeleportData" in data[p]:
-#         print("TeleportData")
-#         print(data[p]["TeleportData"])
+for p in data:
+    print(p)
+    print("Delay")
+    print(data[p]["All"])
+    #print(data[p]["All2"])
+    if "NTeleports" in data[p]:
+        print("NTeleports")
+        print(data[p]["NTeleports"])
+    if "TeleportData" in data[p]:
+        print("TeleportData")
+        print(data[p]["TeleportData"])
 
 # with open("newlastRNGstate.pickle", 'wb') as handle:
 #     pickle.dump(data[0.25]["RNGStates"][1], handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -237,3 +237,150 @@ for d in sorted(data.keys()):
             print(str(statistics.mean(data[d][label])) + " +/- " + str(statistics.stdev(data[d][label])))
         else:
             print(str(statistics.mean(data[d][label])))
+
+
+#AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
+
+#MAKE PLOTS WITHOUT TELEPORT POINTS
+prs = data.keys()
+if "NTeleports" in labels:
+    for pr in prs:
+        n = 0
+        while n < len(data[pr]["NTeleports"]):
+            if data[pr]["NTeleports"][n] > 0:
+                for label in labels:
+                    data[pr][label].pop(n)
+            else:
+                n+=1
+        if n == 0: #Ate all the data, oops
+            data.remove(pr)
+
+plotdata = dict()
+for l in labels:
+    plotdata[l] = []
+sddata = dict()
+for l in labels:
+    sddata[l] = []
+for p in sorted(data.keys()):
+    for w in labels:
+        if w in data[p]:
+            plotdata[w].append(statistics.mean(data[p][w]))
+            if len(data[p][w]) > 1:
+                sddata[w].append(statistics.stdev(data[p][w]))
+            else:
+                sddata[w].append(0)
+
+p = sorted(data.keys())
+
+for v in ["", "2", "3", "0"]:
+    fig, ax = plt.subplots()
+    for w in ["All", "Adopters", "Non-Adopters"]:
+        #plt.plot(p, plotdata[w], label=w)
+        x = np.array(p)
+        y = np.array(plotdata[w+v])
+
+        #Error bars
+        ax.errorbar(x, y, linestyle='None', markersize = 10.0, capsize = 3.0, yerr=np.array(sddata[w+v]))
+        #ax.axis([0, 1, 150, 330]) #To standardize axes
+        
+        maxwidth = (ax.get_ylim()[1] - ax.get_ylim()[0])/500.0 #0.1 #0.99#1.0#
+
+        #Can't just add thickness vertically; this isn't right for non-horizontal lines.
+        #Below code tried to account for that, but to get the angle of the line on the plot, I need to know the axes...
+        #Variable thickness - need duplicate points so I can correctly divide out by cos(atan(slope))
+        m = (y[1:] - y[:-1])/(x[1:]-x[:-1]) #Slope = delta y / delta x
+        m = m * (plt.gca().get_xlim()[1] - plt.gca().get_xlim()[0])/(plt.gca().get_ylim()[1] - plt.gca().get_ylim()[0]) #Account for axis sizes
+
+        #Duplicate data except first and last points
+        repx = np.repeat(x, 2)
+        repx = repx[1:-1]
+        repy = np.repeat(y, 2)
+        repy = repy[1:-1]
+        repm = np.repeat(m, 2)
+        
+        if w == "All":
+            thickness = (0*repx+maxwidth)/np.cos(np.arctan(repm)) #Should divide by cos(atan(slope)) to convert diagonal thickness to vertical thickness
+        elif w == "Adopters":
+            thickness = (maxwidth*repx)/np.cos(np.arctan(repm))
+        else: #Non-Adopters
+            thickness = (maxwidth - maxwidth*repx)/np.cos(np.arctan(repm))
+
+        ax.fill_between(repx, repy - thickness, repy + thickness, label=w)
+
+    #Text box code from: https://matplotlib.org/3.3.4/gallery/recipes/placing_text_boxes.html
+    s = "Unknown stuff, help!"
+    if v == "":
+        s = "[time leaving] - [time entering] - [minimum route time]"
+    if v == "2":
+        s = "[time leaving] - [time at first reroute] - [minimum route time]"
+    if v == "3":
+        s = "[time leaving] - [time at first intersection] - [minimum route time]"
+    if v == "0":
+        s = "[time leaving] - [intended time entering] - [minimum route time]"
+    # these are matplotlib.patch.Patch properties
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.05, 1, s, transform = ax.transAxes, fontsize=8, verticalalignment='top', bbox=props)
+
+    plt.xlabel("Adoption Probability")
+    plt.ylabel("Average Delay (s)")
+    plt.title("No Teleport Delays"+v)
+    plt.legend()
+    #plt.show() #NOTE: Blocks code execution until you close the plot
+    plt.savefig("Plots/PWDelays" + v + sys.argv[1].split(".")[0] +"NoTeleports.png")
+    plt.close()
+
+#Plot runtime stuff
+for w in ["Runtime", "NTeleports"]:
+    if w in labels:
+        fig, ax = plt.subplots()
+        #w = "Runtime"
+        v = ""
+        #plt.plot(p, plotdata[w], label=w)
+        x = np.array(p)
+        y = np.array(plotdata[w+v])
+
+        #Error bars
+        ax.errorbar(x, y, linestyle='None', markersize = 10.0, capsize = 3.0, yerr=np.array(sddata[w+v]))
+        #ax.axis([0, 1, 130, 250]) #To standardize axes
+
+        maxwidth = (ax.get_ylim()[1] - ax.get_ylim()[0])/500.0 #0.1 #0.99#1.0#
+
+        #Can't just add thickness vertically; this isn't right for non-horizontal lines.
+        #Below code tried to account for that, but to get the angle of the line on the plot, I need to know the axes...
+        #Variable thickness - need duplicate points so I can correctly divide out by cos(atan(slope))
+        m = (y[1:] - y[:-1])/(x[1:]-x[:-1]) #Slope = delta y / delta x
+        m = m * (plt.gca().get_xlim()[1] - plt.gca().get_xlim()[0])/(plt.gca().get_ylim()[1] - plt.gca().get_ylim()[0]) #Account for axis sizes
+
+        #Duplicate data except first and last points
+        repx = np.repeat(x, 2)
+        repx = repx[1:-1]
+        repy = np.repeat(y, 2)
+        repy = repy[1:-1]
+        repm = np.repeat(m, 2)
+
+        thickness = (0*repx+maxwidth)/np.cos(np.arctan(repm)) #Should divide by cos(atan(slope)) to convert diagonal thickness to vertical thickness
+        ax.fill_between(repx, repy - thickness, repy + thickness, label=w)
+
+        #Text box code from: https://matplotlib.org/3.3.4/gallery/recipes/placing_text_boxes.html
+        s = "Unknown stuff, help!"
+        if v == "":
+            s = "[time leaving] - [time entering] - [minimum route time]"
+        if v == "2":
+            s = "[time leaving] - [time at first reroute] - [minimum route time]"
+        if v == "3":
+            s = "[time leaving] - [time at first intersection] - [minimum route time]"
+        if v == "0":
+            s = "[time leaving] - [intended time entering] - [minimum route time]"
+        # these are matplotlib.patch.Patch properties
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.05, 1, s, transform = ax.transAxes, fontsize=8, verticalalignment='top', bbox=props)
+
+        plt.xlabel("Adoption Probability")
+        plt.ylabel(w)
+        plt.title("No Teleport " + w)
+        plt.legend()
+        #plt.show() #NOTE: Blocks code execution until you close the plot
+        plt.savefig("Plots/PW" + w + v + sys.argv[1].split(".")[0] +"NoTeleports.png")
+        plt.close()
+    else:
+        print("Couldn't find data " + w)
