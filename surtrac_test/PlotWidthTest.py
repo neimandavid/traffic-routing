@@ -239,10 +239,9 @@ for d in sorted(data.keys()):
             print(str(statistics.mean(data[d][label])))
 
 
-#AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
-
 #MAKE PLOTS WITHOUT TELEPORT POINTS
 prs = data.keys()
+prstoremove = []
 if "NTeleports" in labels:
     for pr in prs:
         n = 0
@@ -253,7 +252,9 @@ if "NTeleports" in labels:
             else:
                 n+=1
         if n == 0: #Ate all the data, oops
-            data.remove(pr)
+            prstoremove.append(pr)
+    for pr in prstoremove:
+        del data[pr]
 
 plotdata = dict()
 for l in labels:
