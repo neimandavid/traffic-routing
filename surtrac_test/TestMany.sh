@@ -7,6 +7,6 @@ do
 for n in {1..5};
 do
 
-python3 runnerQueueSplit27IntersectionSpecific.py PittsburghPMDataSmallerLongIn+10New_fixedroutes_auto.sumocfg $p
+python3 runnerQueueSplit27IntersectionSpecific.py PittsburghPMDataSmallerLongIn+10Newer_fixedroutes_auto.sumocfg $p
 done
 done
