@@ -107,7 +107,7 @@ disableSurtracComms = False #Speeds up code by having Surtrac no longer predict 
 predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 20 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 0.5 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
-intersectionTime = 2 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
+intersectionTime = 0 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
@@ -2721,7 +2721,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
             print("Checking if there's a learned model. Currently testNN="+str(testNN))
             try:
-                checkpoint = torch.load(MODEL_FILES[light], weights_only=True)
+                checkpoint = torch.load(MODEL_FILES[light], weights_only=True) #map_location=torch.device('cpu') to make this work on not Drogon
                 agents[light].load_state_dict(checkpoint['model_state_dict'])
             except FileNotFoundError:
                 print("Model doesn't exist - turning off testNN")
