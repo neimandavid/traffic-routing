@@ -122,7 +122,7 @@ detectorModel = False #REMINDER: As currently implemented, turning this on makes
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
-adopterComms = True
+adopterComms = True #Whether adopters communicate their positions when using the detector model
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
 
@@ -2721,7 +2721,10 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             MODEL_FILES[light] = 'models/imitate_'+light+'.model' # Once your program successfully trains a network, this file will be written
             print("Checking if there's a learned model. Currently testNN="+str(testNN))
             try:
-                checkpoint = torch.load(MODEL_FILES[light], weights_only=True) #map_location=torch.device('cpu') to make this work on not Drogon
+                try:
+                    checkpoint = torch.load(MODEL_FILES[light], weights_only=True) #map_location=torch.device('cpu') to make this work on not Drogon
+                except pickle.UnpicklingError:
+                    checkpoint = torch.load(MODEL_FILES[light], weights_only=True, map_location=torch.device('cpu')) #to make this work on not Drogon
                 agents[light].load_state_dict(checkpoint['model_state_dict'])
             except FileNotFoundError:
                 print("Model doesn't exist - turning off testNN")
