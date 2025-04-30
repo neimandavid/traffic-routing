@@ -1,0 +1,899 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2025-04-30 11:59:59 by Eclipse SUMO netedit Version 1.20.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
+
+    <input>
+        <sumo-net-file value="pittsburghsmaller2l4.net.xml"/>
+    </input>
+
+    <output>
+        <output-file value="pittsburghsmaller2l4.net.xml"/>
+        <output.street-names value="true"/>
+    </output>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="0"/>
+    </processing>
+
+    <junctions>
+        <no-internal-links value="true"/>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="5"/>
+        <junctions.limit-turn-speed value="5.50"/>
+        <rectangular-lane-cut value="0"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="0"/>
+    </pedestrian>
+
+</configuration>
+-->
+
+<net version="1.20" junctionCornerDetail="5" limitTurnSpeed="5.50" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
+
+    <location netOffset="-584408.72,-4476613.85" convBoundary="-519.00,-804.00,1889.00,1660.00" origBoundary="-80.004731,40.435799,-79.988268,40.445849" projParameter="+proj=utm +zone=17 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"/>
+
+    <type id="highway.primary" priority="12" numLanes="2" speed="27.78" disallow="tram rail_urban rail rail_electric rail_fast ship" oneway="0"/>
+    <type id="highway.residential" priority="3" numLanes="1" speed="13.89" disallow="tram rail_urban rail rail_electric rail_fast ship" oneway="0"/>
+    <type id="highway.secondary" priority="11" numLanes="1" speed="27.78" disallow="tram rail_urban rail rail_electric rail_fast ship" oneway="0"/>
+    <type id="highway.tertiary" priority="10" numLanes="1" speed="22.22" disallow="tram rail_urban rail rail_electric rail_fast ship" oneway="0"/>
+
+    <edge id="Fifth-Grant-Ross" from="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" to="J5" priority="-1">
+        <lane id="Fifth-Grant-Ross_0" index="0" speed="13.89" length="54.13" shape="680.88,388.01 716.97,370.96"/>
+        <lane id="Fifth-Grant-Ross_1" index="1" speed="13.89" length="54.13" shape="682.25,390.90 718.34,373.85"/>
+    </edge>
+    <edge id="Fifth-Grant-Ross-2" from="J5" to="cluster_105096435_8484284984_8484284985_8484285004_8484285005" priority="-1">
+        <lane id="Fifth-Grant-Ross-2_0" index="0" speed="13.89" length="56.87" shape="725.56,370.74 765.24,355.22"/>
+    </edge>
+    <edge id="Fifth-Grant-WilliamPenn" from="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" to="cluster_105012331_5312909754_5312909756_8484445227_8484452927" name="Fifth Avenue" priority="12" type="highway.primary" shape="664.43,401.02 661.31,402.48 632.27,416.13 599.89,431.97">
+        <lane id="Fifth-Grant-WilliamPenn_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="87.90" shape="666.05,405.56 663.35,406.82 634.35,420.46 602.00,436.28">
+            <param key="origId" value="55169716"/>
+        </lane>
+        <lane id="Fifth-Grant-WilliamPenn_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="87.90" shape="664.70,402.66 661.99,403.93 632.96,417.57 600.59,433.41">
+            <param key="origId" value="55169716"/>
+        </lane>
+        <param key="origFrom" value="8484443903"/>
+        <param key="origTo" value="105096409"/>
+    </edge>
+    <edge id="Fifth-RHS-Ross" from="J4" to="104573441" priority="-1">
+        <lane id="Fifth-RHS-Ross_0" index="0" speed="13.89" length="999.86" shape="1853.00,351.60 854.62,351.91"/>
+    </edge>
+    <edge id="Fifth-RHS-Ross-2" from="104573441" to="cluster_105096435_8484284984_8484284985_8484285004_8484285005" name="Fifth Avenue" priority="12" type="highway.primary" shape="853.14,350.31 791.95,351.87 784.15,351.99">
+        <lane id="Fifth-RHS-Ross-2_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="77.70" shape="851.68,351.95 791.99,353.47 787.42,353.54">
+            <param key="origId" value="28727224"/>
+        </lane>
+        <param key="origTo" value="8484285005"/>
+    </edge>
+    <edge id="Fifth-Ross-Grant" from="cluster_105096435_8484284984_8484284985_8484285004_8484285005" to="J5" priority="-1">
+        <lane id="Fifth-Ross-Grant_0" index="0" speed="13.89" length="56.87" shape="766.41,358.20 726.73,373.72"/>
+    </edge>
+    <edge id="Fifth-Ross-Grant-2" from="J5" to="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" priority="-1">
+        <lane id="Fifth-Ross-Grant-2_0" index="0" speed="13.89" length="54.13" shape="721.07,379.64 684.99,396.69"/>
+        <lane id="Fifth-Ross-Grant-2_1" index="1" speed="13.89" length="54.13" shape="719.70,376.75 683.62,393.79"/>
+    </edge>
+    <edge id="Fifth-Ross-RHS" from="cluster_105096435_8484284984_8484284985_8484285004_8484285005" to="104573441" name="Fifth Avenue" priority="12" type="highway.primary" shape="784.15,351.99 791.95,351.87 853.14,350.31">
+        <lane id="Fifth-Ross-RHS_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="77.70" shape="787.38,350.34 791.92,350.27 851.60,348.75">
+            <param key="origId" value="28727224"/>
+        </lane>
+        <param key="origFrom" value="8484285005"/>
+    </edge>
+    <edge id="Fifth-Smithfield-WilliamPenn" from="J11" to="cluster_105096396_5312909851_5312909853_8484452925_8484461664" priority="-1">
+        <lane id="Fifth-Smithfield-WilliamPenn_0" index="0" speed="13.89" length="1000.43" shape="-484.00,468.40 502.05,468.82"/>
+    </edge>
+    <edge id="Fifth-Smithfield-WilliamPenn-2" from="cluster_105096396_5312909851_5312909853_8484452925_8484461664" to="cluster_105012331_5312909754_5312909756_8484445227_8484452927" name="Fifth Avenue" priority="12" type="highway.primary" shape="521.15,467.38 522.16,466.92 589.38,436.91">
+        <lane id="Fifth-Smithfield-WilliamPenn-2_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="85.74" shape="519.16,463.01 520.19,462.54 586.54,432.92">
+            <param key="origId" value="55169716"/>
+        </lane>
+        <lane id="Fifth-Smithfield-WilliamPenn-2_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="85.74" shape="520.49,465.92 521.50,465.46 587.85,435.84">
+            <param key="origId" value="55169716"/>
+        </lane>
+        <param key="origFrom" value="8484452925"/>
+        <param key="origTo" value="5312909756"/>
+    </edge>
+    <edge id="Fifth-WilliamPenn-Grant" from="cluster_105012331_5312909754_5312909756_8484445227_8484452927" to="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" name="Fifth Avenue" priority="12" type="highway.primary" shape="599.89,431.97 632.27,416.13 661.31,402.48 664.43,401.02">
+        <lane id="Fifth-WilliamPenn-Grant_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="87.90" shape="597.78,427.66 630.19,411.80 659.27,398.14 661.98,396.87">
+            <param key="origId" value="55169716"/>
+        </lane>
+        <lane id="Fifth-WilliamPenn-Grant_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="87.90" shape="599.19,430.53 631.58,414.69 660.63,401.03 663.34,399.76">
+            <param key="origId" value="55169716"/>
+        </lane>
+        <param key="origFrom" value="5312909754"/>
+        <param key="origTo" value="105096409"/>
+    </edge>
+    <edge id="Fifth-WilliamPenn-Smithfield" from="cluster_105012331_5312909754_5312909756_8484445227_8484452927" to="cluster_105096396_5312909851_5312909853_8484452925_8484461664" name="Fifth Avenue" priority="12" type="highway.primary" shape="589.38,436.91 522.16,466.92 521.15,467.38">
+        <lane id="Fifth-WilliamPenn-Smithfield_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="85.74" shape="590.45,441.69 524.12,471.30 523.14,471.75">
+            <param key="origId" value="55169716"/>
+        </lane>
+        <lane id="Fifth-WilliamPenn-Smithfield_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="85.74" shape="589.15,438.76 522.81,468.38 521.81,468.84">
+            <param key="origId" value="55169716"/>
+        </lane>
+        <param key="origFrom" value="5312909756"/>
+        <param key="origTo" value="8484452925"/>
+    </edge>
+    <edge id="Forbes-Grant-Ross" from="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" to="cluster_105012751_8484067060_8484067061_8484284979_8484284980" name="Forbes Avenue" priority="12" type="highway.primary" shape="643.52,313.78 646.52,312.28 687.86,291.63 731.39,271.26">
+        <lane id="Forbes-Grant-Ross_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="114.72" shape="645.96,310.77 687.16,290.19 727.53,271.30">
+            <param key="origId" value="25795333"/>
+        </lane>
+        <param key="origFrom" value="8484284976"/>
+        <param key="origTo" value="8484284979"/>
+    </edge>
+    <edge id="Forbes-Grant-WilliamPenn" from="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" to="cluster_104945598_8484284971_8484443912_8484445225" name="Forbes Avenue" priority="10" type="highway.tertiary" spreadType="center" shape="625.32,322.71 624.40,323.15 593.24,338.02 580.98,343.86 557.40,355.12">
+        <lane id="Forbes-Grant-WilliamPenn_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="89.64" shape="625.79,324.26 625.09,324.59 593.93,339.46 581.67,345.30 558.09,356.56">
+            <param key="origId" value="11729055"/>
+        </lane>
+        <lane id="Forbes-Grant-WilliamPenn_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="89.64" shape="624.41,321.37 623.71,321.71 592.55,336.58 580.29,342.42 556.71,353.68">
+            <param key="origId" value="11729055"/>
+        </lane>
+        <param key="origFrom" value="8484443909"/>
+        <param key="origTo" value="105012735"/>
+    </edge>
+    <edge id="Forbes-RHS-Ross" from="J7" to="cluster_3724219516_3724219519_684792169_8484285007" priority="-1">
+        <lane id="Forbes-RHS-Ross_0" index="0" speed="13.89" length="1017.39" shape="1829.00,245.60 820.39,246.07"/>
+    </edge>
+    <edge id="Forbes-RHS-Ross-2" from="cluster_3724219516_3724219519_684792169_8484285007" to="cluster_105012751_8484067060_8484067061_8484284979_8484284980" name="Forbes Avenue" priority="12" type="highway.primary" shape="803.82,248.53 791.20,248.06 779.24,249.74 767.92,254.14 744.30,265.22">
+        <lane id="Forbes-RHS-Ross-2_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="78.53" shape="803.64,253.33 791.45,252.87 780.46,254.42 769.81,258.55 749.23,268.21">
+            <param key="origId" value="153256196"/>
+        </lane>
+        <lane id="Forbes-RHS-Ross-2_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="78.53" shape="803.76,250.13 791.28,249.66 779.65,251.30 768.55,255.61 747.87,265.31">
+            <param key="origId" value="153256196"/>
+        </lane>
+        <param key="origFrom" value="684792169"/>
+        <param key="origTo" value="8484067061"/>
+    </edge>
+    <edge id="Forbes-Ross-Grant" from="cluster_105012751_8484067060_8484067061_8484284979_8484284980" to="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" name="Forbes Avenue" priority="12" type="highway.primary" shape="731.39,271.26 687.86,291.63 646.52,312.28 643.52,313.78">
+        <lane id="Forbes-Ross-Grant_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="114.72" shape="730.24,277.10 689.95,295.95 648.82,316.50">
+            <param key="origId" value="25795333"/>
+        </lane>
+        <lane id="Forbes-Ross-Grant_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="114.72" shape="728.89,274.20 688.56,293.07 647.39,313.63">
+            <param key="origId" value="25795333"/>
+        </lane>
+        <param key="origFrom" value="8484284979"/>
+        <param key="origTo" value="8484284976"/>
+    </edge>
+    <edge id="Forbes-Ross-RHS" from="cluster_105012751_8484067060_8484067061_8484284979_8484284980" to="cluster_3724219516_3724219519_684792169_8484285007" name="Forbes Avenue" priority="12" type="highway.primary" shape="744.30,265.22 767.92,254.14 779.24,249.74 791.20,248.06 803.82,248.53">
+        <lane id="Forbes-Ross-RHS_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="78.53" shape="745.15,259.52 766.03,249.73 778.02,245.06 790.95,243.25 804.00,243.73">
+            <param key="origId" value="153256196"/>
+        </lane>
+        <lane id="Forbes-Ross-RHS_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="78.53" shape="746.51,262.42 767.29,252.67 778.83,248.18 791.12,246.46 803.88,246.93">
+            <param key="origId" value="153256196"/>
+        </lane>
+        <param key="origFrom" value="8484067061"/>
+        <param key="origTo" value="684792169"/>
+    </edge>
+    <edge id="Forbes-Smithfield-WilliamPenn" from="J10" to="cluster_105012724_5312909842" priority="-1">
+        <lane id="Forbes-Smithfield-WilliamPenn_0" index="0" speed="13.89" length="1000.98" shape="-519.00,392.40 479.26,392.47"/>
+    </edge>
+    <edge id="Forbes-Smithfield-WilliamPenn-2" from="cluster_105012724_5312909842" to="cluster_104945598_8484284971_8484443912_8484445225" name="Forbes Avenue" priority="10" type="highway.tertiary" shape="484.58,391.77 489.01,387.76 552.41,357.51">
+        <lane id="Forbes-Smithfield-WilliamPenn-2_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="81.09" shape="483.51,390.58 488.11,386.42 546.65,358.49">
+            <param key="origId" value="54800530"/>
+        </lane>
+        <param key="origFrom" value="5312909842"/>
+        <param key="origTo" value="104945598"/>
+    </edge>
+    <edge id="Forbes-WilliamPenn-Smithfield" from="cluster_104945598_8484284971_8484443912_8484445225" to="cluster_105012724_5312909842" name="Forbes Avenue" priority="10" type="highway.tertiary" shape="552.41,357.51 489.01,387.76 484.58,391.77">
+        <lane id="Forbes-WilliamPenn-Smithfield_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="81.09" shape="549.40,364.26 491.71,391.79 487.80,395.33">
+            <param key="origId" value="54800530"/>
+        </lane>
+        <lane id="Forbes-WilliamPenn-Smithfield_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="81.09" shape="548.02,361.38 489.91,389.10 485.65,392.96">
+            <param key="origId" value="54800530"/>
+        </lane>
+        <param key="origFrom" value="104945598"/>
+        <param key="origTo" value="5312909842"/>
+    </edge>
+    <edge id="Grant-Fifth-Forbes" from="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" to="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" priority="-1">
+        <lane id="Grant-Fifth-Forbes_0" index="0" speed="13.89" length="87.90" shape="664.58,389.43 634.85,329.71"/>
+        <lane id="Grant-Fifth-Forbes_1" index="1" speed="13.89" length="87.90" shape="667.44,388.00 637.72,328.28"/>
+    </edge>
+    <edge id="Grant-Fifth-Oliver" from="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" to="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" priority="-1">
+        <lane id="Grant-Fifth-Oliver_0" index="0" speed="13.89" length="88.77" shape="682.30,404.22 712.68,470.26"/>
+        <lane id="Grant-Fifth-Oliver_1" index="1" speed="13.89" length="88.77" shape="679.40,405.56 709.78,471.60"/>
+    </edge>
+    <edge id="Grant-Forbes-Fifth" from="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" to="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" priority="-1">
+        <lane id="Grant-Forbes-Fifth_0" index="0" speed="13.89" length="87.90" shape="643.45,325.43 673.17,385.15"/>
+        <lane id="Grant-Forbes-Fifth_1" index="1" speed="13.89" length="87.90" shape="640.58,326.86 670.31,386.57"/>
+    </edge>
+    <edge id="Grant-Forbes-Fourth" from="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" to="cluster_104650336_4599846713_5308524119_5308525596_5308525747_8484067051_8484284962_8484284963" priority="-1">
+        <lane id="Grant-Forbes-Fourth_0" index="0" speed="13.89" length="99.16" shape="626.95,313.92 588.94,238.57"/>
+        <lane id="Grant-Forbes-Fourth_1" index="1" speed="13.89" length="99.16" shape="629.81,312.48 591.80,237.13"/>
+    </edge>
+    <edge id="Grant-Fourth-Forbes" from="J8" to="cluster_104650336_4599846713_5308524119_5308525596_5308525747_8484067051_8484284962_8484284963" priority="-1">
+        <lane id="Grant-Fourth-Forbes_0" index="0" speed="13.89" length="986.81" shape="598.60,-755.00 599.52,229.25"/>
+    </edge>
+    <edge id="Grant-Fourth-Forbes-2" from="cluster_104650336_4599846713_5308524119_5308525596_5308525747_8484067051_8484284962_8484284963" to="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" priority="-1">
+        <lane id="Grant-Fourth-Forbes-2_0" index="0" speed="13.89" length="99.16" shape="600.37,232.81 638.38,308.16"/>
+        <lane id="Grant-Fourth-Forbes-2_1" index="1" speed="13.89" length="99.16" shape="597.52,234.25 635.52,309.60"/>
+        <lane id="Grant-Fourth-Forbes-2_2" index="2" speed="13.89" length="99.16" shape="594.66,235.69 632.66,311.04"/>
+    </edge>
+    <edge id="Grant-Oliver-Fifth" from="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" to="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" priority="-1">
+        <lane id="Grant-Oliver-Fifth_0" index="0" speed="13.89" length="88.77" shape="703.96,474.27 673.58,408.23"/>
+        <lane id="Grant-Oliver-Fifth_1" index="1" speed="13.89" length="88.77" shape="706.87,472.93 676.49,406.89"/>
+    </edge>
+    <edge id="Grant-Oliver-Sixth" from="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" to="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" priority="-1">
+        <lane id="Grant-Oliver-Sixth_0" index="0" speed="13.89" length="81.52" shape="717.36,479.80 746.46,535.34"/>
+        <lane id="Grant-Oliver-Sixth_1" index="1" speed="13.89" length="81.52" shape="714.53,481.28 743.62,536.83"/>
+    </edge>
+    <edge id="Grant-Seventh-Sixth" from="J1" to="4599846706" priority="-1">
+        <lane id="Grant-Seventh-Sixth_0" index="0" speed="13.89" length="992.24" shape="780.40,1628.00 780.88,640.92"/>
+    </edge>
+    <edge id="Grant-Seventh-Sixth-2" from="4599846706" to="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" priority="-1">
+        <lane id="Grant-Seventh-Sixth-2_0" index="0" speed="13.89" length="93.45" shape="779.17,632.61 748.18,560.93"/>
+        <lane id="Grant-Seventh-Sixth-2_1" index="1" speed="13.89" length="93.45" shape="782.10,631.34 751.12,559.66"/>
+    </edge>
+    <edge id="Grant-Sixth-Oliver" from="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" to="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" priority="-1">
+        <lane id="Grant-Sixth-Oliver_0" index="0" speed="13.89" length="81.52" shape="737.95,539.80 708.86,484.25"/>
+        <lane id="Grant-Sixth-Oliver_1" index="1" speed="13.89" length="81.52" shape="740.79,538.31 711.69,482.77"/>
+    </edge>
+    <edge id="Grant-Sixth-Seventh" from="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" to="4599846706" priority="-1">
+        <lane id="Grant-Sixth-Seventh_0" index="0" speed="13.89" length="93.45" shape="756.99,557.12 787.98,628.80"/>
+        <lane id="Grant-Sixth-Seventh_1" index="1" speed="13.89" length="93.45" shape="754.06,558.39 785.04,630.07"/>
+    </edge>
+    <edge id="Oliver-Smithfield-WilliamPenn" from="J12" to="cluster_105938047_5317312319_8484452991_8484461657_8484461658" priority="-1">
+        <lane id="Oliver-Smithfield-WilliamPenn_0" index="0" speed="13.89" length="1000.46" shape="-445.00,548.40 552.12,549.01"/>
+    </edge>
+    <edge id="Oliver-Smithfield-WilliamPenn-2" from="cluster_105938047_5317312319_8484452991_8484461657_8484461658" to="cluster_105012342_8484443890_8484452928_8484452936_8484452937" name="Oliver Avenue" priority="3" type="highway.residential" shape="561.03,547.42 630.34,514.38">
+        <lane id="Oliver-Smithfield-WilliamPenn-2_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="88.89" shape="560.34,545.98 629.39,513.06">
+            <param key="origId" value="1073294205"/>
+        </lane>
+        <param key="origFrom" value="5317312319"/>
+        <param key="origTo" value="8484452936"/>
+    </edge>
+    <edge id="Oliver-WilliamPenn-Grant" from="cluster_105012342_8484443890_8484452928_8484452936_8484452937" to="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" name="Oliver Avenue" priority="3" type="highway.residential" spreadType="center" shape="641.00,509.39 696.15,484.03 703.15,480.81">
+        <lane id="Oliver-WilliamPenn-Grant_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="82.80" shape="641.00,509.39 696.15,484.03 701.22,481.70">
+            <param key="origId" value="1065071639"/>
+        </lane>
+        <param key="origFrom" value="8484443890"/>
+        <param key="origTo" value="8484443891"/>
+    </edge>
+    <edge id="Oliver-WilliamPenn-Smithfield" from="cluster_105012342_8484443890_8484452928_8484452936_8484452937" to="cluster_105938047_5317312319_8484452991_8484461657_8484461658" name="Oliver Avenue" priority="3" type="highway.residential" shape="630.34,514.38 561.03,547.42">
+        <lane id="Oliver-WilliamPenn-Smithfield_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="11.18" length="88.89" shape="630.77,515.95 561.72,548.86">
+            <param key="origId" value="1073294205"/>
+        </lane>
+        <param key="origFrom" value="8484452936"/>
+        <param key="origTo" value="5317312319"/>
+    </edge>
+    <edge id="Ross-Fifth-Forbes" from="cluster_105096435_8484284984_8484284985_8484285004_8484285005" to="cluster_105012751_8484067060_8484067061_8484284979_8484284980" name="Ross Street" priority="11" type="highway.secondary" shape="771.95,344.59 740.29,274.02">
+        <lane id="Ross-Fifth-Forbes_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="92.97" shape="767.57,346.55 737.64,279.84">
+            <param key="origId" value="323046623"/>
+        </lane>
+        <lane id="Ross-Fifth-Forbes_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="92.97" shape="770.49,345.24 740.56,278.53">
+            <param key="origId" value="323046623"/>
+        </lane>
+        <param key="origFrom" value="8484284985"/>
+        <param key="origTo" value="8484284980"/>
+    </edge>
+    <edge id="Ross-Fifth-Sixth" from="cluster_105096435_8484284984_8484284985_8484285004_8484285005" to="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" name="Ross Street" priority="11" type="highway.secondary" shape="779.28,362.01 816.05,453.95 834.88,500.61">
+        <lane id="Ross-Fifth-Sixth_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="177.66" shape="783.74,360.23 820.50,452.16 838.47,496.67">
+            <param key="origId" value="153230494"/>
+        </lane>
+        <lane id="Ross-Fifth-Sixth_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="177.66" shape="780.77,361.42 817.53,453.35 835.50,497.87">
+            <param key="origId" value="153230494"/>
+        </lane>
+        <param key="origFrom" value="8484285004"/>
+    </edge>
+    <edge id="Ross-Forbes-Fifth" from="cluster_105012751_8484067060_8484067061_8484284979_8484284980" to="cluster_105096435_8484284984_8484284985_8484285004_8484285005" name="Ross Street" priority="11" type="highway.secondary" shape="740.29,274.02 771.95,344.59">
+        <lane id="Ross-Forbes-Fifth_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="92.97" shape="746.40,275.91 776.33,342.63">
+            <param key="origId" value="323046623"/>
+        </lane>
+        <lane id="Ross-Forbes-Fifth_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="92.97" shape="743.48,277.22 773.41,343.94">
+            <param key="origId" value="323046623"/>
+        </lane>
+        <param key="origFrom" value="8484284980"/>
+        <param key="origTo" value="8484284985"/>
+    </edge>
+    <edge id="Ross-Forbes-Fourth" from="cluster_105012751_8484067060_8484067061_8484284979_8484284980" to="cluster_104650348_8484067046_8484067048_8484067049_8484067050" name="Ross Street" priority="11" type="highway.secondary" shape="734.50,261.29 720.34,230.61 706.87,201.57">
+        <lane id="Ross-Forbes-Fourth_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="79.17" shape="729.00,260.83 715.98,232.63 702.52,203.59">
+            <param key="origId" value="323046623"/>
+        </lane>
+        <lane id="Ross-Forbes-Fourth_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="79.17" shape="731.91,259.49 718.89,231.28 705.42,202.24">
+            <param key="origId" value="323046623"/>
+        </lane>
+        <param key="origFrom" value="8484067060"/>
+    </edge>
+    <edge id="Ross-Fourth-Forbes" from="J6" to="cluster_104650348_8484067046_8484067048_8484067049_8484067050" priority="-1">
+        <lane id="Ross-Fourth-Forbes_0" index="0" speed="13.89" length="1000.10" shape="705.60,-804.00 706.13,184.23"/>
+    </edge>
+    <edge id="Ross-Fourth-Forbes-2" from="cluster_104650348_8484067046_8484067048_8484067049_8484067050" to="cluster_105012751_8484067060_8484067061_8484284979_8484284980" name="Ross Street" priority="11" type="highway.secondary" shape="706.87,201.57 720.34,230.61 734.50,261.29">
+        <lane id="Ross-Fourth-Forbes-2_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="79.17" shape="711.22,199.55 724.70,228.59 737.72,256.81">
+            <param key="origId" value="323046623"/>
+        </lane>
+        <lane id="Ross-Fourth-Forbes-2_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="79.17" shape="708.32,200.90 721.79,229.94 734.81,258.15">
+            <param key="origId" value="323046623"/>
+        </lane>
+        <param key="origFrom" value="8484067050"/>
+    </edge>
+    <edge id="Ross-Seventh-Sixth" from="J2" to="4491753305" priority="-1">
+        <lane id="Ross-Seventh-Sixth_0" index="0" speed="13.89" length="982.05" shape="857.40,1563.00 857.83,583.32"/>
+    </edge>
+    <edge id="Ross-Seventh-Sixth-2" from="4491753305" to="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" priority="-1">
+        <lane id="Ross-Seventh-Sixth-2_0" index="0" speed="13.89" length="71.04" shape="857.17,579.84 835.47,524.64"/>
+        <lane id="Ross-Seventh-Sixth-2_1" index="1" speed="13.89" length="71.04" shape="860.15,578.67 838.45,523.47"/>
+        <lane id="Ross-Seventh-Sixth-2_2" index="2" speed="13.89" length="71.04" shape="863.13,577.50 841.43,522.30"/>
+    </edge>
+    <edge id="Ross-Sixth-Fifth" from="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" to="cluster_105096435_8484284984_8484284985_8484285004_8484285005" name="Ross Street" priority="11" type="highway.secondary" shape="834.88,500.61 816.05,453.95 779.28,362.01">
+        <lane id="Ross-Sixth-Fifth_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="177.66" shape="829.56,500.26 811.60,455.74 774.82,363.79">
+            <param key="origId" value="153230494"/>
+        </lane>
+        <lane id="Ross-Sixth-Fifth_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="177.66" shape="832.53,499.07 814.57,454.55 777.79,362.60">
+            <param key="origId" value="153230494"/>
+        </lane>
+        <param key="origFrom" value="8484285016"/>
+    </edge>
+    <edge id="Ross-Sixth-Seventh" from="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" to="4491753305" priority="-1">
+        <lane id="Ross-Sixth-Seventh_0" index="0" speed="13.89" length="71.04" shape="847.38,519.95 869.08,575.16"/>
+        <lane id="Ross-Sixth-Seventh_1" index="1" speed="13.89" length="71.04" shape="844.41,521.12 866.11,576.33"/>
+    </edge>
+    <edge id="Sixth-Grant-Ross" from="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" to="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" name="Sixth Avenue" priority="11" type="highway.secondary" shape="758.41,545.04 762.85,543.29 806.26,526.18 829.63,515.78">
+        <lane id="Sixth-Grant-Ross_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="99.40" shape="755.48,537.60 759.92,535.85 803.17,518.80 823.01,509.97">
+            <param key="origId" value="54314945"/>
+        </lane>
+        <lane id="Sixth-Grant-Ross_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="99.40" shape="756.65,540.57 761.09,538.82 804.40,521.75 824.31,512.89">
+            <param key="origId" value="54314945"/>
+        </lane>
+        <lane id="Sixth-Grant-Ross_2" index="2" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="99.40" shape="757.82,543.55 762.26,541.80 805.64,524.70 825.61,515.82">
+            <param key="origId" value="54314945"/>
+        </lane>
+        <param key="origFrom" value="8484284983"/>
+    </edge>
+    <edge id="Sixth-Grant-WilliamPenn" from="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" to="cluster_104572636_8484443882_8484452939_8484452945_8484452946" name="Sixth Avenue" priority="10" type="highway.tertiary" shape="738.92,553.80 731.75,557.29 708.81,568.50 679.39,582.93">
+        <lane id="Sixth-Grant-WilliamPenn_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="82.31" shape="740.83,558.21 733.86,561.60 710.92,572.81 682.24,586.88">
+            <param key="origId" value="488125922"/>
+        </lane>
+        <lane id="Sixth-Grant-WilliamPenn_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="82.31" shape="739.43,555.33 732.45,558.73 709.51,569.94 680.84,584.00">
+            <param key="origId" value="488125922"/>
+        </lane>
+        <param key="origFrom" value="8484443879"/>
+    </edge>
+    <edge id="Sixth-RHS-Ross" from="J3" to="cluster_104572699_3277882116" priority="-1">
+        <lane id="Sixth-RHS-Ross_0" index="0" speed="13.89" length="998.06" shape="1889.00,467.60 899.03,467.66"/>
+    </edge>
+    <edge id="Sixth-RHS-Ross-2" from="cluster_104572699_3277882116" to="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" name="Sixth Avenue" priority="11" type="highway.secondary" shape="888.23,472.07 886.13,476.99 883.98,480.57 881.12,484.24 877.26,488.59 872.49,493.24 867.53,496.68 862.07,500.32 852.57,505.21 849.24,506.67 848.54,507.01">
+        <lane id="Sixth-RHS-Ross-2_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="71.86" shape="892.64,473.95 890.42,479.18 887.95,483.29 884.81,487.31 880.73,491.91 875.55,496.96 870.23,500.65 864.51,504.46 854.63,509.55 851.34,510.99">
+            <param key="origId" value="289792306 321073330 321073330"/>
+        </lane>
+        <lane id="Sixth-RHS-Ross-2_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="71.86" shape="889.70,472.70 887.56,477.72 885.30,481.48 882.35,485.26 878.42,489.70 873.51,494.48 868.43,498.00 862.88,501.70 853.26,506.66 849.94,508.11">
+            <param key="origId" value="289792306 321073330 321073330"/>
+        </lane>
+        <param key="origFrom" value="3277882116"/>
+        <param key="origTo" value="8486322131"/>
+    </edge>
+    <edge id="Sixth-Ross-Grant" from="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" to="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" name="Sixth Avenue" priority="11" type="highway.secondary" shape="829.63,515.78 806.26,526.18 762.85,543.29 758.41,545.04">
+        <lane id="Sixth-Ross-Grant_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="99.40" shape="828.21,521.66 808.12,530.61 764.61,547.76 760.17,549.51">
+            <param key="origId" value="54314945"/>
+        </lane>
+        <lane id="Sixth-Ross-Grant_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="99.40" shape="826.91,518.74 806.88,527.66 763.44,544.78 759.00,546.53">
+            <param key="origId" value="54314945"/>
+        </lane>
+        <param key="origFrom" value="8484318434"/>
+    </edge>
+    <edge id="Sixth-Ross-RHS" from="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" to="cluster_104572699_3277882116" name="Sixth Avenue" priority="11" type="highway.secondary" shape="848.54,507.01 849.24,506.67 852.57,505.21 862.07,500.32 867.53,496.68 872.49,493.24 877.26,488.59 881.12,484.24 883.98,480.57 886.13,476.99 888.23,472.07">
+        <lane id="Sixth-Ross-RHS_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="71.86" shape="845.74,499.47 845.88,499.41 849.13,497.98 858.01,493.41 863.03,490.06 867.38,487.05 871.47,483.06 874.97,479.12 877.37,476.04 878.99,473.34 880.87,468.93">
+            <param key="origId" value="321073330 321073330 289792306"/>
+        </lane>
+        <lane id="Sixth-Ross-RHS_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="71.86" shape="847.14,502.35 850.51,500.87 859.63,496.18 864.83,492.71 869.43,489.52 873.79,485.27 877.43,481.17 880.01,477.85 881.84,474.80 883.82,470.19">
+            <param key="origId" value="321073330 321073330 289792306"/>
+        </lane>
+        <lane id="Sixth-Ross-RHS_2" index="2" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="27.78" length="71.86" shape="848.54,505.23 851.88,503.76 861.26,498.94 866.63,495.36 871.47,492.00 876.10,487.48 879.89,483.22 882.66,479.66 884.70,476.26 886.76,471.44">
+            <param key="origId" value="321073330 321073330 289792306"/>
+        </lane>
+        <param key="origFrom" value="8486322131"/>
+        <param key="origTo" value="3277882116"/>
+    </edge>
+    <edge id="Sixth-Smithfield-WilliamPenn" from="J13" to="cluster_104572618_8484452947_8484452988_8484452989_8484452990" priority="-1">
+        <lane id="Sixth-Smithfield-WilliamPenn_0" index="0" speed="13.89" length="1000.55" shape="-409.00,622.40 579.37,623.26"/>
+    </edge>
+    <edge id="Sixth-Smithfield-WilliamPenn-2" from="cluster_104572618_8484452947_8484452988_8484452989_8484452990" to="cluster_104572636_8484443882_8484452939_8484452945_8484452946" name="Sixth Avenue" priority="10" type="highway.tertiary" shape="597.66,621.91 635.55,603.74 667.91,588.44">
+        <lane id="Sixth-Smithfield-WilliamPenn-2_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="91.79" shape="595.58,617.58 633.49,599.41 665.86,584.10">
+            <param key="origId" value="661624479"/>
+        </lane>
+        <lane id="Sixth-Smithfield-WilliamPenn-2_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="91.79" shape="596.97,620.47 634.86,602.30 667.23,586.99">
+            <param key="origId" value="661624479"/>
+        </lane>
+        <param key="origFrom" value="8484452947"/>
+    </edge>
+    <edge id="Sixth-WilliamPenn-Grant" from="cluster_104572636_8484443882_8484452939_8484452945_8484452946" to="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" name="Sixth Avenue" priority="10" type="highway.tertiary" shape="679.39,582.93 708.81,568.50 731.75,557.29 738.92,553.80">
+        <lane id="Sixth-WilliamPenn-Grant_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="82.31" shape="678.02,578.26 706.70,564.19 729.64,552.98 736.63,549.58">
+            <param key="origId" value="488125922"/>
+        </lane>
+        <lane id="Sixth-WilliamPenn-Grant_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="82.31" shape="679.43,581.13 708.11,567.06 731.05,555.85 738.03,552.45">
+            <param key="origId" value="488125922"/>
+        </lane>
+        <param key="origFrom" value="8484443882"/>
+    </edge>
+    <edge id="Sixth-WilliamPenn-Smithfield" from="cluster_104572636_8484443882_8484452939_8484452945_8484452946" to="cluster_104572618_8484452947_8484452988_8484452989_8484452990" name="Sixth Avenue" priority="10" type="highway.tertiary" shape="667.91,588.44 635.55,603.74 597.66,621.91">
+        <lane id="Sixth-WilliamPenn-Smithfield_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="91.79" shape="669.96,592.78 637.61,608.07 599.74,626.24">
+            <param key="origId" value="661624479"/>
+        </lane>
+        <lane id="Sixth-WilliamPenn-Smithfield_1" index="1" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="22.22" length="91.79" shape="668.59,589.89 636.24,605.18 598.35,623.35">
+            <param key="origId" value="661624479"/>
+        </lane>
+        <param key="origFrom" value="8484452945"/>
+    </edge>
+    <edge id="WilliamPenn-Fifth-Forbes" from="cluster_105012331_5312909754_5312909756_8484445227_8484452927" to="cluster_104945598_8484284971_8484443912_8484445225" name="Cherry Way" priority="3" type="highway.residential" spreadType="center" shape="590.71,428.62 590.30,427.85 589.74,426.81 569.52,392.77 555.77,364.44">
+        <lane id="WilliamPenn-Fifth-Forbes_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="13.89" length="87.46" shape="589.01,425.58 569.52,392.77 556.94,366.86">
+            <param key="origId" value="11722268 11722268 203322565 203322566"/>
+        </lane>
+        <param key="origFrom" value="8484445227"/>
+        <param key="origTo" value="8484445225"/>
+    </edge>
+    <edge id="WilliamPenn-Forbes-Fourth" from="cluster_104945598_8484284971_8484443912_8484445225" to="cluster_2133394203_8484284960" name="Cherry Way" priority="3" type="highway.residential" spreadType="center" shape="549.86,352.26 535.46,322.59">
+        <lane id="WilliamPenn-Forbes-Fourth_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="13.89" length="39.42" shape="549.26,351.02 535.46,322.58">
+            <param key="origId" value="203322566"/>
+        </lane>
+        <param key="origFrom" value="8484284971"/>
+        <param key="origTo" value="2133394203"/>
+    </edge>
+    <edge id="WilliamPenn-Oliver-Fifth" from="cluster_105012342_8484443890_8484452928_8484452936_8484452937" to="cluster_105012331_5312909754_5312909756_8484445227_8484452927" name="William Penn Place" priority="3" type="highway.residential" spreadType="center" shape="633.40,508.53 597.79,441.80 597.29,440.87">
+        <lane id="WilliamPenn-Oliver-Fifth_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="13.89" length="88.17" shape="631.84,505.61 598.99,444.05">
+            <param key="origId" value="661624478"/>
+        </lane>
+        <param key="origFrom" value="8484452928"/>
+        <param key="origTo" value="8484452927"/>
+    </edge>
+    <edge id="WilliamPenn-Seventh-Sixth" from="J0" to="cluster_105012350_8484443870_8484452954_8484452957" priority="-1">
+        <lane id="WilliamPenn-Seventh-Sixth_0" index="0" speed="13.89" length="1002.16" shape="714.40,1660.00 714.99,659.82"/>
+    </edge>
+    <edge id="WilliamPenn-Seventh-Sixth-2" from="cluster_105012350_8484443870_8484452954_8484452957" to="cluster_104572636_8484443882_8484452939_8484452945_8484452946" name="William Penn Place" priority="3" type="highway.residential" spreadType="center" shape="713.95,657.49 678.52,591.89">
+        <lane id="WilliamPenn-Seventh-Sixth-2_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="13.89" length="83.61" shape="713.95,657.49 679.85,594.35">
+            <param key="origId" value="11729008"/>
+        </lane>
+        <param key="origFrom" value="8484452957"/>
+        <param key="origTo" value="8484452946"/>
+    </edge>
+    <edge id="WilliamPenn-Sixth-Oliver" from="cluster_104572636_8484443882_8484452939_8484452945_8484452946" to="cluster_105012342_8484443890_8484452928_8484452936_8484452937" name="William Penn Place" priority="3" type="highway.residential" spreadType="center" shape="671.77,579.55 663.16,564.10 646.80,533.32 638.47,517.96">
+        <lane id="WilliamPenn-Sixth-Oliver_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship cable_car subway" speed="13.89" length="82.80" shape="669.76,575.95 663.16,564.10 646.80,533.32 638.65,518.30">
+            <param key="origId" value="1065071640"/>
+        </lane>
+        <param key="origFrom" value="8484452939"/>
+        <param key="origTo" value="8484452937"/>
+    </edge>
+
+    <tlLogic id="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" type="static" programID="0" offset="0">
+        <phase duration="39" state="rrrrGGGgrrrrGGgGGg"/>
+        <phase duration="6"  state="rrrryyyyrrrryyyyyy"/>
+        <phase duration="39" state="GGGgrrrrGGGgrrrrrr"/>
+        <phase duration="6"  state="yyyyrrrryyyyrrrrrr"/>
+    </tlLogic>
+    <tlLogic id="cluster_104572636_8484443882_8484452939_8484452945_8484452946" type="static" programID="0" offset="0">
+        <phase duration="40" state="rrrGGgGGG"/>
+        <phase duration="5"  state="rrryyyyyy"/>
+        <phase duration="40" state="GGGrrrrrr"/>
+        <phase duration="5"  state="yyyrrrrrr"/>
+    </tlLogic>
+    <tlLogic id="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" type="static" programID="0" offset="0">
+        <phase duration="39" state="GGGgrrrrGGGgrrrr"/>
+        <phase duration="6"  state="yyyyrrrryyyyrrrr"/>
+        <phase duration="39" state="rrrrGGGgrrrrGGGg"/>
+        <phase duration="6"  state="rrrryyyyrrrryyyy"/>
+    </tlLogic>
+    <tlLogic id="cluster_104945598_8484284971_8484443912_8484445225" type="static" programID="0" offset="0">
+        <phase duration="40" state="rrGGgG"/>
+        <phase duration="5"  state="rryyyy"/>
+        <phase duration="40" state="GGrrrr"/>
+        <phase duration="5"  state="yyrrrr"/>
+    </tlLogic>
+    <tlLogic id="cluster_105012331_5312909754_5312909756_8484445227_8484452927" type="static" programID="0" offset="0">
+        <phase duration="42" state="rrrGGgGGG"/>
+        <phase duration="3"  state="rrryyyyyy"/>
+        <phase duration="42" state="GGGrrrrrr"/>
+        <phase duration="3"  state="yyyrrrrrr"/>
+    </tlLogic>
+    <tlLogic id="cluster_105012342_8484443890_8484452928_8484452936_8484452937" type="static" programID="0" offset="0">
+        <phase duration="42" state="GGGrr"/>
+        <phase duration="3"  state="yyyrr"/>
+        <phase duration="42" state="GrrGG"/>
+        <phase duration="3"  state="yrryy"/>
+    </tlLogic>
+    <tlLogic id="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" type="static" programID="0" offset="0">
+        <phase duration="33" state="GGGgrrrrGGGg"/>
+        <phase duration="6"  state="yyygrrrryyyg"/>
+        <phase duration="6"  state="rrrGrrrrrrrG"/>
+        <phase duration="6"  state="rrryrrrrrrry"/>
+        <phase duration="33" state="rrrrGGGGGrrr"/>
+        <phase duration="6"  state="rrrryyyyyrrr"/>
+    </tlLogic>
+    <tlLogic id="cluster_105012751_8484067060_8484067061_8484284979_8484284980" type="static" programID="0" offset="0">
+        <phase duration="39" state="rrrrGGGgrrrrGGg"/>
+        <phase duration="6"  state="rrrryyyyrrrryyy"/>
+        <phase duration="39" state="GGGgrrrrGGGgrrr"/>
+        <phase duration="6"  state="yyyyrrrryyyyrrr"/>
+    </tlLogic>
+    <tlLogic id="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" type="static" programID="0" offset="0">
+        <phase duration="42" state="rrrrGGGggrrrrGGGg"/>
+        <phase duration="3"  state="rrrryyyyyrrrryyyy"/>
+        <phase duration="42" state="GGGgrrrrrGGGgrrrr"/>
+        <phase duration="3"  state="yyyyrrrrryyyyrrrr"/>
+    </tlLogic>
+    <tlLogic id="cluster_105096435_8484284984_8484284985_8484285004_8484285005" type="static" programID="0" offset="0">
+        <phase duration="39" state="rrrrGGgrrrrGGg"/>
+        <phase duration="6"  state="rrrryyyrrrryyy"/>
+        <phase duration="39" state="GGGgrrrGGGgrrr"/>
+        <phase duration="6"  state="yyyyrrryyyyrrr"/>
+    </tlLogic>
+    <tlLogic id="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" type="static" programID="0" offset="0">
+        <phase duration="42" state="GGGGrr"/>
+        <phase duration="3"  state="yyyyrr"/>
+        <phase duration="42" state="rrrrGG"/>
+        <phase duration="3"  state="rrrryy"/>
+    </tlLogic>
+
+    <junction id="104573441" type="priority" x="853.14" y="350.31" incLanes="Fifth-RHS-Ross_0 Fifth-Ross-RHS_0" intLanes="" shape="854.63,353.51 854.62,350.31 851.55,347.15 851.72,353.55">
+        <request index="0" response="0" foes="0"/>
+    </junction>
+    <junction id="4491753305" type="priority" x="859.44" y="563.74" incLanes="Ross-Sixth-Seventh_0 Ross-Sixth-Seventh_1 Ross-Seventh-Sixth_0" intLanes="" shape="870.57,574.57 855.68,580.42 856.07,581.46 856.16,581.83 856.21,582.22 856.23,582.69 856.23,583.32 859.43,583.32">
+        <request index="0" response="11100" foes="11100"/>
+        <request index="1" response="11100" foes="11100"/>
+        <request index="2" response="00000" foes="00011"/>
+        <request index="3" response="00000" foes="00011"/>
+        <request index="4" response="00000" foes="00011"/>
+    </junction>
+    <junction id="4599846706" type="priority" x="782.49" y="628.20" incLanes="Grant-Sixth-Seventh_0 Grant-Sixth-Seventh_1 Grant-Seventh-Sixth_0" intLanes="" shape="789.45,628.17 777.70,633.24 778.80,635.96 779.07,636.96 779.22,637.99 779.27,639.24 779.28,640.92 782.48,640.92 783.20,637.91 784.93,635.86 787.05,634.32 788.92,632.82 789.93,630.92">
+        <request index="0" response="00" foes="00"/>
+        <request index="1" response="00" foes="00"/>
+    </junction>
+    <junction id="J0" type="dead_end" x="716.00" y="1660.00" incLanes="" intLanes="" shape="716.00,1660.00 712.80,1660.00"/>
+    <junction id="J1" type="dead_end" x="782.00" y="1628.00" incLanes="" intLanes="" shape="782.00,1628.00 778.80,1628.00"/>
+    <junction id="J10" type="dead_end" x="-519.00" y="394.00" incLanes="" intLanes="" shape="-519.00,394.00 -519.00,390.80"/>
+    <junction id="J11" type="dead_end" x="-484.00" y="470.00" incLanes="" intLanes="" shape="-484.00,470.00 -484.00,466.80"/>
+    <junction id="J12" type="dead_end" x="-445.00" y="550.00" incLanes="" intLanes="" shape="-445.00,550.00 -445.00,546.80"/>
+    <junction id="J13" type="dead_end" x="-409.00" y="624.00" incLanes="" intLanes="" shape="-409.00,624.00 -409.00,620.80"/>
+    <junction id="J2" type="dead_end" x="859.00" y="1563.00" incLanes="" intLanes="" shape="859.00,1563.00 855.80,1563.00"/>
+    <junction id="J3" type="dead_end" x="1889.00" y="466.00" incLanes="" intLanes="" shape="1889.00,466.00 1889.00,469.20"/>
+    <junction id="J4" type="dead_end" x="1853.00" y="350.00" incLanes="" intLanes="" shape="1853.00,350.00 1853.00,353.20"/>
+    <junction id="J5" type="priority" x="722.53" y="373.64" incLanes="Fifth-Ross-Grant_0 Fifth-Grant-Ross_0 Fifth-Grant-Ross_1" intLanes="" shape="727.31,375.21 724.98,369.25 721.80,369.61 720.59,369.28 719.39,368.97 718.01,368.96 716.29,369.51 721.75,381.09 723.98,379.12 724.49,378.05 725.01,377.00 725.85,376.03">
+        <request index="0" response="000" foes="000"/>
+        <request index="1" response="000" foes="000"/>
+        <request index="2" response="000" foes="000"/>
+    </junction>
+    <junction id="J6" type="dead_end" x="704.00" y="-804.00" incLanes="" intLanes="" shape="704.00,-804.00 707.20,-804.00"/>
+    <junction id="J7" type="dead_end" x="1829.00" y="244.00" incLanes="" intLanes="" shape="1829.00,244.00 1829.00,247.20"/>
+    <junction id="J8" type="dead_end" x="597.00" y="-755.00" incLanes="" intLanes="" shape="597.00,-755.00 600.20,-755.00"/>
+    <junction id="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" type="traffic_light" x="841.42" y="517.90" incLanes="Ross-Seventh-Sixth-2_0 Ross-Seventh-Sixth-2_1 Ross-Seventh-Sixth-2_2 Sixth-RHS-Ross-2_0 Sixth-RHS-Ross-2_1 Ross-Fifth-Sixth_0 Ross-Fifth-Sixth_1 Sixth-Grant-Ross_0 Sixth-Grant-Ross_1 Sixth-Grant-Ross_2" intLanes="" shape="833.98,525.22 848.87,519.37 848.40,516.49 848.73,515.27 849.45,514.18 850.55,513.24 852.04,512.43 845.05,498.03 842.88,498.59 841.97,498.42 841.18,497.94 840.51,497.16 839.95,496.07 828.08,500.86 828.22,503.63 827.52,504.94 826.31,506.18 824.59,507.37 822.36,508.51 828.87,523.13 831.06,522.64 831.97,522.84 832.76,523.33 833.43,524.13">
+        <request index="0"  response="000000000001100000" foes="000000000001100000"/>
+        <request index="1"  response="111111000011100000" foes="111111100011100000"/>
+        <request index="2"  response="111111000011100000" foes="111111100011100000"/>
+        <request index="3"  response="111010011011100000" foes="111010011011100000"/>
+        <request index="4"  response="000000000000000000" foes="000000011000000000"/>
+        <request index="5"  response="000000000000000000" foes="100000111000001111"/>
+        <request index="6"  response="000000000000000000" foes="100000111000001111"/>
+        <request index="7"  response="011111000000000000" foes="011111111000001110"/>
+        <request index="8"  response="011010000000000000" foes="011010000000000000"/>
+        <request index="9"  response="111010000011110000" foes="111010000011111000"/>
+        <request index="10" response="111010000011110000" foes="111010000011111000"/>
+        <request index="11" response="111010000011100110" foes="111010000011100110"/>
+        <request index="12" response="000000000000000000" foes="000000000010000110"/>
+        <request index="13" response="000000000000000000" foes="000100111110001110"/>
+        <request index="14" response="000010000000000000" foes="000010000010000110"/>
+        <request index="15" response="000000000000000000" foes="000000111110001110"/>
+        <request index="16" response="000000000000000000" foes="000000111110001110"/>
+        <request index="17" response="000000000001100000" foes="000000111001101110"/>
+    </junction>
+    <junction id="cluster_104572618_8484452947_8484452988_8484452989_8484452990" type="priority" x="591.55" y="624.87" incLanes="Sixth-WilliamPenn-Smithfield_0 Sixth-WilliamPenn-Smithfield_1 Sixth-Smithfield-WilliamPenn_0" intLanes="" shape="600.43,627.68 594.89,616.14 591.74,617.79 589.40,619.15 587.44,620.24 585.41,621.02 582.87,621.50 579.37,621.66 579.37,624.86 583.95,625.39 587.42,626.62 590.29,628.00 593.07,628.99 596.28,629.07">
+        <request index="0" response="00" foes="00"/>
+        <request index="1" response="00" foes="00"/>
+    </junction>
+    <junction id="cluster_104572636_8484443882_8484452939_8484452945_8484452946" type="traffic_light" x="674.50" y="585.59" incLanes="WilliamPenn-Seventh-Sixth-2_0 Sixth-Grant-WilliamPenn_0 Sixth-Grant-WilliamPenn_1 Sixth-Smithfield-WilliamPenn-2_0 Sixth-Smithfield-WilliamPenn-2_1" intLanes="" shape="678.44,595.11 681.26,593.59 680.60,591.44 680.73,590.51 681.17,589.68 681.90,588.95 682.95,588.31 677.31,576.82 674.80,577.53 673.72,577.42 672.75,576.98 671.90,576.24 671.16,575.17 668.37,576.73 668.88,578.94 668.54,579.96 667.81,580.92 666.69,581.81 665.17,582.65 670.65,594.23 674.10,593.10 675.51,593.07 676.70,593.40 677.68,594.08">
+        <request index="0" response="000011000" foes="000011000"/>
+        <request index="1" response="111111000" foes="111111000"/>
+        <request index="2" response="110111000" foes="110111000"/>
+        <request index="3" response="000000000" foes="000000111"/>
+        <request index="4" response="000000000" foes="000000111"/>
+        <request index="5" response="111000000" foes="111000110"/>
+        <request index="6" response="000000000" foes="000100010"/>
+        <request index="7" response="000000000" foes="000100110"/>
+        <request index="8" response="000000000" foes="000100110"/>
+    </junction>
+    <junction id="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" type="traffic_light" x="748.52" y="549.62" incLanes="Grant-Seventh-Sixth-2_0 Grant-Seventh-Sixth-2_1 Sixth-Ross-Grant_0 Sixth-Ross-Grant_1 Grant-Oliver-Sixth_0 Grant-Oliver-Sixth_1 Sixth-WilliamPenn-Grant_0 Sixth-WilliamPenn-Grant_1" intLanes="" shape="746.71,561.57 758.46,556.49 757.96,554.14 758.19,553.15 758.73,552.30 759.58,551.58 760.76,550.99 754.89,536.11 751.82,536.84 750.56,536.75 749.48,536.34 748.59,535.62 747.88,534.60 736.54,540.54 737.37,542.37 737.82,543.97 737.91,545.35 737.62,546.50 736.96,547.43 735.93,548.14 741.53,559.65 743.70,559.08 744.62,559.25 745.43,559.72 746.13,560.50">
+        <request index="0"  response="0000000001100000" foes="0000000001100000"/>
+        <request index="1"  response="1111000011100000" foes="1111100011100000"/>
+        <request index="2"  response="1111000011100000" foes="1111100011100000"/>
+        <request index="3"  response="1110011011100000" foes="1110011011100000"/>
+        <request index="4"  response="0000000000000000" foes="0000011000000000"/>
+        <request index="5"  response="0000000000000000" foes="1000111000001111"/>
+        <request index="6"  response="0000000000000000" foes="1000111000001111"/>
+        <request index="7"  response="0110000000000000" foes="0110111000001110"/>
+        <request index="8"  response="0000000000000000" foes="0000000000000000"/>
+        <request index="9"  response="1110000011110000" foes="1110000011111000"/>
+        <request index="10" response="1110000011110000" foes="1110000011111000"/>
+        <request index="11" response="1110000011100110" foes="1110000011100110"/>
+        <request index="12" response="0000000000000000" foes="0000000000000110"/>
+        <request index="13" response="0000000000000000" foes="0000111010001110"/>
+        <request index="14" response="0000000000000000" foes="0000111010001110"/>
+        <request index="15" response="0000000001100000" foes="0000111001101110"/>
+    </junction>
+    <junction id="cluster_104572699_3277882116" type="priority" x="889.88" y="466.06" incLanes="Sixth-RHS-Ross_0 Sixth-Ross-RHS_0 Sixth-Ross-RHS_1 Sixth-Ross-RHS_2" intLanes="" shape="899.03,469.26 899.03,466.06 893.30,466.12 888.55,466.31 884.79,466.62 882.01,467.06 880.21,467.62 879.40,468.30 894.12,474.58 895.67,471.63 896.48,470.59 897.31,469.85 898.16,469.41">
+        <request index="0" response="00" foes="00"/>
+        <request index="1" response="00" foes="00"/>
+    </junction>
+    <junction id="cluster_104650336_4599846713_5308524119_5308525596_5308525747_8484067051_8484284962_8484284963" type="priority" x="597.94" y="245.75" incLanes="Grant-Forbes-Fourth_0 Grant-Forbes-Fourth_1 Grant-Fourth-Forbes_0" intLanes="" shape="587.52,239.30 601.80,232.09 601.33,231.10 601.22,230.73 601.15,230.35 601.13,229.88 601.12,229.25 597.92,229.25">
+        <request index="0" response="11100" foes="11100"/>
+        <request index="1" response="11100" foes="11100"/>
+        <request index="2" response="00000" foes="00011"/>
+        <request index="3" response="00000" foes="00011"/>
+        <request index="4" response="00000" foes="00011"/>
+    </junction>
+    <junction id="cluster_104650348_8484067046_8484067048_8484067049_8484067050" type="priority" x="704.54" y="196.10" incLanes="Ross-Forbes-Fourth_0 Ross-Forbes-Fourth_1 Ross-Fourth-Forbes_0" intLanes="" shape="701.06,204.26 712.68,198.88 711.18,195.89 709.95,193.68 708.99,191.82 708.29,189.90 707.88,187.51 707.73,184.23 704.53,184.23 703.98,188.60 702.69,191.89 701.20,194.60 700.06,197.23 699.84,200.28">
+        <request index="0" response="00" foes="00"/>
+        <request index="1" response="00" foes="00"/>
+    </junction>
+    <junction id="cluster_104945598_8484284971_8484443912_8484445225" type="traffic_light" x="553.86" y="357.33" incLanes="WilliamPenn-Fifth-Forbes_0 Forbes-Grant-WilliamPenn_0 Forbes-Grant-WilliamPenn_1 Forbes-Smithfield-WilliamPenn-2_0" intLanes="" shape="555.50,367.56 558.38,366.16 557.52,364.14 557.04,362.38 556.93,360.88 557.20,359.65 557.84,358.68 558.86,357.97 556.10,352.20 553.88,352.76 552.93,352.60 552.08,352.14 551.34,351.38 550.70,350.33 547.82,351.72 548.39,353.91 548.23,354.85 547.77,355.69 547.01,356.42 545.96,357.04 550.09,365.71 552.32,365.14 553.28,365.30 554.13,365.75 554.87,366.51">
+        <request index="0" response="001100" foes="001100"/>
+        <request index="1" response="111100" foes="111100"/>
+        <request index="2" response="000000" foes="000011"/>
+        <request index="3" response="000000" foes="000011"/>
+        <request index="4" response="100000" foes="100010"/>
+        <request index="5" response="000000" foes="010010"/>
+    </junction>
+    <junction id="cluster_105012331_5312909754_5312909756_8484445227_8484452927" type="traffic_light" x="594.27" y="434.64" incLanes="WilliamPenn-Oliver-Fifth_0 Fifth-Grant-WilliamPenn_0 Fifth-Grant-WilliamPenn_1 Fifth-Smithfield-WilliamPenn-2_0 Fifth-Smithfield-WilliamPenn-2_1" intLanes="" shape="597.58,444.81 600.40,443.29 599.82,441.11 600.03,440.14 600.59,439.25 601.48,438.44 602.70,437.72 597.08,426.22 594.33,427.05 593.16,426.98 592.11,426.58 591.20,425.87 590.42,424.83 587.60,426.33 588.32,428.44 588.19,429.34 587.75,430.15 586.98,430.85 585.89,431.46 591.11,443.15 593.83,442.44 594.98,442.56 595.99,442.99 596.86,443.74">
+        <request index="0" response="000011000" foes="000011000"/>
+        <request index="1" response="111111000" foes="111111000"/>
+        <request index="2" response="110111000" foes="110111000"/>
+        <request index="3" response="000000000" foes="000000111"/>
+        <request index="4" response="000000000" foes="000000111"/>
+        <request index="5" response="111000000" foes="111000110"/>
+        <request index="6" response="000000000" foes="000100010"/>
+        <request index="7" response="000000000" foes="000100110"/>
+        <request index="8" response="000000000" foes="000100110"/>
+    </junction>
+    <junction id="cluster_105012342_8484443890_8484452928_8484452936_8484452937" type="traffic_light" x="635.70" y="512.46" incLanes="WilliamPenn-Sixth-Oliver_0 Oliver-Smithfield-WilliamPenn-2_0" intLanes="" shape="637.25,519.06 640.06,517.53 639.09,514.67 639.17,513.48 639.63,512.44 640.46,511.56 641.67,510.84 640.33,507.94 637.61,508.49 636.38,508.17 635.25,507.46 634.20,506.36 633.25,504.86 630.43,506.36 631.08,508.52 630.94,509.44 630.50,510.27 629.75,510.99 628.70,511.62 631.46,517.39 633.83,516.76 634.85,516.88 635.75,517.31 636.56,518.04">
+        <request index="0" response="00000" foes="00000"/>
+        <request index="1" response="00000" foes="11000"/>
+        <request index="2" response="00000" foes="10000"/>
+        <request index="3" response="00010" foes="00010"/>
+        <request index="4" response="00110" foes="00110"/>
+    </junction>
+    <junction id="cluster_105012350_8484443870_8484452954_8484452957" type="priority" x="716.59" y="660.08" incLanes="WilliamPenn-Seventh-Sixth_0" intLanes="" shape="715.36,656.73 712.54,658.25 713.39,659.82 716.59,659.82 716.45,658.61 716.27,658.20 716.03,657.81 715.72,657.35">
+        <request index="0" response="0" foes="0"/>
+    </junction>
+    <junction id="cluster_105012724_5312909842" type="priority" x="481.98" y="394.07" incLanes="Forbes-WilliamPenn-Smithfield_0 Forbes-WilliamPenn-Smithfield_1 Forbes-Smithfield-WilliamPenn_0" intLanes="" shape="488.87,396.51 482.43,389.40 481.42,390.30 481.02,390.57 480.57,390.75 480.02,390.84 479.26,390.87 479.26,394.07">
+        <request index="0" response="0" foes="0"/>
+    </junction>
+    <junction id="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" type="traffic_light" x="634.42" y="318.07" incLanes="Grant-Fifth-Forbes_0 Grant-Fifth-Forbes_1 Forbes-Ross-Grant_0 Forbes-Ross-Grant_1 Grant-Fourth-Forbes-2_0 Grant-Fourth-Forbes-2_1 Grant-Fourth-Forbes-2_2" intLanes="" shape="633.42,330.42 644.88,324.72 644.61,322.38 645.15,321.23 646.16,320.11 647.62,319.01 649.53,317.93 645.24,309.34 643.05,309.92 642.10,309.76 641.24,309.29 640.48,308.51 639.81,307.44 625.52,314.64 626.12,316.81 625.97,317.75 625.52,318.58 624.77,319.30 623.72,319.93 626.48,325.70 628.90,325.44 630.07,326.00 631.21,327.01 632.33,328.49">
+        <request index="0"  response="000000000000" foes="000001100000"/>
+        <request index="1"  response="000000000000" foes="100011100000"/>
+        <request index="2"  response="000000000000" foes="100011100000"/>
+        <request index="3"  response="011100000000" foes="011111100000"/>
+        <request index="4"  response="011000000000" foes="011000000000"/>
+        <request index="5"  response="111000001111" foes="111000001111"/>
+        <request index="6"  response="111000001111" foes="111000001111"/>
+        <request index="7"  response="111000001110" foes="111000001110"/>
+        <request index="8"  response="000000000000" foes="000000001000"/>
+        <request index="9"  response="000000000000" foes="000011111000"/>
+        <request index="10" response="000000000000" foes="000011111000"/>
+        <request index="11" response="000000000110" foes="000011100110"/>
+    </junction>
+    <junction id="cluster_105012751_8484067060_8484067061_8484284979_8484284980" type="traffic_light" x="737.64" y="268.02" incLanes="Ross-Fifth-Forbes_0 Ross-Fifth-Forbes_1 Forbes-RHS-Ross-2_0 Forbes-RHS-Ross-2_1 Ross-Fourth-Forbes-2_0 Ross-Fourth-Forbes-2_1 Forbes-Grant-Ross_0" intLanes="" shape="736.18,280.50 747.86,275.26 747.32,272.93 747.51,271.94 748.00,271.07 748.80,270.31 749.90,269.66 744.47,258.07 742.27,258.61 741.33,258.44 740.50,257.97 739.78,257.20 739.17,256.14 727.55,261.50 728.38,263.57 728.83,265.36 728.90,266.89 728.59,268.14 727.91,269.13 726.85,269.85 730.92,278.55 733.12,278.01 734.05,278.19 734.87,278.66 735.58,279.43">
+        <request index="0"  response="000000001100000" foes="000000001100000"/>
+        <request index="1"  response="111000011100000" foes="111100011100000"/>
+        <request index="2"  response="111000011100000" foes="111100011100000"/>
+        <request index="3"  response="110011011100000" foes="110011011100000"/>
+        <request index="4"  response="000000000000000" foes="000011000000000"/>
+        <request index="5"  response="000000000000000" foes="100111000001111"/>
+        <request index="6"  response="000000000000000" foes="100111000001111"/>
+        <request index="7"  response="010000000000000" foes="010111000001110"/>
+        <request index="8"  response="000000000000000" foes="000000000000000"/>
+        <request index="9"  response="110000011110000" foes="110000011111000"/>
+        <request index="10" response="110000011110000" foes="110000011111000"/>
+        <request index="11" response="110000011100110" foes="110000011100110"/>
+        <request index="12" response="000000000000000" foes="000000000000110"/>
+        <request index="13" response="000000000000000" foes="000111010001110"/>
+        <request index="14" response="000000001100000" foes="000111001101110"/>
+    </junction>
+    <junction id="cluster_105096396_5312909851_5312909853_8484452925_8484461664" type="priority" x="516.43" y="470.43" incLanes="Fifth-WilliamPenn-Smithfield_0 Fifth-WilliamPenn-Smithfield_1 Fifth-Smithfield-WilliamPenn_0" intLanes="" shape="523.80,473.20 518.50,461.56 515.13,463.23 512.65,464.63 510.57,465.74 508.42,466.56 505.74,467.06 502.05,467.22 502.05,470.42 506.77,470.95 510.34,472.16 513.29,473.52 516.16,474.51 519.49,474.58">
+        <request index="0" response="00" foes="00"/>
+        <request index="1" response="00" foes="00"/>
+    </junction>
+    <junction id="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" type="traffic_light" x="673.59" y="396.76" incLanes="Grant-Oliver-Fifth_0 Grant-Oliver-Fifth_1 Fifth-Ross-Grant-2_0 Fifth-Ross-Grant-2_1 Grant-Forbes-Fifth_0 Grant-Forbes-Fifth_1 Fifth-WilliamPenn-Grant_0 Fifth-WilliamPenn-Grant_1" intLanes="" shape="672.13,408.90 683.76,403.55 683.21,401.30 683.38,400.34 683.85,399.49 684.61,398.76 685.67,398.13 680.20,386.56 677.95,387.09 676.96,386.90 676.08,386.39 675.29,385.57 674.60,384.44 663.15,390.14 663.73,392.32 663.58,393.25 663.12,394.08 662.36,394.80 661.31,395.42 666.73,407.01 668.99,406.44 669.94,406.61 670.79,407.07 671.52,407.84">
+        <request index="0"  response="00000000001100000" foes="00000000001100000"/>
+        <request index="1"  response="11110000011100000" foes="11111000011100000"/>
+        <request index="2"  response="11110000011100000" foes="11111000011100000"/>
+        <request index="3"  response="11100110011100000" foes="11100110111100000"/>
+        <request index="4"  response="00000000000000000" foes="00000110000000000"/>
+        <request index="5"  response="00000000000000000" foes="10001110000001111"/>
+        <request index="6"  response="00000000000000000" foes="10001110000001111"/>
+        <request index="7"  response="01100000000000000" foes="01101110000001110"/>
+        <request index="8"  response="01100000000001000" foes="01100000000001000"/>
+        <request index="9"  response="01100000000000000" foes="01100000000000000"/>
+        <request index="10" response="11100000011110000" foes="11100000011111000"/>
+        <request index="11" response="11100000011110000" foes="11100000011111000"/>
+        <request index="12" response="11100000011100110" foes="11100000011100110"/>
+        <request index="13" response="00000000000000000" foes="00000000000000110"/>
+        <request index="14" response="00000000000000000" foes="00001111110001110"/>
+        <request index="15" response="00000000000000000" foes="00001111110001110"/>
+        <request index="16" response="00000000001100000" foes="00001110001101110"/>
+    </junction>
+    <junction id="cluster_105096435_8484284984_8484284985_8484285004_8484285005" type="traffic_light" x="775.50" y="352.93" incLanes="Ross-Sixth-Fifth_0 Ross-Sixth-Fifth_1 Fifth-RHS-Ross-2_0 Ross-Forbes-Fifth_0 Ross-Forbes-Fifth_1 Fifth-Grant-Ross-2_0" intLanes="" shape="773.34,364.39 785.22,359.63 784.68,357.16 784.89,356.29 785.42,355.67 786.28,355.28 787.45,355.14 787.35,348.74 785.29,348.58 783.41,348.03 781.72,347.10 780.22,345.78 778.91,344.07 777.79,341.97 766.11,347.21 766.96,350.19 766.88,351.37 766.48,352.36 765.73,353.15 764.66,353.73 766.99,359.69 769.41,359.54 770.51,360.11 771.53,361.11 772.47,362.53">
+        <request index="0"  response="00000000000000" foes="00010000100000"/>
+        <request index="1"  response="00000000000000" foes="11110001100000"/>
+        <request index="2"  response="00000000000000" foes="11110001100000"/>
+        <request index="3"  response="00001110000000" foes="11001111100000"/>
+        <request index="4"  response="00001100000000" foes="00001100000000"/>
+        <request index="5"  response="00011100001111" foes="10011100001111"/>
+        <request index="6"  response="01011100001110" foes="01011100001110"/>
+        <request index="7"  response="00000000000000" foes="01000000001000"/>
+        <request index="8"  response="00000000000000" foes="11000001111000"/>
+        <request index="9"  response="00000000000000" foes="11000001111000"/>
+        <request index="10" response="00000000000111" foes="11000001100111"/>
+        <request index="11" response="00000000000110" foes="00000000000110"/>
+        <request index="12" response="00011110001110" foes="00011111001110"/>
+        <request index="13" response="00011100101110" foes="00011100101110"/>
+    </junction>
+    <junction id="cluster_105938047_5317312319_8484452991_8484461657_8484461658" type="priority" x="555.46" y="550.61" incLanes="Oliver-WilliamPenn-Smithfield_0 Oliver-Smithfield-WilliamPenn_0" intLanes="" shape="562.41,550.31 559.65,544.53 556.98,546.05 556.03,546.62 555.05,547.05 553.82,547.32 552.12,547.41 552.11,550.61 554.34,550.74 556.04,551.02 557.45,551.29 558.82,551.37 560.39,551.10">
+        <request index="0" response="0" foes="0"/>
+    </junction>
+    <junction id="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" type="traffic_light" x="710.69" y="477.41" incLanes="Grant-Sixth-Oliver_0 Grant-Sixth-Oliver_1 Grant-Fifth-Oliver_0 Grant-Fifth-Oliver_1 Oliver-WilliamPenn-Grant_0" intLanes="" shape="707.44,485.00 718.78,479.06 714.14,469.59 702.51,474.94 703.03,477.15 702.85,478.08 702.38,478.91 701.61,479.63 700.55,480.25 701.88,483.15 704.15,482.60 705.12,482.76 706.00,483.22 706.77,483.96">
+        <request index="0" response="000000" foes="110000"/>
+        <request index="1" response="000000" foes="110000"/>
+        <request index="2" response="000000" foes="100000"/>
+        <request index="3" response="000000" foes="100000"/>
+        <request index="4" response="000011" foes="000011"/>
+        <request index="5" response="001111" foes="001111"/>
+    </junction>
+    <junction id="cluster_2133394203_8484284960" type="dead_end" x="537.07" y="321.80" incLanes="WilliamPenn-Forbes-Fourth_0" intLanes="" shape="534.02,323.28 536.90,321.88"/>
+    <junction id="cluster_3724219516_3724219519_684792169_8484285007" type="priority" x="829.04" y="244.47" incLanes="Forbes-RHS-Ross_0 Forbes-Ross-RHS_0 Forbes-Ross-RHS_1" intLanes="" shape="820.40,247.67 820.39,244.47 816.89,244.32 814.32,243.94 812.22,243.42 810.12,242.88 807.56,242.41 804.06,242.13 803.58,254.93 807.37,254.51 809.97,253.20 811.99,251.43 814.00,249.63 816.61,248.24">
+        <request index="0" response="00" foes="00"/>
+        <request index="1" response="00" foes="00"/>
+    </junction>
+
+    <connection from="Fifth-Grant-Ross" to="Fifth-Grant-Ross-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Fifth-Grant-Ross-2" to="Ross-Fifth-Forbes" fromLane="0" toLane="0" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="11" dir="r" state="o"/>
+    <connection from="Fifth-Grant-Ross-2" to="Fifth-Ross-RHS" fromLane="0" toLane="0" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="12" dir="s" state="o"/>
+    <connection from="Fifth-Grant-Ross-2" to="Ross-Fifth-Sixth" fromLane="0" toLane="1" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="13" dir="l" state="o"/>
+    <connection from="Fifth-Grant-WilliamPenn" to="Fifth-WilliamPenn-Smithfield" fromLane="0" toLane="0" tl="cluster_105012331_5312909754_5312909756_8484445227_8484452927" linkIndex="3" dir="s" state="O"/>
+    <connection from="Fifth-Grant-WilliamPenn" to="Fifth-WilliamPenn-Smithfield" fromLane="1" toLane="1" tl="cluster_105012331_5312909754_5312909756_8484445227_8484452927" linkIndex="4" dir="s" state="O"/>
+    <connection from="Fifth-Grant-WilliamPenn" to="WilliamPenn-Fifth-Forbes" fromLane="1" toLane="0" tl="cluster_105012331_5312909754_5312909756_8484445227_8484452927" linkIndex="5" dir="l" state="o"/>
+    <connection from="Fifth-RHS-Ross" to="Fifth-RHS-Ross-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Fifth-RHS-Ross-2" to="Ross-Fifth-Sixth" fromLane="0" toLane="0" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="4" dir="r" state="o"/>
+    <connection from="Fifth-RHS-Ross-2" to="Fifth-Ross-Grant" fromLane="0" toLane="0" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="5" dir="s" state="o"/>
+    <connection from="Fifth-RHS-Ross-2" to="Ross-Fifth-Forbes" fromLane="0" toLane="1" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="6" dir="l" state="o"/>
+    <connection from="Fifth-Ross-Grant" to="Fifth-Ross-Grant-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Fifth-Ross-Grant" to="Fifth-Ross-Grant-2" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from="Fifth-Ross-Grant-2" to="Grant-Fifth-Oliver" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="4" dir="r" state="O"/>
+    <connection from="Fifth-Ross-Grant-2" to="Fifth-Grant-WilliamPenn" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="5" dir="s" state="O"/>
+    <connection from="Fifth-Ross-Grant-2" to="Fifth-Grant-WilliamPenn" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="6" dir="s" state="O"/>
+    <connection from="Fifth-Ross-Grant-2" to="Grant-Fifth-Forbes" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="7" dir="l" state="o"/>
+    <connection from="Fifth-Ross-Grant-2" to="Fifth-Grant-Ross" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="8" dir="t" state="o"/>
+    <connection from="Fifth-Smithfield-WilliamPenn" to="Fifth-Smithfield-WilliamPenn-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Fifth-Smithfield-WilliamPenn" to="Fifth-Smithfield-WilliamPenn-2" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from="Fifth-Smithfield-WilliamPenn-2" to="WilliamPenn-Fifth-Forbes" fromLane="0" toLane="0" tl="cluster_105012331_5312909754_5312909756_8484445227_8484452927" linkIndex="6" dir="r" state="O"/>
+    <connection from="Fifth-Smithfield-WilliamPenn-2" to="Fifth-WilliamPenn-Grant" fromLane="0" toLane="0" tl="cluster_105012331_5312909754_5312909756_8484445227_8484452927" linkIndex="7" dir="s" state="O"/>
+    <connection from="Fifth-Smithfield-WilliamPenn-2" to="Fifth-WilliamPenn-Grant" fromLane="1" toLane="1" tl="cluster_105012331_5312909754_5312909756_8484445227_8484452927" linkIndex="8" dir="s" state="O"/>
+    <connection from="Fifth-WilliamPenn-Grant" to="Grant-Fifth-Forbes" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="13" dir="r" state="O"/>
+    <connection from="Fifth-WilliamPenn-Grant" to="Fifth-Grant-Ross" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="14" dir="s" state="O"/>
+    <connection from="Fifth-WilliamPenn-Grant" to="Fifth-Grant-Ross" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="15" dir="s" state="O"/>
+    <connection from="Fifth-WilliamPenn-Grant" to="Grant-Fifth-Oliver" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="16" dir="l" state="o"/>
+    <connection from="Forbes-Grant-Ross" to="Ross-Forbes-Fourth" fromLane="0" toLane="0" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="12" dir="r" state="O"/>
+    <connection from="Forbes-Grant-Ross" to="Forbes-Ross-RHS" fromLane="0" toLane="1" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="13" dir="s" state="O"/>
+    <connection from="Forbes-Grant-Ross" to="Ross-Forbes-Fifth" fromLane="0" toLane="1" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="14" dir="l" state="o"/>
+    <connection from="Forbes-Grant-WilliamPenn" to="Forbes-WilliamPenn-Smithfield" fromLane="0" toLane="0" tl="cluster_104945598_8484284971_8484443912_8484445225" linkIndex="2" dir="s" state="O"/>
+    <connection from="Forbes-Grant-WilliamPenn" to="Forbes-WilliamPenn-Smithfield" fromLane="1" toLane="1" tl="cluster_104945598_8484284971_8484443912_8484445225" linkIndex="3" dir="s" state="O"/>
+    <connection from="Forbes-Grant-WilliamPenn" to="WilliamPenn-Forbes-Fourth" fromLane="1" toLane="0" tl="cluster_104945598_8484284971_8484443912_8484445225" linkIndex="4" dir="l" state="o"/>
+    <connection from="Forbes-RHS-Ross" to="Forbes-RHS-Ross-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Forbes-RHS-Ross" to="Forbes-RHS-Ross-2" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from="Forbes-RHS-Ross-2" to="Ross-Forbes-Fifth" fromLane="0" toLane="0" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="4" dir="r" state="O"/>
+    <connection from="Forbes-RHS-Ross-2" to="Forbes-Ross-Grant" fromLane="0" toLane="0" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="5" dir="s" state="O"/>
+    <connection from="Forbes-RHS-Ross-2" to="Forbes-Ross-Grant" fromLane="1" toLane="1" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="6" dir="s" state="O"/>
+    <connection from="Forbes-RHS-Ross-2" to="Ross-Forbes-Fourth" fromLane="1" toLane="1" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="7" dir="l" state="o"/>
+    <connection from="Forbes-Ross-Grant" to="Grant-Forbes-Fifth" fromLane="0" toLane="0" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="4" dir="r" state="o"/>
+    <connection from="Forbes-Ross-Grant" to="Forbes-Grant-WilliamPenn" fromLane="0" toLane="0" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="5" dir="s" state="o"/>
+    <connection from="Forbes-Ross-Grant" to="Forbes-Grant-WilliamPenn" fromLane="1" toLane="1" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="6" dir="s" state="o"/>
+    <connection from="Forbes-Ross-Grant" to="Grant-Forbes-Fourth" fromLane="1" toLane="1" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="7" dir="l" state="o"/>
+    <connection from="Forbes-Smithfield-WilliamPenn" to="Forbes-Smithfield-WilliamPenn-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Forbes-Smithfield-WilliamPenn-2" to="WilliamPenn-Forbes-Fourth" fromLane="0" toLane="0" tl="cluster_104945598_8484284971_8484443912_8484445225" linkIndex="5" dir="r" state="O"/>
+    <connection from="Grant-Fifth-Forbes" to="Forbes-Grant-WilliamPenn" fromLane="0" toLane="0" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="0" dir="r" state="O"/>
+    <connection from="Grant-Fifth-Forbes" to="Grant-Forbes-Fourth" fromLane="0" toLane="0" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="1" dir="s" state="O"/>
+    <connection from="Grant-Fifth-Forbes" to="Grant-Forbes-Fourth" fromLane="1" toLane="1" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="2" dir="s" state="O"/>
+    <connection from="Grant-Fifth-Forbes" to="Forbes-Grant-Ross" fromLane="1" toLane="0" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="3" dir="l" state="o"/>
+    <connection from="Grant-Fifth-Oliver" to="Grant-Oliver-Sixth" fromLane="0" toLane="0" tl="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" linkIndex="2" dir="s" state="O"/>
+    <connection from="Grant-Fifth-Oliver" to="Grant-Oliver-Sixth" fromLane="1" toLane="1" tl="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" linkIndex="3" dir="s" state="O"/>
+    <connection from="Grant-Forbes-Fifth" to="Fifth-Grant-Ross" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="9" dir="r" state="o"/>
+    <connection from="Grant-Forbes-Fifth" to="Grant-Fifth-Oliver" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="10" dir="s" state="o"/>
+    <connection from="Grant-Forbes-Fifth" to="Grant-Fifth-Oliver" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="11" dir="s" state="o"/>
+    <connection from="Grant-Forbes-Fifth" to="Fifth-Grant-WilliamPenn" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="12" dir="l" state="o"/>
+    <connection from="Grant-Forbes-Fourth" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="0" dir="t" state="m"/>
+    <connection from="Grant-Forbes-Fourth" to="Grant-Fourth-Forbes-2" fromLane="1" toLane="1" dir="t" state="m"/>
+    <connection from="Grant-Fourth-Forbes" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Grant-Fourth-Forbes" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from="Grant-Fourth-Forbes" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="2" dir="s" state="M"/>
+    <connection from="Grant-Fourth-Forbes-2" to="Forbes-Grant-Ross" fromLane="0" toLane="0" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="8" dir="r" state="O"/>
+    <connection from="Grant-Fourth-Forbes-2" to="Grant-Forbes-Fifth" fromLane="0" toLane="0" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="9" dir="s" state="O"/>
+    <connection from="Grant-Fourth-Forbes-2" to="Grant-Forbes-Fifth" fromLane="1" toLane="1" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="10" dir="s" state="O"/>
+    <connection from="Grant-Fourth-Forbes-2" to="Forbes-Grant-WilliamPenn" fromLane="2" toLane="1" tl="cluster_105012740_4599846712_8484284976_8484284977_8484284978_8484443907_8484443908_8484443909" linkIndex="11" dir="l" state="o"/>
+    <connection from="Grant-Oliver-Fifth" to="Fifth-Grant-WilliamPenn" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="0" dir="r" state="o"/>
+    <connection from="Grant-Oliver-Fifth" to="Grant-Fifth-Forbes" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="1" dir="s" state="o"/>
+    <connection from="Grant-Oliver-Fifth" to="Grant-Fifth-Forbes" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="2" dir="s" state="o"/>
+    <connection from="Grant-Oliver-Fifth" to="Fifth-Grant-Ross" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="3" dir="l" state="o"/>
+    <connection from="Grant-Oliver-Sixth" to="Sixth-Grant-Ross" fromLane="0" toLane="0" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="8" dir="r" state="O"/>
+    <connection from="Grant-Oliver-Sixth" to="Grant-Sixth-Seventh" fromLane="0" toLane="0" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="9" dir="s" state="o"/>
+    <connection from="Grant-Oliver-Sixth" to="Grant-Sixth-Seventh" fromLane="1" toLane="1" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="10" dir="s" state="o"/>
+    <connection from="Grant-Oliver-Sixth" to="Sixth-Grant-WilliamPenn" fromLane="1" toLane="1" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="11" dir="l" state="o"/>
+    <connection from="Grant-Seventh-Sixth" to="Grant-Seventh-Sixth-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Grant-Seventh-Sixth" to="Grant-Seventh-Sixth-2" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from="Grant-Seventh-Sixth-2" to="Sixth-Grant-WilliamPenn" fromLane="0" toLane="0" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="0" dir="r" state="o"/>
+    <connection from="Grant-Seventh-Sixth-2" to="Grant-Sixth-Oliver" fromLane="0" toLane="0" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="1" dir="s" state="o"/>
+    <connection from="Grant-Seventh-Sixth-2" to="Grant-Sixth-Oliver" fromLane="1" toLane="1" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="2" dir="s" state="o"/>
+    <connection from="Grant-Seventh-Sixth-2" to="Sixth-Grant-Ross" fromLane="1" toLane="2" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="3" dir="l" state="o"/>
+    <connection from="Grant-Sixth-Oliver" to="Grant-Oliver-Fifth" fromLane="0" toLane="0" tl="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" linkIndex="0" dir="s" state="O"/>
+    <connection from="Grant-Sixth-Oliver" to="Grant-Oliver-Fifth" fromLane="1" toLane="1" tl="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" linkIndex="1" dir="s" state="O"/>
+    <connection from="Oliver-Smithfield-WilliamPenn" to="Oliver-Smithfield-WilliamPenn-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Oliver-Smithfield-WilliamPenn-2" to="WilliamPenn-Oliver-Fifth" fromLane="0" toLane="0" tl="cluster_105012342_8484443890_8484452928_8484452936_8484452937" linkIndex="3" dir="r" state="o"/>
+    <connection from="Oliver-Smithfield-WilliamPenn-2" to="Oliver-WilliamPenn-Grant" fromLane="0" toLane="0" tl="cluster_105012342_8484443890_8484452928_8484452936_8484452937" linkIndex="4" dir="s" state="o"/>
+    <connection from="Oliver-WilliamPenn-Grant" to="Grant-Oliver-Fifth" fromLane="0" toLane="0" tl="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" linkIndex="4" dir="r" state="o"/>
+    <connection from="Oliver-WilliamPenn-Grant" to="Grant-Oliver-Sixth" fromLane="0" toLane="1" tl="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" linkIndex="5" dir="l" state="o"/>
+    <connection from="Ross-Fifth-Forbes" to="Forbes-Ross-Grant" fromLane="0" toLane="0" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="0" dir="r" state="o"/>
+    <connection from="Ross-Fifth-Forbes" to="Ross-Forbes-Fourth" fromLane="0" toLane="0" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="1" dir="s" state="o"/>
+    <connection from="Ross-Fifth-Forbes" to="Ross-Forbes-Fourth" fromLane="1" toLane="1" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="2" dir="s" state="o"/>
+    <connection from="Ross-Fifth-Forbes" to="Forbes-Ross-RHS" fromLane="1" toLane="1" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="3" dir="l" state="o"/>
+    <connection from="Ross-Fifth-Sixth" to="Sixth-Ross-RHS" fromLane="0" toLane="0" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="8" dir="r" state="o"/>
+    <connection from="Ross-Fifth-Sixth" to="Ross-Sixth-Seventh" fromLane="0" toLane="0" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="9" dir="s" state="o"/>
+    <connection from="Ross-Fifth-Sixth" to="Ross-Sixth-Seventh" fromLane="1" toLane="1" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="10" dir="s" state="o"/>
+    <connection from="Ross-Fifth-Sixth" to="Sixth-Ross-Grant" fromLane="1" toLane="1" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="11" dir="l" state="o"/>
+    <connection from="Ross-Forbes-Fifth" to="Fifth-Ross-RHS" fromLane="0" toLane="0" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="7" dir="r" state="O"/>
+    <connection from="Ross-Forbes-Fifth" to="Ross-Fifth-Sixth" fromLane="0" toLane="0" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="8" dir="s" state="O"/>
+    <connection from="Ross-Forbes-Fifth" to="Ross-Fifth-Sixth" fromLane="1" toLane="1" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="9" dir="s" state="O"/>
+    <connection from="Ross-Forbes-Fifth" to="Fifth-Ross-Grant" fromLane="1" toLane="0" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="10" dir="l" state="o"/>
+    <connection from="Ross-Fourth-Forbes" to="Ross-Fourth-Forbes-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Ross-Fourth-Forbes" to="Ross-Fourth-Forbes-2" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from="Ross-Fourth-Forbes-2" to="Forbes-Ross-RHS" fromLane="0" toLane="0" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="8" dir="r" state="O"/>
+    <connection from="Ross-Fourth-Forbes-2" to="Ross-Forbes-Fifth" fromLane="0" toLane="0" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="9" dir="s" state="o"/>
+    <connection from="Ross-Fourth-Forbes-2" to="Ross-Forbes-Fifth" fromLane="1" toLane="1" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="10" dir="s" state="o"/>
+    <connection from="Ross-Fourth-Forbes-2" to="Forbes-Ross-Grant" fromLane="1" toLane="1" tl="cluster_105012751_8484067060_8484067061_8484284979_8484284980" linkIndex="11" dir="l" state="o"/>
+    <connection from="Ross-Seventh-Sixth" to="Ross-Seventh-Sixth-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Ross-Seventh-Sixth" to="Ross-Seventh-Sixth-2" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from="Ross-Seventh-Sixth" to="Ross-Seventh-Sixth-2" fromLane="0" toLane="2" dir="s" state="M"/>
+    <connection from="Ross-Seventh-Sixth-2" to="Sixth-Ross-Grant" fromLane="0" toLane="0" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="0" dir="r" state="o"/>
+    <connection from="Ross-Seventh-Sixth-2" to="Ross-Sixth-Fifth" fromLane="1" toLane="0" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="1" dir="s" state="o"/>
+    <connection from="Ross-Seventh-Sixth-2" to="Ross-Sixth-Fifth" fromLane="2" toLane="1" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="2" dir="s" state="o"/>
+    <connection from="Ross-Seventh-Sixth-2" to="Sixth-Ross-RHS" fromLane="2" toLane="2" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="3" dir="l" state="o"/>
+    <connection from="Ross-Sixth-Fifth" to="Fifth-Ross-Grant" fromLane="0" toLane="0" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="0" dir="r" state="O"/>
+    <connection from="Ross-Sixth-Fifth" to="Ross-Fifth-Forbes" fromLane="0" toLane="0" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="1" dir="s" state="O"/>
+    <connection from="Ross-Sixth-Fifth" to="Ross-Fifth-Forbes" fromLane="1" toLane="1" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="2" dir="s" state="O"/>
+    <connection from="Ross-Sixth-Fifth" to="Fifth-Ross-RHS" fromLane="1" toLane="0" tl="cluster_105096435_8484284984_8484284985_8484285004_8484285005" linkIndex="3" dir="l" state="o"/>
+    <connection from="Ross-Sixth-Seventh" to="Ross-Seventh-Sixth-2" fromLane="0" toLane="0" dir="t" state="m"/>
+    <connection from="Ross-Sixth-Seventh" to="Ross-Seventh-Sixth-2" fromLane="1" toLane="1" dir="t" state="m"/>
+    <connection from="Sixth-Grant-Ross" to="Ross-Sixth-Fifth" fromLane="0" toLane="0" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="12" dir="r" state="O"/>
+    <connection from="Sixth-Grant-Ross" to="Sixth-Ross-RHS" fromLane="0" toLane="0" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="13" dir="s" state="O"/>
+    <connection from="Sixth-Grant-Ross" to="Ross-Sixth-Fifth" fromLane="1" toLane="1" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="14" dir="r" state="o"/>
+    <connection from="Sixth-Grant-Ross" to="Sixth-Ross-RHS" fromLane="1" toLane="1" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="15" dir="s" state="O"/>
+    <connection from="Sixth-Grant-Ross" to="Sixth-Ross-RHS" fromLane="2" toLane="2" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="16" dir="s" state="O"/>
+    <connection from="Sixth-Grant-Ross" to="Ross-Sixth-Seventh" fromLane="2" toLane="1" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="17" dir="l" state="o"/>
+    <connection from="Sixth-Grant-WilliamPenn" to="Sixth-WilliamPenn-Smithfield" fromLane="0" toLane="0" tl="cluster_104572636_8484443882_8484452939_8484452945_8484452946" linkIndex="3" dir="s" state="O"/>
+    <connection from="Sixth-Grant-WilliamPenn" to="Sixth-WilliamPenn-Smithfield" fromLane="1" toLane="1" tl="cluster_104572636_8484443882_8484452939_8484452945_8484452946" linkIndex="4" dir="s" state="O"/>
+    <connection from="Sixth-Grant-WilliamPenn" to="WilliamPenn-Sixth-Oliver" fromLane="1" toLane="0" tl="cluster_104572636_8484443882_8484452939_8484452945_8484452946" linkIndex="5" dir="l" state="o"/>
+    <connection from="Sixth-RHS-Ross" to="Sixth-RHS-Ross-2" fromLane="0" toLane="0" dir="r" state="M"/>
+    <connection from="Sixth-RHS-Ross" to="Sixth-RHS-Ross-2" fromLane="0" toLane="1" dir="r" state="M"/>
+    <connection from="Sixth-RHS-Ross-2" to="Ross-Sixth-Seventh" fromLane="0" toLane="0" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="4" dir="r" state="O"/>
+    <connection from="Sixth-RHS-Ross-2" to="Sixth-Ross-Grant" fromLane="0" toLane="0" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="5" dir="s" state="O"/>
+    <connection from="Sixth-RHS-Ross-2" to="Sixth-Ross-Grant" fromLane="1" toLane="1" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="6" dir="s" state="O"/>
+    <connection from="Sixth-RHS-Ross-2" to="Ross-Sixth-Fifth" fromLane="1" toLane="1" tl="cluster_104472649_1362263119_684800917_8484285016_8484318434_8486322131_8486322133" linkIndex="7" dir="l" state="o"/>
+    <connection from="Sixth-Ross-Grant" to="Grant-Sixth-Seventh" fromLane="0" toLane="0" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="4" dir="r" state="O"/>
+    <connection from="Sixth-Ross-Grant" to="Sixth-Grant-WilliamPenn" fromLane="0" toLane="0" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="5" dir="s" state="O"/>
+    <connection from="Sixth-Ross-Grant" to="Sixth-Grant-WilliamPenn" fromLane="1" toLane="1" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="6" dir="s" state="O"/>
+    <connection from="Sixth-Ross-Grant" to="Grant-Sixth-Oliver" fromLane="1" toLane="1" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="7" dir="l" state="o"/>
+    <connection from="Sixth-Smithfield-WilliamPenn" to="Sixth-Smithfield-WilliamPenn-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="Sixth-Smithfield-WilliamPenn" to="Sixth-Smithfield-WilliamPenn-2" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from="Sixth-Smithfield-WilliamPenn-2" to="WilliamPenn-Sixth-Oliver" fromLane="0" toLane="0" tl="cluster_104572636_8484443882_8484452939_8484452945_8484452946" linkIndex="6" dir="r" state="O"/>
+    <connection from="Sixth-Smithfield-WilliamPenn-2" to="Sixth-WilliamPenn-Grant" fromLane="0" toLane="0" tl="cluster_104572636_8484443882_8484452939_8484452945_8484452946" linkIndex="7" dir="s" state="O"/>
+    <connection from="Sixth-Smithfield-WilliamPenn-2" to="Sixth-WilliamPenn-Grant" fromLane="1" toLane="1" tl="cluster_104572636_8484443882_8484452939_8484452945_8484452946" linkIndex="8" dir="s" state="O"/>
+    <connection from="Sixth-WilliamPenn-Grant" to="Grant-Sixth-Oliver" fromLane="0" toLane="0" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="12" dir="r" state="O"/>
+    <connection from="Sixth-WilliamPenn-Grant" to="Sixth-Grant-Ross" fromLane="0" toLane="1" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="13" dir="s" state="O"/>
+    <connection from="Sixth-WilliamPenn-Grant" to="Sixth-Grant-Ross" fromLane="1" toLane="2" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="14" dir="s" state="O"/>
+    <connection from="Sixth-WilliamPenn-Grant" to="Grant-Sixth-Seventh" fromLane="1" toLane="1" tl="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" linkIndex="15" dir="l" state="o"/>
+    <connection from="WilliamPenn-Fifth-Forbes" to="Forbes-WilliamPenn-Smithfield" fromLane="0" toLane="0" tl="cluster_104945598_8484284971_8484443912_8484445225" linkIndex="0" dir="r" state="o"/>
+    <connection from="WilliamPenn-Fifth-Forbes" to="WilliamPenn-Forbes-Fourth" fromLane="0" toLane="0" tl="cluster_104945598_8484284971_8484443912_8484445225" linkIndex="1" dir="s" state="o"/>
+    <connection from="WilliamPenn-Oliver-Fifth" to="Fifth-WilliamPenn-Smithfield" fromLane="0" toLane="0" tl="cluster_105012331_5312909754_5312909756_8484445227_8484452927" linkIndex="0" dir="r" state="o"/>
+    <connection from="WilliamPenn-Oliver-Fifth" to="WilliamPenn-Fifth-Forbes" fromLane="0" toLane="0" tl="cluster_105012331_5312909754_5312909756_8484445227_8484452927" linkIndex="1" dir="s" state="o"/>
+    <connection from="WilliamPenn-Oliver-Fifth" to="Fifth-WilliamPenn-Grant" fromLane="0" toLane="1" tl="cluster_105012331_5312909754_5312909756_8484445227_8484452927" linkIndex="2" dir="l" state="o"/>
+    <connection from="WilliamPenn-Seventh-Sixth" to="WilliamPenn-Seventh-Sixth-2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from="WilliamPenn-Seventh-Sixth-2" to="Sixth-WilliamPenn-Smithfield" fromLane="0" toLane="0" tl="cluster_104572636_8484443882_8484452939_8484452945_8484452946" linkIndex="0" dir="r" state="o"/>
+    <connection from="WilliamPenn-Seventh-Sixth-2" to="WilliamPenn-Sixth-Oliver" fromLane="0" toLane="0" tl="cluster_104572636_8484443882_8484452939_8484452945_8484452946" linkIndex="1" dir="s" state="o"/>
+    <connection from="WilliamPenn-Seventh-Sixth-2" to="Sixth-WilliamPenn-Grant" fromLane="0" toLane="1" tl="cluster_104572636_8484443882_8484452939_8484452945_8484452946" linkIndex="2" dir="l" state="o"/>
+    <connection from="WilliamPenn-Sixth-Oliver" to="Oliver-WilliamPenn-Smithfield" fromLane="0" toLane="0" tl="cluster_105012342_8484443890_8484452928_8484452936_8484452937" linkIndex="0" dir="r" state="O"/>
+    <connection from="WilliamPenn-Sixth-Oliver" to="WilliamPenn-Oliver-Fifth" fromLane="0" toLane="0" tl="cluster_105012342_8484443890_8484452928_8484452936_8484452937" linkIndex="1" dir="s" state="O"/>
+    <connection from="WilliamPenn-Sixth-Oliver" to="Oliver-WilliamPenn-Grant" fromLane="0" toLane="0" tl="cluster_105012342_8484443890_8484452928_8484452936_8484452937" linkIndex="2" dir="l" state="O"/>
+
+</net>
