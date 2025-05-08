@@ -266,7 +266,7 @@ def mergePredictions(clusters, predClusters):
     for lane in clusters:
         if lane in predClusters:
             mergedClusters[lane] += predClusters[lane] #Concatenate known clusters with predicted clusters
-            consolidateClusters(mergedClusters[lane])
+            mergedClusters[lane] = consolidateClusters(mergedClusters[lane])
     return mergedClusters
 
 def consolidateClusters(clusters):
@@ -298,6 +298,15 @@ def consolidateClusters(clusters):
                         continue
                 j+=1
             i+=1
+
+    #Sort the cluster list
+    pq = []
+    for cluster in clusters:
+        heappush(cluster, cluster["arrival"])
+    newclusters = []
+    while len(pq) > 0:
+        newclusters.append(heappop(pq))
+    return newclusters
 
 def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
     if FTP:
