@@ -41,7 +41,7 @@ reset = True
 reuseOldData = False
 resetNN = reset
 resetTrainingData2 = reset
-superResetTrainingData = False
+superResetTrainingData = False #I believe we don't want this for intersection-specific DAgger stuff?
 if superResetTrainingData:
     resetTrainingData2 = True
 #UPDATE: Turns out appendTrainingData (there) gets updated automatically, as does noNNInMain

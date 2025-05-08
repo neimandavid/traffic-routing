@@ -103,11 +103,11 @@ routingSimUsesSUMO = True #Only switch this if we go back to custom routing simu
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
-disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
+disableSurtracComms = False#True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 20 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 0.5 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
-intersectionTime = 0 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
+intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
@@ -118,7 +118,7 @@ resetTrainingData = False#True
 appendTrainingData = False#True
 crossEntropyLoss = True
 
-detectorModel = False #REMINDER: As currently implemented, turning this on makes even 0% and 100% routing non-deterministic, as we're guessing lanes for vehicles before running Surtrac
+detectorModel = True #REMINDER: As currently implemented, turning this on makes even 0% and 100% routing non-deterministic, as we're guessing lanes for vehicles before running Surtrac
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
@@ -270,29 +270,34 @@ def mergePredictions(clusters, predClusters):
     return mergedClusters
 
 def consolidateClusters(clusters):
-    i = 0
-    while i < len(clusters):
-        j = i+1
-        while j < len(clusters):
-            #Check if clusters i and j should merge
-            if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-                #Merge j into i
-                clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
-                clusters[i]["weight"] += clusters[j]["weight"]
-                clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
-                clusters.pop(j)
-                continue
-            else:
-                if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
-                    #Merge i into j
-                    clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
-                    clusters[j]["weight"] += clusters[i]["weight"]
-                    clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
-                    clusters[i] = clusters[j]
+    stuffHappened = True
+    while stuffHappened: #Idea is to keep consolidating until you can't anymore
+        stuffHappened = False
+        i = 0
+        while i < len(clusters):
+            j = i+1
+            while j < len(clusters):
+                #Check if clusters i and j should merge
+                if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+                    #Merge j into i
+                    clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                    clusters[i]["weight"] += clusters[j]["weight"]
+                    clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
                     clusters.pop(j)
+                    stuffHappened = True
                     continue
-            j+=1
-        i+=1
+                else:
+                    if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
+                        #Merge i into j
+                        clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                        clusters[j]["weight"] += clusters[i]["weight"]
+                        clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
+                        clusters[i] = clusters[j]
+                        clusters.pop(j)
+                        stuffHappened = True
+                        continue
+                j+=1
+            i+=1
 
 def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
     if FTP:
@@ -2545,7 +2550,6 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             speeds[edge] = network.getEdge(edge).getSpeed()
             fftimes[edge] = lengths[edge+"_0"]/speeds[edge]
             endpointcoords[edge] = network.getEdge(edge).getFromNode().getCoord() + network.getEdge(edge).getToNode().getCoord() #+ should concatenate into a length-4 vector: [fromx, fromy, tox, toy]
-
     for lane in lanes:
         if not lane[0] == ":":
             fftimes[lane] = fftimes[lane.split("_")[0]]
