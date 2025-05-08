@@ -302,10 +302,11 @@ def consolidateClusters(clusters):
     #Sort the cluster list
     pq = []
     for cluster in clusters:
-        heappush(pq, (cluster["arrival"], cluster))
+        heappush(pq, (cluster["arrival"], len(pq), cluster)) #Using len(pq) to tiebreak as otherwise tuple comparison might tie on first elt and error on comparing dicts.
+        #TODO can I ditch the len(pq) now that my departures are hopefully after my arrivals? (Meaning equal start-time clusters should just get merged?)
     newclusters = []
     while len(pq) > 0:
-        newclusters.append(heappop(pq)[1])
+        newclusters.append(heappop(pq)[2])
     return newclusters
 
 def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
@@ -955,7 +956,8 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                             modcartuple = (cartuple[0], arr, cartuple[2]*predDiscount*turndata[lane][nextlane] / normprobs[lane][nextedge], cartuple[3])
                             newPredClusters[nextlane][-1]["cars"].append(modcartuple)
                             newPredClusters[nextlane][-1]["weight"] += modcartuple[2]
-                            newPredClusters[nextlane][-1]["departure"] = arr
+                            if arr > newPredClusters[nextlane][-1]["departure"]:
+                                newPredClusters[nextlane][-1]["departure"] = arr
                     else:
                         for nextlane in turndata[lane]:
 
@@ -990,7 +992,8 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                             modcartuple = (cartuple[0], arr, cartuple[2]*predDiscount*turndata[lane][nextlane], cartuple[3])
                             newPredClusters[nextlane][-1]["cars"].append(modcartuple)
                             newPredClusters[nextlane][-1]["weight"] += modcartuple[2]
-                            newPredClusters[nextlane][-1]["departure"] = arr
+                            if arr > newPredClusters[nextlane][-1]["departure"]:
+                                newPredClusters[nextlane][-1]["departure"] = arr
                     
                     #Added car to predictions, now set up the next car
                     carNums[lane] += 1
