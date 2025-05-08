@@ -302,7 +302,7 @@ def consolidateClusters(clusters):
     #Sort the cluster list
     pq = []
     for cluster in clusters:
-        heappush(pq, cluster, cluster["arrival"])
+        heappush(pq, (cluster["arrival"], cluster))
     newclusters = []
     while len(pq) > 0:
         newclusters.append(heappop(pq))
