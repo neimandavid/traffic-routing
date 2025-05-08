@@ -118,7 +118,7 @@ resetTrainingData = False#True
 appendTrainingData = False#True
 crossEntropyLoss = True
 
-detectorModel = True #REMINDER: As currently implemented, turning this on makes even 0% and 100% routing non-deterministic, as we're guessing lanes for vehicles before running Surtrac
+detectorModel = False #REMINDER: As currently implemented, turning this on makes even 0% and 100% routing non-deterministic, as we're guessing lanes for vehicles before running Surtrac
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
@@ -271,43 +271,44 @@ def mergePredictions(clusters, predClusters):
 
 def consolidateClusters(clusters):
     stuffHappened = True
-    while stuffHappened: #Idea is to keep consolidating until you can't anymore
-        stuffHappened = False
-        i = 0
-        while i < len(clusters):
-            j = i+1
-            while j < len(clusters):
-                #Check if clusters i and j should merge
-                if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-                    #Merge j into i
-                    clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
-                    clusters[i]["weight"] += clusters[j]["weight"]
-                    clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
+    #while stuffHappened: #Idea is to keep consolidating until you can't anymore
+    stuffHappened = False
+    i = 0
+    while i < len(clusters):
+        j = i+1
+        while j < len(clusters):
+            #Check if clusters i and j should merge
+            if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+                #Merge j into i
+                clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                clusters[i]["weight"] += clusters[j]["weight"]
+                clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
+                clusters.pop(j)
+                stuffHappened = True
+                continue
+            else:
+                if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
+                    #Merge i into j
+                    clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                    clusters[j]["weight"] += clusters[i]["weight"]
+                    clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
+                    clusters[i] = clusters[j]
                     clusters.pop(j)
                     stuffHappened = True
                     continue
-                else:
-                    if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
-                        #Merge i into j
-                        clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
-                        clusters[j]["weight"] += clusters[i]["weight"]
-                        clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
-                        clusters[i] = clusters[j]
-                        clusters.pop(j)
-                        stuffHappened = True
-                        continue
-                j+=1
-            i+=1
+            j+=1
+        i+=1
 
     #Sort the cluster list
-    pq = []
-    for cluster in clusters:
-        heappush(pq, (cluster["arrival"], len(pq), cluster)) #Using len(pq) to tiebreak as otherwise tuple comparison might tie on first elt and error on comparing dicts.
-        #TODO can I ditch the len(pq) now that my departures are hopefully after my arrivals? (Meaning equal start-time clusters should just get merged?)
-    newclusters = []
-    while len(pq) > 0:
-        newclusters.append(heappop(pq)[2])
-    return newclusters
+    # pq = []
+    # for cluster in clusters:
+    #     heappush(pq, (cluster["arrival"], len(pq), cluster)) #Using len(pq) to tiebreak as otherwise tuple comparison might tie on first elt and error on comparing dicts.
+    #     #TODO can I ditch the len(pq) now that my departures are hopefully after my arrivals? (Meaning equal start-time clusters should just get merged?)
+    # newclusters = []
+    # while len(pq) > 0:
+    #     newclusters.append(heappop(pq)[2])
+    # return newclusters
+    return clusters
 
 def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
     if FTP:
@@ -866,6 +867,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     if len(clusters[lane]) > clusterNums[lane]: #In case there's no clusters on a given lane
                         #heappush(nextSendTimes, (bestschedule[9][lane][clusterNums[lane]][0], lane)) #Pre-predict for appropriate lane for first cluster, get departure time, stuff into a priority queue
                         heappush(nextSendTimes, (bestschedule[9][laneind][clusterNums[lane]][0], laneind)) #Pre-predict for appropriate lane for first cluster, get departure time, stuff into a priority queue
+                        #We're pushing the next time the next to-be-processed car from each lane departs the current intersection, and once we process a car we'll heappush the car behind it into the queue
 
                 while len(nextSendTimes) > 0:
                     (nextSendTime, laneind) = heappop(nextSendTimes)
@@ -1013,6 +1015,15 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         compFac = bestschedule[9][laneind][clusterNums[lane]][1] #Compression factor in case cluster is waiting at a red light
                         sendTimeDelay = compFac*mingap + (1-compFac)*rawSendTimeDelay #Update time delay using compression factor
                         newSendTime = prevSendTime + sendTimeDelay #Compute time we'd send next car
+                        # try:
+                        #     assert(compFac >= 0)
+                        #     assert(compFac <= 1)
+                        #     assert(newSendTime >= prevSendTime) #THESE ASSERTS ARE FAILING, not sure why
+                        # except:
+                        #     print(compFac)
+                        #     print(sendTimeDelay)
+                        #     print(rawSendTimeDelay)
+                        #     asdf
                         heappush(nextSendTimes, (newSendTime, laneind))
 
             #Predicting should be done now
