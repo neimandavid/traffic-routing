@@ -271,7 +271,7 @@ def mergePredictions(clusters, predClusters):
 
 def consolidateClusters(clusters):
     stuffHappened = True
-    #while stuffHappened: #Idea is to keep consolidating until you can't anymore
+    #while stuffHappened: #Idea is to keep consolidating until you can't anymore. Seems unnecessary now that cluster depart times aren't nonsensical
     stuffHappened = False
     i = 0
     while i < len(clusters):
@@ -280,7 +280,8 @@ def consolidateClusters(clusters):
             #Check if clusters i and j should merge
             if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
                 #Merge j into i
-                clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
                 clusters[i]["weight"] += clusters[j]["weight"]
                 clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
                 clusters.pop(j)
@@ -289,7 +290,8 @@ def consolidateClusters(clusters):
             else:
                 if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
                     #Merge i into j
-                    clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                    #clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                    clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
                     clusters[j]["weight"] += clusters[i]["weight"]
                     clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
                     clusters[i] = clusters[j]
@@ -1014,7 +1016,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         rawSendTimeDelay = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]][1] - clusters[lane][clusterNums[lane]]["cars"][carNums[lane]-1][1] #Time between next car and this car in the original cluster
                         compFac = bestschedule[9][laneind][clusterNums[lane]][1] #Compression factor in case cluster is waiting at a red light
                         sendTimeDelay = compFac*mingap + (1-compFac)*rawSendTimeDelay #Update time delay using compression factor
-                        newSendTime = prevSendTime + sendTimeDelay #Compute time we'd send next car
+                        newSendTime = prevSendTime + max(sendTimeDelay, mingap) #Compute time we'd send next car
                         # try:
                         #     assert(compFac >= 0)
                         #     assert(compFac <= 1)
