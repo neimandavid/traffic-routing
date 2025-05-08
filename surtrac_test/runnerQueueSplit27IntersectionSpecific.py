@@ -305,7 +305,7 @@ def consolidateClusters(clusters):
         heappush(pq, (cluster["arrival"], cluster))
     newclusters = []
     while len(pq) > 0:
-        newclusters.append(heappop(pq))
+        newclusters.append(heappop(pq)[1])
     return newclusters
 
 def dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes):
