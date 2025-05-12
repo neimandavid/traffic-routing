@@ -202,10 +202,10 @@ def run(netfile, rerouters, sumoconfig):
                 endDict[id] = t
                 locDict.pop(id)
                 #Store the turn onto the exit road in lanetransitiondata
-                if not (prevLaneDict[id] in lanetransitiondata): #Should always be true because psuedocount stuff, but apparently not???
-                    print("Warning: prevLaneDict[id] isn't in lanetransitiondata, this shouldn't happen")
-                    lanetransitiondata[prevLaneDict[id]] = []
                 if not id in traci.simulation.getEndingTeleportIDList():
+                    if not (prevLaneDict[id] in lanetransitiondata): #Should always be true because psuedocount stuff, but apparently not???
+                        print("Warning: prevLaneDict[id] isn't in lanetransitiondata, this shouldn't happen")
+                        lanetransitiondata[prevLaneDict[id]] = []
                     if laneDict[id].split("_")[0] in getSuccessors(prevLaneDict[id].split("_")[0], network):
                         lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
                     else:
@@ -236,7 +236,10 @@ def run(netfile, rerouters, sumoconfig):
                     if not id in traci.simulation.getEndingTeleportIDList():
                         if not prevLaneDict[id] in lanetransitiondata:
                             lanetransitiondata[prevLaneDict[id]] = []
-                        lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
+                        if prevLaneDict[id] == None or laneDict[id].split("_")[0] in getSuccessors(prevLaneDict[id].split("_")[0], network):
+                            lanetransitiondata[prevLaneDict[id]].append(laneDict[id]) #Last lane you turned from to lane you're currently turning from
+                        else:
+                            print("We think we didn't teleport, but we ended up on a non-successor road?")
                             
                     prevLaneDict[id] = laneDict[id]
                     
