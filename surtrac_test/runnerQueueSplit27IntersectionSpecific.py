@@ -106,7 +106,7 @@ recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedu
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 15 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 15 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
-predDiscount = 0.6 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
+predDiscount = 0.4 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
@@ -898,8 +898,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         print(carNums[lane])
                         print(clusters[lane][clusterNums[lane]]["cars"])
                         asdf
-                    if False: #New theory: We're confidently wrong about adopters, especially as they approach the first intersection
-                    #if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
+                    if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
                         #Split on "|" and "_" to deal with splitty cars correctly
                         route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
                         edge = lane.split("_")[0]
@@ -1250,7 +1249,7 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                     for cartuple in clusters[lane][clusterind]["cars"]:
                         #cartuple[0] is name of car; cartuple[1] is departure time; cartuple[2] is debug info
                         #assert(cartuple[0] in isSmart)
-                        if False:#cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from the routing sim, in which case we may have ghost cars or off-network predicted cars that we don't have routes for
+                        if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from the routing sim, in which case we may have ghost cars or off-network predicted cars that we don't have routes for
                             route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
                             if not edge in route:
                                 #Not sure if or why this happens - maybe the route is changing and predictions aren't updating?
