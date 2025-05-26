@@ -2465,7 +2465,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     global netfile
     global predDiscount
 
-    predDiscount = float(predDiscountIn)
+    predDiscount = predDiscountIn
 
     print("AAAAAAAAAAAAAAAAAAA")
     print(predDiscount)
@@ -3796,9 +3796,9 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3:
         pSmart = float(sys.argv[2])
     if len(sys.argv) >= 4:
-        useLastRNGState = sys.argv[3]
+        useLastRNGState = bool(sys.argv[3])
     if len(sys.argv) >= 5:
-        appendTrainingData = sys.argv[4]
+        appendTrainingData = bool(sys.argv[4])
     if len(sys.argv) >= 6:
-        predDiscount = sys.argv[5]
+        predDiscount = float(sys.argv[5])
     main(sys.argv[1], pSmart, True, useLastRNGState, appendTrainingData, predDiscount)
