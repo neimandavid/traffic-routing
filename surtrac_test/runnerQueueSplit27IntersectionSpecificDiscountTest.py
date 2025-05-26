@@ -3298,21 +3298,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         #So apparently:
         #If we add a vehicle, then remove it before calling simulationStep, it doesn't count as departed or arrived
         #If we simulationStep first, it shows up on both, usually(???)
-        # print(simtime)
-        # if not "badroute" in traci.route.getIDList():
-        #     traci.route.add("badroute", ["E31"])
-        # traci.vehicle.add("testcar", "badroute")
-        # try:
-        #     traci.vehicle.remove("testcar")
-        # except:
-        #     pass
-        # print("Departed")
-        # print(traci.simulation.getDepartedIDList())
-        # print("Arrived")
-        # print(traci.simulation.getArrivedIDList())
-
-        # print("dontReRemove")
-        # print(dontReRemove)
+        
         for vehicle in traci.simulation.getArrivedIDList():
             if vehicle in edgeDict3: #Without this check, we occasionally get errors without detector model, either with known vehicles trying to enter that we immediately remove, or apparently other stuff with libsumo???
                 # #In case the target was a non-exit edge, make sure to remove these from detector readings
@@ -3796,9 +3782,9 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3:
         pSmart = float(sys.argv[2])
     if len(sys.argv) >= 4:
-        useLastRNGState = bool(sys.argv[3])
+        useLastRNGState = sys.argv[3] == "True"
     if len(sys.argv) >= 5:
-        appendTrainingData = bool(sys.argv[4])
+        appendTrainingData = sys.argv[4] == "True"
     if len(sys.argv) >= 6:
         predDiscount = float(sys.argv[5])
     main(sys.argv[1], pSmart, True, useLastRNGState, appendTrainingData, predDiscount)
