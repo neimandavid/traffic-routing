@@ -294,7 +294,8 @@ def consolidateClusters(clusters):
                     clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
                     clusters[j]["weight"] += clusters[i]["weight"]
                     clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
-                    clusters[i] = clusters[j]
+                    clusters[i] = pickle.loads(pickle.dumps(clusters[j]))
+
                     clusters.pop(j)
                     stuffHappened = True
                     continue
