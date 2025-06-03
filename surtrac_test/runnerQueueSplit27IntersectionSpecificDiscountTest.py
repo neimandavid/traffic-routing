@@ -104,8 +104,8 @@ mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the 
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
-predCutoffMain = 15 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
-predCutoffRouting = 15 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
+predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
+predCutoffRouting = predCutoffMain #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 0.4 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
@@ -278,7 +278,8 @@ def consolidateClusters(clusters):
         j = i+1
         while j < len(clusters):
             #Check if clusters i and j should merge
-            if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+            #if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+            if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
                 #Merge j into i
                 #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
                 clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
@@ -287,18 +288,18 @@ def consolidateClusters(clusters):
                 clusters.pop(j)
                 stuffHappened = True
                 continue
-            else:
-                if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
-                    #Merge i into j
-                    #clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
-                    clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
-                    clusters[j]["weight"] += clusters[i]["weight"]
-                    clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
-                    clusters[i] = pickle.loads(pickle.dumps(clusters[j]))
+            # else:
+            #     if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
+            #         #Merge i into j
+            #         #clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+            #         clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
+            #         clusters[j]["weight"] += clusters[i]["weight"]
+            #         clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
+            #         clusters[i] = pickle.loads(pickle.dumps(clusters[j]))
 
-                    clusters.pop(j)
-                    stuffHappened = True
-                    continue
+            #         clusters.pop(j)
+            #         stuffHappened = True
+            #         continue
             j+=1
         i+=1
 
