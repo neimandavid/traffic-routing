@@ -278,8 +278,8 @@ def consolidateClusters(clusters):
         j = i+1
         while j < len(clusters):
             #Check if clusters i and j should merge
-            if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-            #if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+            #if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+            if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
                 #Merge j into i
                 #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
                 #clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
@@ -288,18 +288,18 @@ def consolidateClusters(clusters):
                 clusters.pop(j)
                 stuffHappened = True
                 continue
-            else:
-                if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
-                    #Merge i into j
-                    #clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
-                    #clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
-                    clusters[j]["weight"] += clusters[i]["weight"]
-                    clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
-                    clusters[i] = pickle.loads(pickle.dumps(clusters[j]))
+            # else:
+            #     if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
+            #         #Merge i into j
+            #         #clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+            #         #clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
+            #         clusters[j]["weight"] += clusters[i]["weight"]
+            #         clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
+            #         clusters[i] = pickle.loads(pickle.dumps(clusters[j]))
 
-                    clusters.pop(j)
-                    stuffHappened = True
-                    continue
+            #         clusters.pop(j)
+            #         stuffHappened = True
+            #         continue
             j+=1
         i+=1
 
