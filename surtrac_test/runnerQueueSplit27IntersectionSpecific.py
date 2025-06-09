@@ -104,8 +104,8 @@ mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the 
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
-predCutoffMain = 15 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
-predCutoffRouting = 15 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
+predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
+predCutoffRouting = predCutoffMain #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 0.4 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
@@ -278,26 +278,28 @@ def consolidateClusters(clusters):
         j = i+1
         while j < len(clusters):
             #Check if clusters i and j should merge
-            if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+            #if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+            if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
                 #Merge j into i
                 #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
-                clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
+                #clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
                 clusters[i]["weight"] += clusters[j]["weight"]
                 clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
                 clusters.pop(j)
                 stuffHappened = True
                 continue
-            else:
-                if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
-                    #Merge i into j
-                    #clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
-                    clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
-                    clusters[j]["weight"] += clusters[i]["weight"]
-                    clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
-                    clusters[i] = clusters[j]
-                    clusters.pop(j)
-                    stuffHappened = True
-                    continue
+            # else:
+            #     if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
+            #         #Merge i into j
+            #         #clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+            #         #clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
+            #         clusters[j]["weight"] += clusters[i]["weight"]
+            #         clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
+            #         clusters[i] = pickle.loads(pickle.dumps(clusters[j]))
+
+            #         clusters.pop(j)
+            #         stuffHappened = True
+            #         continue
             j+=1
         i+=1
 
@@ -1279,40 +1281,46 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
 
                             for nextlaneind in range(nLanes[nextedge]):
                                 nextlane = nextedge+"_"+str(nextlaneind)
-                                modcartuple = (cartuple[0], cartuple[1]+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane] / normprobs[lane][nextedge], cartuple[3])
                                 if nextlane in predLanes:
                                     #Make sure we're predicting this cluster
+
+                                    #New math: Discount departure times too
+                                    newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] - catpreds[nextlane][-1]["arrival"])
+                                    modcartuple = (cartuple[0], newarr+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane] / normprobs[lane][nextedge], cartuple[3])                                
                                     catpreds[nextlane][-1]["cars"].append(modcartuple)
                                     catpreds[nextlane][-1]["weight"] += modcartuple[2]
 
                         else:
                             for nextlane in predLanes:
-                                modcartuple = (cartuple[0], cartuple[1]+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane], cartuple[3])
+                                newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] - catpreds[nextlane][-1]["arrival"])
+                                modcartuple = (cartuple[0], newarr+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane], cartuple[3])
                                 catpreds[nextlane][-1]["cars"].append(modcartuple)
                                 catpreds[nextlane][-1]["weight"] += modcartuple[2]
 
                     for outlane in predLanes:
-                        if catpreds[outlane][-1]["weight"] == 0:
-                            #Remove predicted clusters that are empty
-                            catpreds[outlane].pop(-1)
-                            continue
+                        # if catpreds[outlane][-1]["weight"] == 0:
+                        #     #Remove predicted clusters that are empty
+                        #     catpreds[outlane].pop(-1)
+                        #     continue
 
                         if len(catpreds[outlane]) >=2 and catpreds[outlane][-1]["arrival"] - catpreds[outlane][-2]["departure"] < clusterthresh:
                             #Merge this cluster with the previous one
                             #Pos and time don't do anything here
                             #Arrival doesn't change - previous cluster arrived first
+                            #I expect this to trigger if multiple clusters are planning to merge together while waiting for a green light, and then consolidate into one big communicated cluster
                             catpreds[outlane][-2]["departure"] = max(catpreds[outlane][-2]["departure"], catpreds[outlane][-1]["departure"])
                             catpreds[outlane][-2]["cars"] += catpreds[outlane][-1]["cars"] # += concatenates
                             catpreds[outlane][-2]["weight"] += catpreds[outlane][-1]["weight"]
                             catpreds[outlane].pop(-1)
 
         #Confirm that weight of cluster = sum of weights of cars
-        for lane in catpreds:
-            for preind in range(len(catpreds[lane])):
-                weightsum = 0
-                for ind in range(len(catpreds[lane][preind]["cars"])):
-                    weightsum += catpreds[lane][preind]["cars"][ind][2]
-                assert(abs(weightsum - catpreds[lane][preind]["weight"]) < 1e-10)
+        if debugMode:
+            for lane in catpreds:
+                for preind in range(len(catpreds[lane])):
+                    weightsum = 0
+                    for ind in range(len(catpreds[lane][preind]["cars"])):
+                        weightsum += catpreds[lane][preind]["cars"][ind][2]
+                    assert(abs(weightsum - catpreds[lane][preind]["weight"]) < 1e-10)
 
     return (toSwitch, catpreds, remainingDuration)
 
@@ -2450,7 +2458,7 @@ def readSumoCfg(sumocfg):
                 roufile = data[1]
     return (netfile, roufile)
 
-def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTrainingDataIn = False):
+def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTrainingDataIn = False, predDiscountIn=predDiscount):
     global lowprioritygreenlightlinks
     global prioritygreenlightlinks
     global edges
@@ -2463,6 +2471,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     global noNNinMain
     global sumoconfig
     global netfile
+    global predDiscount
+
+    predDiscount = predDiscountIn
 
     sumoconfig = sumoconfigin
     #options = get_options()
@@ -3790,7 +3801,9 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3:
         pSmart = float(sys.argv[2])
     if len(sys.argv) >= 4:
-        useLastRNGState = sys.argv[3]
+        useLastRNGState = sys.argv[3] == "True"
     if len(sys.argv) >= 5:
-        appendTrainingData = sys.argv[4]
-    main(sys.argv[1], pSmart, True, useLastRNGState, appendTrainingData)
+        appendTrainingData = sys.argv[4] == "True"
+    if len(sys.argv) >= 6:
+        predDiscount = float(sys.argv[5])
+    main(sys.argv[1], pSmart, True, useLastRNGState, appendTrainingData, predDiscount)
