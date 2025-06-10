@@ -543,7 +543,7 @@
     </tlLogic>
     <tlLogic id="cluster_105012331_5312909754_5312909756_8484445227_8484452927" type="static" programID="0" offset="0">
         <phase duration="30" state="rrrrGGgGGG"/>
-        <phase duration="5"  state="rrrrrrgyyy"/>
+        <phase duration="5"  state="rrrryygyyy"/>
         <phase duration="5"  state="rrrrrrGrrr"/>
         <phase duration="5"  state="rrrrrryrrr"/>
         <phase duration="40" state="GGGGrrrrrr"/>
