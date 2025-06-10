@@ -7,6 +7,6 @@ do
 for d in 0.5 0.1 0 0.7 0.3 1 0.2 0.35 0.4 0.45 0.55 0.6 0.8;
 do
 
-python3 runnerQueueSplit27IntersectionSpecificDiscountTest.py PittsburghPMDataSmallerLongIn+15Newestester_fixedroutes_auto.sumocfg 0.01 False False $d
+python3 runnerQueueSplit27IntersectionSpecificDiscountTest.py PittsburghPMDataSmallerLongIn+15Big_fixedroutes_auto.sumocfg 0.01 False False $d
 done
 done
