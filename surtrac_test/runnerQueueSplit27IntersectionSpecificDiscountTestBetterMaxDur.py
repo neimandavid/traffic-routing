@@ -808,11 +808,11 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     # print(newScheduleStatus[lane])
 
                     #If a cluster gets split due to maxDur, newPrePredict is going to get overwritten by the last part of the cluster. This isn't right, but is probably okayish?
-                    newPrePredict[laneindex][newScheduleStatus[lane]][0] = ast #-1 because zero-indexing; first cluster has newScheduleStatus[lane] = 1, but is stored at index 0
+                    newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][0] = ast #-1 because zero-indexing; first cluster has newScheduleStatus[lane] = 1, but is stored at index 0
                     if dur <= mindur:
-                        newPrePredict[laneindex][newScheduleStatus[lane]][1] = 0 #Squish factor = 0 (no squishing)
+                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][1] = 0 #Squish factor = 0 (no squishing)
                     else:
-                        newPrePredict[laneindex][newScheduleStatus[lane]][1] = (dur-newdur)/(dur-mindur) #Squish factor equals this thing
+                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][1] = (dur-newdur)/(dur-mindur) #Squish factor equals this thing
                         #If newdur = mindur, compression factor = 1, all gaps are 2.5 (=mindur)
                         #If newdur = dur, compression factor = 0, all gaps are original values
                         #Otherwise smoothly interpolate
