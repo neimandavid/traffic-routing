@@ -655,6 +655,12 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         assert(lenlightlaneslight > 0)
         emptyPrePreds = np.zeros((lenlightlaneslight, maxnClusters, 2))
 
+        emptyPrePreds = []
+        for i in range(lenlightlaneslight):
+            emptyPrePreds.append([])
+            for j in range(maxnClusters):
+                emptyPrePreds[i].append([])
+
         phase = lightphases[light]
         lastSwitch = lastswitchtimes[light]
         schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
@@ -808,14 +814,17 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     # print(newScheduleStatus[lane])
 
                     #If a cluster gets split due to maxDur, newPrePredict is going to get overwritten by the last part of the cluster. This isn't right, but is probably okayish?
-                    newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][0] = ast #-1 because zero-indexing; first cluster has newScheduleStatus[lane] = 1, but is stored at index 0
+                    newPrePredict[laneindex][math.floor(newScheduleStatus[lane])].append([0, 0, 0, 0])
+                    newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][0] = ast #-1 because zero-indexing; first cluster has newScheduleStatus[lane] = 1, but is stored at index 0
                     if dur <= mindur:
-                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][1] = 0 #Squish factor = 0 (no squishing)
+                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][1] = 0 #Squish factor = 0 (no squishing)
                     else:
-                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][1] = (dur-newdur)/(dur-mindur) #Squish factor equals this thing
+                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][1] = (dur-newdur)/(dur-mindur) #Squish factor equals this thing
                         #If newdur = mindur, compression factor = 1, all gaps are 2.5 (=mindur)
                         #If newdur = dur, compression factor = 0, all gaps are original values
                         #Otherwise smoothly interpolate
+                    newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][2] = fracSent #Stuff sent before this (so where this subcluster starts). TODO probably don't need this
+                    newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][3] = (1-fracSent)*(tSent/dur) #Stuff sent including this (so where this subcluster ends)
                     
                     #Tell other clusters to also start no sooner than max(new ast, old directionalMakespan value) to preserve order
                     #That max is important, though; blind overwriting is wrong, as you could send a long cluster, then a short one, then change the light before the long one finishes
@@ -977,15 +986,17 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
                 nextSendTimes = [] #Priority queue
                 clusterNums = dict()
+                subclusterNums = dict()
                 carNums = dict()
                 #for lane in lightlanes[light]:
                 for laneind in range(lenlightlaneslight):
                     lane = lightlanes[light][laneind]
                     clusterNums[lane] = 0
+                    subclusterNums[lane] = 0
                     carNums[lane] = 0
                     if len(clusters[lane]) > clusterNums[lane]: #In case there's no clusters on a given lane
                         #heappush(nextSendTimes, (bestschedule[9][lane][clusterNums[lane]][0], lane)) #Pre-predict for appropriate lane for first cluster, get departure time, stuff into a priority queue
-                        heappush(nextSendTimes, (bestschedule[9][laneind][clusterNums[lane]][0], laneind)) #Pre-predict for appropriate lane for first cluster, get departure time, stuff into a priority queue
+                        heappush(nextSendTimes, (bestschedule[9][laneind][clusterNums[lane]][0][0], laneind)) #Pre-predict for appropriate lane for first cluster, get departure time, stuff into a priority queue
                         #We're pushing the next time the next to-be-processed car from each lane departs the current intersection, and once we process a car we'll heappush the car behind it into the queue
 
                 while len(nextSendTimes) > 0:
@@ -1000,6 +1011,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     #NEXT TODO can I delete this? Apparently not, how bad is this?
                     while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
                         clusterNums[lane] += 1
+                        subclusterNums[lane] = 0 #TODO check this, previous comments scare me here
                         carNums[lane] = 0
                     if len(clusters[lane]) == clusterNums[lane]:
                         #Nothing left on this lane, we're done here
@@ -1120,20 +1132,28 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     carNums[lane] += 1
                     while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
                         clusterNums[lane] += 1
+                        subclusterNums[lane] = 0
                         carNums[lane] = 0
                     if len(clusters[lane]) == clusterNums[lane]:
                         #Nothing left on this lane, we're done here
                         #nextSendTimes.pop(lane)
                         continue
                     if carNums[lane] == 0:
-                        heappush(nextSendTimes, (bestschedule[9][laneind][clusterNums[lane]][0], laneind)) #Time next cluster is scheduled to be sent
+                        heappush(nextSendTimes, (bestschedule[9][laneind][clusterNums[lane]][0][0], laneind)) #Time next cluster is scheduled to be sent
                     else:
-                        #Account for cluster compression
+                        newSubcluster = False
+                        while carNums[lane] > bestschedule[9][laneind][clusterNums[lane]][subclusterNums[lane]][3]*len(clusters[lane][clusterNums[lane]]["cars"]): #Should be while in case of very very small clusters, I guess
+                            subclusterNums[lane] += 1
+                            newSubcluster = True
+                        if newSubcluster:
+                            heappush(nextSendTimes, (bestschedule[9][laneind][clusterNums[lane]][subclusterNums[lane]][0], laneind)) #Send first time from new subcluster
+                        #Else we're in the same subcluster; account for cluster compression
                         prevSendTime = nextSendTime #When we sent the car above
                         rawSendTimeDelay = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]][1] - clusters[lane][clusterNums[lane]]["cars"][carNums[lane]-1][1] #Time between next car and this car in the original cluster
-                        compFac = bestschedule[9][laneind][clusterNums[lane]][1] #Compression factor in case cluster is waiting at a red light
+                        compFac = bestschedule[9][laneind][clusterNums[lane]][subclusterNums[lane]][1] #Compression factor in case cluster is waiting at a red light
                         sendTimeDelay = compFac*mingap + (1-compFac)*rawSendTimeDelay #Update time delay using compression factor
                         newSendTime = prevSendTime + max(sendTimeDelay, mingap) #Compute time we'd send next car
+
                         # try:
                         #     assert(compFac >= 0)
                         #     assert(compFac <= 1)
@@ -1143,7 +1163,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         #     print(sendTimeDelay)
                         #     print(rawSendTimeDelay)
                         #     asdf
-                        heappush(nextSendTimes, (newSendTime, laneind))
+                        heappush(nextSendTimes, (newSendTime, laneind)) #Literally process one car at a time (in case clusters from multiple lanes are merging, or one cluster gets split across light phases)
 
             #Predicting should be done now
             #bestschedule[8] = newPredClusters #I'd store this, but tuples are immutable and we don't actually use it anywhere...
