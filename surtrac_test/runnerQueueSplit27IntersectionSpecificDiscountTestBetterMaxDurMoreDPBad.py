@@ -497,7 +497,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
     return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
 
-#@profile
+@profile
 def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
     global totalSurtracRuns
     global totalSurtracClusters
@@ -677,6 +677,20 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
             stateToExpand = heappop(pq)
             fval = stateToExpand[0]
             schedule = stateToExpand[1]
+
+            if len(stateToExpand) > 2:
+                #Otherwise we're just reading the starting state, no bookkeeping needed
+                key = stateToExpand[2]
+                subkey = stateToExpand[3]
+                try:
+                    scheduleHashDict[key][subkey].remove(schedule)
+                except:
+                    print(stateToExpand)
+                    print(scheduleHashDict)
+                    asdf
+                if len(scheduleHashDict[key][subkey]) == 0:
+                    del scheduleHashDict[key][subkey]
+
             gval = schedule[5] #Delay so far
 
             if fval > bestcost:
@@ -721,6 +735,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
                     nLanesTotal = len(surtracdata[light][i]["lanes"])
                     j = surtracdata[light][i]["lanes"].index(lane)
+                    #This is sketchy: it's NOT lightlanes[light].lindex(lane). Why?
 
                     newDurations = copy(schedule[7]) #Shallow copy should be fine
 
@@ -870,37 +885,78 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     newschedule = (schedule[0]+[(i, j)], newScheduleStatus, i, directionalMakespans, newMakespan, delay, newLastSwitch, newDurations, [], newPrePredict)
                     
                     #DP on partial schedules
-                    key = (tuple(newschedule[1].values()), newschedule[2]) #Key needs to be something immutable (like a tuple, not a list)
+                    key = (newschedule[2]) #Key needs to be something immutable (like a tuple, not a list)
                     #TODO: This could be bad at pruning if clusters are routinely exceeding maxDur, since then we'll have fractional parts of clusters running around... Hopefully it's fine?
 
                     if not key in scheduleHashDict:
-                        scheduleHashDict[key] = []
+                        scheduleHashDict[key] = dict()
+
+                    newsubkey = tuple(newschedule[1].values())
+                    newsubkeynp = np.array(newsubkey)
+
+                    if not newsubkey in scheduleHashDict[key]:
+                        scheduleHashDict[key][newsubkey] = []
                     
-                    keep = True
-                    testscheduleind = 0
-                    while testscheduleind < len(scheduleHashDict[key]): #Key stores schedule status and current light phase, and we only check against schedules that match those
-                        testschedule = scheduleHashDict[key][testscheduleind]
-
-                        #These asserts should follow from how I set up scheduleHashDict
-                        if debugMode:
-                            assert(newschedule[1] == testschedule[1])
-                            assert(newschedule[2] == testschedule[2])
-                        
-                        #NOTE: If we're going to go for truly optimal, we also need to check all makespans, plus the current phase duration
-                        #OTOH, if people seem to think fast greedy approximations are good enough, I'm fine with that
-                        if newschedule[5] >= testschedule[5] and (greedyDP or newschedule[4] >= testschedule[4]):
-                            #New schedule was dominated; remove it and don't continue comparing (old schedule beats anything new one would)
-                            keep = False
+                    newSchBad = False
+                    for subkey in scheduleHashDict[key]:
+                        if newSchBad:
+                            #New schedule bad, break
                             break
-                        if newschedule[5] <= testschedule[5] and (greedyDP or newschedule[4] <= testschedule[4]):
-                            #Old schedule was dominated; remove it
-                            scheduleHashDict[key].pop(testscheduleind)
-                            continue
-                        #No dominance, keep going
-                        testscheduleind += 1
+                        testscheduleind = 0
+                        subkeynp = np.array(subkey)
+                        
+                        superkeep = False
+                        superkeepTest = False
 
-                    if keep: #New schedule not dominated by any previous schedules
-                        scheduleHashDict[key].append(newschedule)
+                        #If identical, check both ways
+                        #If new always >= and sometimes >, check if we can ditch old
+                        anynewg = np.any(newsubkeynp > subkeynp)
+                        anynewl = np.any(newsubkeynp < subkeynp)
+                        if anynewg and anynewl:
+                            #Different clusters were scheduled; no meaningful comparison to be made
+                            continue
+                        if anynewg and not anynewl:
+                            #New scheduled strictly more clusters, never remove new
+                            superkeep = True
+                        if anynewl and not anynewg:
+                            #Old scheduled strictly more clusters, never remove old
+                            superkeepTest = True
+
+                        while testscheduleind < len(scheduleHashDict[key][subkey]): #Key stores schedule status and current light phase, and we only check against schedules that match those
+                            testschedule = scheduleHashDict[key][subkey][testscheduleind]
+                            keep = superkeep
+                            keepTest = superkeepTest
+
+                            #These asserts should follow from how I set up scheduleHashDict
+                            #assert(newschedule[2] == testschedule[2])
+
+                            if newschedule[5] < testschedule[5]: #Total delay
+                                keep = True
+                            else:
+                                keepTest = True
+                            #NOTE: If we're going to go for truly optimal, we also need to check all makespans, plus the current phase duration
+                            #OTOH, if people seem to think fast greedy approximations are good enough, I'm fine with that
+                            if not greedyDP:
+                                if newschedule[4] < testschedule[4]: #Time we can start next cluster
+                                    keep = True
+                                else:
+                                    keepTest = True
+                            
+                            if not keepTest:
+                                #Old schedule was dominated; remove it
+                                scheduleHashDict[key][subkey].pop(testscheduleind)
+                                #TODO: This is assuming 0 heuristic
+                                pq.remove((testschedule[5], testschedule, key, subkey))
+                                heapify(pq)
+                                continue
+                            if not keep:
+                                newSchBad = True
+                                break
+                            #No dominance, keep going
+                            testscheduleind += 1
+
+                    if not newSchBad: #New schedule not dominated by any previous schedules
+                        scheduleHashDict[key][newsubkey].append(newschedule)
                         # print("Adding to PQ")
                         # print(pq)
 
@@ -963,10 +1019,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
                         heuristic = 0
                         #heappush(pq, (newschedule[5], newschedule)) #Add to A* priority queue
-                        heappush(pq, (newschedule[5]+heuristic, newschedule)) #Add to A* priority queue
-
-                    if debugMode:
-                        assert(len(scheduleHashDict[key]) > 0)
+                        heappush(pq, (newschedule[5]+heuristic, newschedule, key, newsubkey)) #Add to A* priority queue
 
 
         # mindelay = np.inf
@@ -1224,7 +1277,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         bestschedules[light] = testnnschedule
         
 
-#@profile
+@profile
 def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True, nonExitEdgeDetections4 = nonExitEdgeDetections): #deepcopy breaks main Surtrac somehow?!
     global clustersCache
     global totalLoadRuns
@@ -1501,7 +1554,7 @@ def backwardDijkstra(network, goal):
             heappush(pq, (gval+c+h, succ))
     return gvals
 
-#@profile
+@profile
 def run(network, rerouters, pSmart, verbose = True):
     global sumoPredClusters
     global currentRoutes
@@ -1656,7 +1709,7 @@ def run(network, rerouters, pSmart, verbose = True):
 
                 #Remove vehicle from predictions, since the next intersection should actually see it now
                 if not disableSurtracComms:
-                    removeVehicleFromPredictions(sumoPredClusters, id, edgeDict[id])
+                    removeVehicleFromPredictions(sumoPredClusters, edgeDict[id])
 
                 cs = endpointcoords[edgeDict[id]]
                 theta0 = math.atan2(cs[3]-cs[1], cs[2]-cs[0])
@@ -2178,7 +2231,7 @@ def dumpIntersectionDataFun(intersectionData):
         for dtheta in thetabooks:
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
-#@profile
+@profile
 def loadClusters(simtime, VOI=None):
     global totalLoadCars
     global nVehicles
@@ -2956,7 +3009,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     return [outdata, rngstate]
 
 #Tell all the detectors to reroute the cars they've seen
-#@profile
+@profile
 def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     global delay3adjdict
     #Clear any stored Surtrac stuff
@@ -3211,7 +3264,7 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDi
             VOIs[newghostcar] = [nextlane, newspeed, ghostcarpos, oldroute+[nextedge], leftedge, True]
     return dontReRemove2
 
-#@profile
+@profile
 def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchtimes, sumoPredClusters3, lightphases, simtime, reroutedata):
     global nRoutingCalls
     global nSuccessfulRoutingCalls
@@ -3506,7 +3559,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
                 #Remove vehicle from predictions, since the next intersection should actually see it now
                 if not disableSurtracComms:
-                    removeVehicleFromPredictions(sumoPredClusters3, id, edgeDict3[id])
+                    removeVehicleFromPredictions(sumoPredClusters3, edgeDict3[id])
 
                 laneDict3[id] = newlane
                 edgeDict3[id] = newloc
@@ -3691,9 +3744,9 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                 else:
                     print("Unrecognized light " + light + ", this shouldn't happen")
 
-#@profile
+@profile
 #NOTE: Profiling says this function isn't terrible, probably don't need to speed it up right now
-def removeVehicleFromPredictions(sumoPredClusters, id, lastedge):
+def removeVehicleFromPredictions(sumoPredClusters, lastedge):
     for predlane in sumoPredClusters.keys():
         #Don't bother checking lanes on edges that weren't the last edge
         if not predlane.split("_")[0] == lastedge:
