@@ -653,7 +653,6 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         #     emptyPrePreds[lane] = []
         lenlightlaneslight = len(lightlanes[light])
         assert(lenlightlaneslight > 0)
-        emptyPrePreds = np.zeros((lenlightlaneslight, maxnClusters, 2))
 
         emptyPrePreds = []
         for i in range(lenlightlaneslight):
@@ -775,26 +774,10 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                             #Figure out how long the remaining part of the cluster is
                             tSent = surtracdata[light][i]["maxDur"] - (max(ist, ast)-schedule[6]) #Time we'll have run this cluster for before the light switches
                             
-                            #Negative tSent would trigger "switch immediately" case above
-                            # if tSent < 0: #Cluster might arrive after the light would have switched due to max duration (ist is big), which would have made tSent go negative
-                            #     tSent = 0
-                            #     try:
-                            #         assert(mindur >= 0)
-                            #         assert(dur >= 0)
-                            #     except AssertionError as e:
-                            #         print(mindur)
-                            #         print(dur)
-                            #         raise(e)
-
                             if mindur > 0 and dur > 0: #Having issues with negative weights, possibly related to cars contributing less than 1 to weight having left the edge
+                                #WE HANDLE THIS LATER, NO NEED TO DO ANYTHING NOW!
                                 pass
-                                # #We've committed to sending this cluster in current phase, but current phase ends before cluster
-                                # #So we're sending what we can, cycling through everything else, then sending the rest
-                                # #Compute the delay on the stuff we sent through, then treat the rest as a new cluster and compute stuff then
-
-                                # #NEXT TODO weight here probably wrong for delay computation
-                                delay += tSent/dur*clusters[surtracdata[light][i]["lanes"][j]][clusterind]["weight"]*(1-fracSent)*((ast-ist)-1/2*(dur-newdur) ) #Weight of stuff sent through, times amount the start time got delayed minus half the squishibility
-                                mindur *= 1-tSent/dur #Assuming uniform density, we've sent tSent/dur fraction of vehicles through, so 1-tSent/dur remain to be handled
+                            
                             else:
                                 print("Negative weight, what just happened?")
                             newScheduleStatus[lane] += (1-fracSent)*(tSent/dur) - 1 #In case a phase is so long we span two maxdurs. Ex: Previously sent 2/3 of a cluster, now sending 1/2 of what's left (since dur tracks what's left). Full fraction sent needs to increase by 1/2 * the 1/3 of the cluster we're working with. -1 to cancel the +1 we'll have from assuming we sent a full cluster
@@ -813,7 +796,6 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     # print(laneindex)
                     # print(newScheduleStatus[lane])
 
-                    #If a cluster gets split due to maxDur, newPrePredict is going to get overwritten by the last part of the cluster. This isn't right, but is probably okayish?
                     newPrePredict[laneindex][math.floor(newScheduleStatus[lane])].append([0, 0, 0, 0])
                     newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][0] = ast #-1 because zero-indexing; first cluster has newScheduleStatus[lane] = 1, but is stored at index 0
                     if dur <= mindur:
