@@ -637,22 +637,22 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
             #NOTE: superclusters[key][superclusterind][superclustersubind] = (clusterdata, [lane, clusterind])
             list.sort(superclusters[keyy], key = lambda clustertuple:clustertuple[0][0]["arrival"])
 
-            i = 1
-            while i < len(superclusters[keyy]):
-                maxdep = -np.inf
-                for j in range(len(superclusters[keyy][i-1])):
-                    maxdep = max(maxdep, superclusters[keyy][i-1][j][0]["departure"])
-                #Merge any cluster pairs we can
-                if superclusters[keyy][i][0][0]["arrival"] < maxdep+clusterthresh:
-                    superclusters[keyy][i-1].append(superclusters[keyy][i][0])
-                    #Logic to try to literally make one giant cluster. Probably slightly faster but suboptimal
-                    # superclusters[keyy][i-1][0]["departure"] = max(superclusters[keyy][i-1][0]["departure"], superclusters[keyy][i][0]["departure"])
-                    # superclusters[keyy][i-1][0]["weight"] += superclusters[keyy][i][0]["weight"]
-                    # superclusters[keyy][i-1][0]["cars"] += superclusters[keyy][i][0]["cars"]
-                    # superclusters[keyy][i-1][1] += superclusters[keyy][i][1] #Update the list of clusters contained in this supercluster
-                    superclusters[keyy].pop(i)
-                else:
-                    i+=1
+            # i = 1
+            # while i < len(superclusters[keyy]):
+            #     maxdep = -np.inf
+            #     for j in range(len(superclusters[keyy][i-1])):
+            #         maxdep = max(maxdep, superclusters[keyy][i-1][j][0]["departure"])
+            #     #Merge any cluster pairs we can
+            #     if superclusters[keyy][i][0][0]["arrival"] < maxdep+clusterthresh:
+            #         superclusters[keyy][i-1].append(superclusters[keyy][i][0])
+            #         #Logic to try to literally make one giant cluster. Probably slightly faster but suboptimal
+            #         # superclusters[keyy][i-1][0]["departure"] = max(superclusters[keyy][i-1][0]["departure"], superclusters[keyy][i][0]["departure"])
+            #         # superclusters[keyy][i-1][0]["weight"] += superclusters[keyy][i][0]["weight"]
+            #         # superclusters[keyy][i-1][0]["cars"] += superclusters[keyy][i][0]["cars"]
+            #         # superclusters[keyy][i-1][1] += superclusters[keyy][i][1] #Update the list of clusters contained in this supercluster
+            #         superclusters[keyy].pop(i)
+            #     else:
+            #         i+=1
 
             nSuperclusters += len(superclusters[keyy])
             if maxnSuperclusters < len(superclusters[keyy]):
@@ -723,7 +723,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
             stateToExpand = heappop(pq)
             fval = stateToExpand[0]
             schedule = stateToExpand[1]
-            newschedule = schedule
+            startschedule = schedule
             gval = schedule[5] #Delay so far
 
             if fval > bestcost:
@@ -766,17 +766,19 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     superclusterComplete = True
                     didSomething = False
 
+                    newschedule = startschedule
+                    
                     for superclustersubind in range(len(superclusters[superclusterphases][superclusterind])):
+                        cluster = superclusters[superclusterphases][superclusterind][superclustersubind][0] #Don't think I need this, can look this up off clusters as needed
+                        (lane, tempclusternum) = superclusters[superclusterphases][superclusterind][superclustersubind][1] #OTOH, I very much need the lane, and I need tempclusternum so I know not to reprocess clusters in case of max duration problems
+                        j = surtracdata[light][i]["lanes"].index(lane)
+
                         #Reload schedule data
                         schedule = newschedule
                         newScheduleStatus = copy(schedule[1]) #Shallow copy okay? Dict points to int, which is stored by value
                         phase = schedule[2]
                         directionalMakespans = copy(schedule[3])
                         newDurations = copy(schedule[7]) #Shallow copy should be fine
-
-                        cluster = superclusters[superclusterphases][superclusterind][superclustersubind][0] #Don't think I need this, can look this up off clusters as needed
-                        (lane, tempclusternum) = superclusters[superclusterphases][superclusterind][superclustersubind][1] #OTOH, I very much need the lane, and I need tempclusternum so I know not to reprocess clusters in case of max duration problems
-                        j = surtracdata[light][i]["lanes"].index(lane)
 
                         clusterind = math.floor(newScheduleStatus[lane]) #We're scheduling the Xth cluster; it has index X-1. Floor in case part of the cluster got sent before a maxdur phase change
                         fracSent = newScheduleStatus[lane] - clusterind
