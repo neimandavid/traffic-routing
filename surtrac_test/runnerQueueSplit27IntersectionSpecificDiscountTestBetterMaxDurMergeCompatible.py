@@ -104,7 +104,7 @@ mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the 
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
-predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
+predCutoffMain = 60 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = predCutoffMain #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 0.4 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
@@ -850,7 +850,10 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                     #We do delay math later, don't touch anything
                                     pass
                                 else:
-                                    print("Negative weight, what just happened?")
+                                    if mindur <= 0:
+                                        print("Negative weight, what just happened?")
+                                    else:
+                                        print("Cluster departing before arriving?")
                                 newScheduleStatus[lane] += (1-fracSent)*(tSent/dur) - 1 #In case a phase is so long we span two maxdurs. Ex: Previously sent 2/3 of a cluster, now sending 1/2 of what's left (since dur tracks what's left). Full fraction sent needs to increase by 1/2 * the 1/3 of the cluster we're working with. -1 to cancel the +1 we'll have from assuming we sent a full cluster
                                 if debugMode:
                                     assert(math.floor(newScheduleStatus[lane]-1e-10) == clusterind-1)
@@ -3748,7 +3751,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
 #@profile
 #NOTE: Profiling says this function isn't terrible, probably don't need to speed it up right now
-def removeVehicleFromPredictions(sumoPredClusters, id, lastedge):
+def removeVehicleFromPredictions(sumoPredClusters, idrem, lastedge):
     for predlane in sumoPredClusters.keys():
         #Don't bother checking lanes on edges that weren't the last edge
         if not predlane.split("_")[0] == lastedge:
@@ -3763,7 +3766,7 @@ def removeVehicleFromPredictions(sumoPredClusters, id, lastedge):
             maxarr = -inf
             while predcarind < len(predcluster["cars"]):
                 predcartuple = predcluster["cars"][predcarind]
-                if predcartuple[0] == id:
+                if predcartuple[0] == idrem:
                     predcluster["cars"].pop(predcarind)
                     predcluster["weight"] -= predcartuple[2]
                 else:
@@ -3779,6 +3782,7 @@ def removeVehicleFromPredictions(sumoPredClusters, id, lastedge):
                 for predcarind in range(len(predcluster["cars"])):
                     weightsum += predcluster["cars"][predcarind][2]
                 assert(abs(weightsum - predcluster["weight"]) < 1e-10)
+                assert(predcluster["weight"] >= 0)
 
             #Remove empty clusters
             if len(predcluster["cars"]) == 0:
