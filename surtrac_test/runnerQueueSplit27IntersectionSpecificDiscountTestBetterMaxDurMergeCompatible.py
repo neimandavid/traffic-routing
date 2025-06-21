@@ -64,6 +64,7 @@ if useLibsumo:
         useLibsumo = False
 if not useLibsumo:
     import traci  #To interface with SUMO simulations
+noGUI = useLibsumo
 
 import sumolib #To query node/edge stuff about the network
 import pickle #To save/load traffic light states
@@ -2709,7 +2710,13 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
                                 "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
     else:
         try:
-            traci.start([sumoBinary, "-c", sumoconfig,
+            if noGUI:
+                traci.start([checkBinary('sumo'), "-c", sumoconfig,
+                                        "--additional-files", "additional_autogen.xml",
+                                        "--no-step-log", "true",
+                                        "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
+            else:
+                traci.start([sumoBinary, "-c", sumoconfig,
                                     "--additional-files", "additional_autogen.xml",
                                     "--no-step-log", "true",
                                     "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
