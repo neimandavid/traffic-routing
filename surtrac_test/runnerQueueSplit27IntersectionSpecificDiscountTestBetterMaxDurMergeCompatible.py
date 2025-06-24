@@ -107,7 +107,7 @@ recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedu
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 60 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = predCutoffMain #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
-predDiscount = 0.4 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
+predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
@@ -1053,7 +1053,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     clusterNums[lane] = 0
                     subclusterNums[lane] = 0
                     carNums[lane] = 0
-                    if len(clusters[lane]) > clusterNums[lane]: #In case there's no clusters on a given 
+                    if len(clusters[lane]) > clusterNums[lane]: #In case there's no clusters on a given lane
                         #heappush(nextSendTimes, (bestschedule[9][lane][clusterNums[lane]][0], lane)) #Pre-predict for appropriate lane for first cluster, get departure time, stuff into a priority queue
                         heappush(nextSendTimes, (bestschedule[9][laneind][clusterNums[lane]][0][0], laneind)) #Pre-predict for appropriate lane for first cluster, get departure time, stuff into a priority queue
                         #We're pushing the next time the next to-be-processed car from each lane departs the current intersection, and once we process a car we'll heappush the car behind it into the queue

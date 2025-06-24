@@ -64,6 +64,7 @@ if useLibsumo:
         useLibsumo = False
 if not useLibsumo:
     import traci  #To interface with SUMO simulations
+noGUI = useLibsumo
 
 import sumolib #To query node/edge stuff about the network
 import pickle #To save/load traffic light states
@@ -104,7 +105,7 @@ mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the 
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
-predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
+predCutoffMain = 60 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = predCutoffMain #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
@@ -617,14 +618,61 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         fullStatus = dict()
         nClusters = 0
         maxnClusters = 0
+        nSuperclusters = 0
+        maxnSuperclusters = 0
+
+
+        #Combine clusters
+        #Look for same values of lanephases[lane]
+        #Somehow track what clusters went into each supercluster so we can back it out at the end
+        superclusters = dict()
+        for lane in lightlanes[light]:
+            key = tuple(lanephases[lane])
+            if key not in superclusters:
+                superclusters[key] = []
+            for i in range(len(clusters[lane])):
+                superclusters[key].append([(clusters[lane][i], (lane, i))])
+        for keyy in superclusters:
+            #Sort the clusters by start time
+
+            #NOTE: superclusters[key][superclusterind][superclustersubind] = (clusterdata, [lane, clusterind])
+            list.sort(superclusters[keyy], key = lambda clustertuple:clustertuple[0][0]["arrival"])
+
+            # i = 1
+            # while i < len(superclusters[keyy]):
+            #     maxdep = -np.inf
+            #     for j in range(len(superclusters[keyy][i-1])):
+            #         maxdep = max(maxdep, superclusters[keyy][i-1][j][0]["departure"])
+            #     #Merge any cluster pairs we can
+            #     if superclusters[keyy][i][0][0]["arrival"] < maxdep+clusterthresh:
+            #         superclusters[keyy][i-1].append(superclusters[keyy][i][0])
+            #         #Logic to try to literally make one giant cluster. Probably slightly faster but suboptimal
+            #         # superclusters[keyy][i-1][0]["departure"] = max(superclusters[keyy][i-1][0]["departure"], superclusters[keyy][i][0]["departure"])
+            #         # superclusters[keyy][i-1][0]["weight"] += superclusters[keyy][i][0]["weight"]
+            #         # superclusters[keyy][i-1][0]["cars"] += superclusters[keyy][i][0]["cars"]
+            #         # superclusters[keyy][i-1][1] += superclusters[keyy][i][1] #Update the list of clusters contained in this supercluster
+            #         superclusters[keyy].pop(i)
+            #     else:
+            #         i+=1
+
+            nSuperclusters += len(superclusters[keyy])
+            if maxnSuperclusters < len(superclusters[keyy]):
+                maxnSuperclusters = len(superclusters[keyy])
+
+        #How do we use superclusters for Surtrac? I'm thinking we run Surtrac on the superclusters, except that for the delay computation and communication we break out each cluster individually
+        #We still get savings, though, since we don't have to try reorderings of supercluster, etc.
 
         #Does this vectorize somehow?
+        #Need to track both normal clusters and superclusters in case of max duration problems, since I need to know what exactly got sent before max duration hit
         for lane in lightlanes[light]:
             emptyStatus[lane] = 0
             fullStatus[lane] = len(clusters[lane])
             nClusters += fullStatus[lane]
             if maxnClusters < fullStatus[lane]:
                 maxnClusters = fullStatus[lane]
+        for superclusterphases in superclusters:
+            emptyStatus[superclusterphases] = 0
+            fullStatus[superclusterphases] = len(superclusters[superclusterphases])
         if debugMode:
             totalSurtracClusters += nClusters
         #If there's nothing to do, send back something we recognize as "no schedule"
@@ -665,7 +713,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         schedules = [([], emptyStatus, phase, [simtime]*len(surtracdata[light][phase]["lanes"]), simtime, 0, lastSwitch, [simtime - lastSwitch], [], emptyPrePreds)]
 
         pq = []
-        heuristic = 0 #TODO use an actual heuristic function here; using 0 for now since it's obviously admissible
+        heuristic = 0
         heappush(pq, (schedules[0][5]+heuristic, schedules[0]))
         bestcost = np.inf
         bestschedule = None
@@ -676,6 +724,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
             stateToExpand = heappop(pq)
             fval = stateToExpand[0]
             schedule = stateToExpand[1]
+            startschedule = schedule
             gval = schedule[5] #Delay so far
 
             if fval > bestcost:
@@ -695,163 +744,191 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     bestschedule = schedule
                 continue #Obviously no reason to add anything to this schedule, move on to the next
 
-            #Given that we didn't stop the search, try adding clusters from all lanes
-            for laneindex in range(lenlightlaneslight):
-                lane = lightlanes[light][laneindex]
+            newScheduleStatus = copy(schedule[1]) #Shallow copy okay? Dict points to int, which is stored by value
+            phase = schedule[2]
 
-                if schedule[1][lane] == fullStatus[lane]:
-                    continue
-                #Consider adding next cluster from surtracdata[light][i]["lanes"][j] to schedule
-                newScheduleStatus = copy(schedule[1]) #Shallow copy okay? Dict points to int, which is stored by value
-                assert(newScheduleStatus[lane] < maxnClusters)
-                phase = schedule[2]
+            #Now loop over all sets of superclusterphases where we can clear a supercluster
+            for superclusterphases in superclusters:
 
-                #Now loop over all phases where we can clear this cluster
+                superclusterind = math.floor(newScheduleStatus[superclusterphases])
+                if superclusterind == len(superclusters[superclusterphases]):
+                    continue #No more superclusters to send in this phase set
+
                 try:
-                    assert(len(lanephases[lane]) > 0)
+                    assert(len(superclusterphases) > 0)
                 except:
-                    print(lane)
+                    print(superclusterphases)
                     print("ERROR: Can't clear this lane ever?")
                     
-                for i in lanephases[lane]:
+                for i in superclusterphases:
                     if not learnYellow and ("Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state):
                         continue
-                    directionalMakespans = copy(schedule[3])
 
-                    nLanesTotal = len(surtracdata[light][i]["lanes"])
-                    j = surtracdata[light][i]["lanes"].index(lane)
+                    superclusterComplete = True
+                    didSomething = False
 
-                    newDurations = copy(schedule[7]) #Shallow copy should be fine
+                    newschedule = startschedule
+                    
+                    for superclustersubind in range(len(superclusters[superclusterphases][superclusterind])):
+                        cluster = superclusters[superclusterphases][superclusterind][superclustersubind][0] #Don't think I need this, can look this up off clusters as needed
+                        (lane, tempclusternum) = superclusters[superclusterphases][superclusterind][superclustersubind][1] #OTOH, I very much need the lane, and I need tempclusternum so I know not to reprocess clusters in case of max duration problems
+                        j = surtracdata[light][i]["lanes"].index(lane)
 
-                    clusterind = math.floor(newScheduleStatus[lane]) #We're scheduling the Xth cluster; it has index X-1. Floor in case part of the cluster got sent before a maxdur phase change
-                    fracSent = newScheduleStatus[lane] - clusterind
-                    #If we're sending part of a cluster, we'll set the pst to the max, and then we'll be unable to send anything without switching
+                        #Reload schedule data
+                        schedule = newschedule
+                        newScheduleStatus = copy(schedule[1]) #Shallow copy okay? Dict points to int, which is stored by value
+                        phase = schedule[2]
+                        directionalMakespans = copy(schedule[3])
+                        newDurations = copy(schedule[7]) #Shallow copy should be fine
 
-                    ist = clusters[lane][clusterind]["arrival"] + fracSent*(clusters[lane][clusterind]["departure"]-clusters[lane][clusterind]["arrival"]) #Intended start time = cluster arrival time + fracSent of the total duration
-                    dur = clusters[lane][clusterind]["departure"] - ist + mingap #+mingap because next cluster can't start until mingap after current cluster finishes
-                    dur *= (1-fracSent)
+                        clusterind = math.floor(newScheduleStatus[lane]) #We're scheduling the Xth cluster; it has index X-1. Floor in case part of the cluster got sent before a maxdur phase change
+                        fracSent = newScheduleStatus[lane] - clusterind
+                        #If we're sending part of a cluster, we'll set the pst to the max, and then we'll be unable to send anything without switching
 
-                    mindur = max((clusters[lane][clusterind]["weight"]*(1-fracSent) )*mingap, 0) #No -1 because fencepost problem; next cluster still needs 2.5s of gap afterwards
-                    delay = schedule[5]
+                        if tempclusternum+1 <= clusterind:
+                            #We've already processed this cluster, skip
+                            continue
 
-                    #NOTE: Here's the re-densifying code, this needs to change if we're going to start combining compatible clusters (ideally it just isn't doing anything and gets removed, but needs testing)
-                    if dur < mindur:
-                        #print("Warning, dur < mindur???")
-                        dur = mindur
-                    tSent = dur #We'll overwrite this if we can't send the full cluster because maxDur
+                        ist = clusters[lane][clusterind]["arrival"] + fracSent*(clusters[lane][clusterind]["departure"]-clusters[lane][clusterind]["arrival"]) #Intended start time = cluster arrival time + fracSent of the total duration
+                        dur = clusters[lane][clusterind]["departure"] - ist + mingap #+mingap because next cluster can't start until mingap after current cluster finishes
+                        dur *= (1-fracSent)
 
-                    if phase == i:
-                        pst = schedule[3][j]
-                        newLastSwitch = schedule[6] #Last switch time doesn't change
-                        ast = max(ist, pst)
-                        newdur = max(dur - (ast-ist), mindur) #Try to compress cluster as it runs into an existing queue
-                        currentDuration = max(ist, ast)+newdur-schedule[6] #Total duration of current light phase if we send this cluster without changing phase
+                        mindur = max((clusters[lane][clusterind]["weight"]*(1-fracSent) )*mingap, 0) #No -1 because fencepost problem; next cluster still needs 2.5s of gap afterwards
+                        delay = schedule[5]
 
-                    if not phase == i or currentDuration > surtracdata[light][i]["maxDur"]: #We'll have to switch the light, possibly mid-cluster
+                        #NOTE: Here's the re-densifying code. This is fine even with superclusters since we're processing each cluster separately. Nice.
+                        if dur < mindur:
+                            #print("Warning, dur < mindur???")
+                            dur = mindur
+                        tSent = dur #We'll overwrite this if we can't send the full cluster because maxDur
 
-                        if not phase == i or surtracdata[light][i]["maxDur"] - (max(ist, ast)-schedule[6]) < 1e-5:
-                            #Have to switch light phases NOW - either we're in the wrong phase or the current phase is at its max duration
-                            newFirstSwitch = max(schedule[6] + surtracdata[light][phase]["minDur"], schedule[4]-mingap, simtime) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed. Except for first phase, which usually wants to switch 2.5s in the past if there's no clusters
+                        #NOTE: We read phase off the schedule; we fixed i before starting to loop over clusters
+                        #So the only possible difference between clusters in the same subcluster is if maxDur stuff happens
+                        if phase == i:
+                            pst = schedule[3][j]
+                            newLastSwitch = schedule[6] #Last switch time doesn't change
+                            ast = max(ist, pst)
+                            newdur = max(dur - (ast-ist), mindur) #Try to compress cluster as it runs into an existing queue
+                            currentDuration = max(ist, ast)+newdur-schedule[6] #Total duration of current light phase if we send this cluster without changing phase
 
-                            #Standard switch logic
-                            newLastSwitch = newFirstSwitch + surtracdata[light][(phase+1)%nPhases]["timeTo"][i] #Switch right after previous cluster finishes (why not when next cluster arrives minus sult? Maybe try both?)                        
-                            pst = newLastSwitch + sult #Total makespan + switching time + startup loss time
-                            #Technically this sult implementation isn't quite right, as a cluster might reach the light as the light turns green and not have to stop and restart
-                            directionalMakespans = [pst]*nLanesTotal #Other directions can't schedule a cluster before the light switches
+                        if not phase == i or currentDuration > surtracdata[light][i]["maxDur"]: #We'll have to switch the light, possibly mid-cluster
 
-                            newDurations[-1] = newFirstSwitch - schedule[6] #Previous phase lasted from when it started to when it switched
-                            tempphase = (phase+1)%nPhases
-                            while tempphase != i:
-                                newDurations.append(surtracdata[light][i]["minDur"])
-                                tempphase = (tempphase+1)%nPhases
-                            newDurations.append(0) #Duration of new phase i. To be updated on future loops once we figure out when the cluster finishes
-                            assert(newDurations != schedule[7]) #Confirm that shallow copy from before is fine
-                            
-                        else:
-                            #This cluster is too long to fit entirely in the current phase, but we can start it
-                            #We want to send part of it, set its makespan to lastSwitch+maxDur, then toss the other part back into the cluster pool for rescheduling (since we may want to partially-send other compatible clusters)
-                            #newFirstSwitch = schedule[6] + surtracdata[light][phase]["maxDur"] #Set current phase to max duration
-                            #Figure out how long the remaining part of the cluster is
-                            tSent = surtracdata[light][i]["maxDur"] - (max(ist, ast)-schedule[6]) #Time we'll have run this cluster for before the light switches
-                            
-                            if mindur > 0 and dur > 0: #Having issues with negative weights, possibly related to cars contributing less than 1 to weight having left the edge
-                                #WE HANDLE THIS LATER, NO NEED TO DO ANYTHING NOW!
-                                pass
-                            
+                            if not phase == i or surtracdata[light][i]["maxDur"] - (max(ist, ast)-schedule[6]) < 1e-5:
+                                #Have to switch light phases NOW - either we're in the wrong phase or the current phase hits max duration before we can send anything from this cluster
+                                
+                                #TODO: I think I'm being sloppy here. Is it possible the first cluster from this supercluster can't go in current phase, triggering the light switch, but a later one can (ex: maybe a previous supercluster had a huge makespan on the lane for the first cluster from the second supercluster?) Going to hope this is fine...
+                                if didSomething:
+                                    #We've alreadyprocessed part of this supercluster before having to switch the light due to maxDur
+                                    #So skip this cluster, fit any other clusters we can in before the change, then stop
+                                    superclusterComplete = False #Just in case the last cluster actually finished in time but then this one doesn't have time to start
+                                    continue
+                                
+                                newFirstSwitch = max(schedule[6] + surtracdata[light][phase]["minDur"], schedule[4]-mingap, simtime) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed. Except for first phase, which usually wants to switch 2.5s in the past if there's no clusters
+
+                                #Standard switch logic
+                                newLastSwitch = newFirstSwitch + surtracdata[light][(phase+1)%nPhases]["timeTo"][i] #Switch right after previous cluster finishes (why not when next cluster arrives minus sult? Maybe try both?)                        
+                                pst = newLastSwitch + sult #Total makespan + switching time + startup loss time
+                                #Technically this sult implementation isn't quite right, as a cluster might reach the light as the light turns green and not have to stop and restart
+                                directionalMakespans = [pst]*len(surtracdata[light][i]["lanes"]) #Other directions can't schedule a cluster before the light switches
+
+                                newDurations[-1] = max(newDurations[-1], newFirstSwitch - schedule[6]) #Previous phase lasted from when it started to when it switched
+                                
+                                tempphase = (phase+1)%nPhases
+                                while tempphase != i:
+                                    newDurations.append(surtracdata[light][i]["minDur"])
+                                    tempphase = (tempphase+1)%nPhases
+                                newDurations.append(0) #Duration of new phase i. To be updated on future loops once we figure out when the cluster finishes
+                                assert(newDurations != schedule[7]) #Confirm that shallow copy from before is fine
+
                             else:
-                                print("Negative weight, what just happened?")
-                            newScheduleStatus[lane] += (1-fracSent)*(tSent/dur) - 1 #In case a phase is so long we span two maxdurs. Ex: Previously sent 2/3 of a cluster, now sending 1/2 of what's left (since dur tracks what's left). Full fraction sent needs to increase by 1/2 * the 1/3 of the cluster we're working with. -1 to cancel the +1 we'll have from assuming we sent a full cluster
-                            if debugMode:
-                                assert(math.floor(newScheduleStatus[lane]-1e-10) == clusterind-1)
-                            #dur -= tSent
+                                #This cluster is too long to fit entirely in the current phase, but we can start it
+                                #We want to send part of it, set its makespan to lastSwitch+maxDur, then toss the other part back into the cluster pool for rescheduling (since we may want to partially-send other compatible clusters)
+                                #newFirstSwitch = schedule[6] + surtracdata[light][phase]["maxDur"] #Set current phase to max duration
+                                #Figure out how long the remaining part of the cluster is
+                                tSent = surtracdata[light][i]["maxDur"] - (max(ist, ast)-schedule[6]) #Time we'll have run this cluster for before the light switches
+                                
+                                if mindur > 0 and dur > 0: #Having issues with negative weights, possibly related to cars contributing less than 1 to weight having left the edge
+                                    #We do delay math later, don't touch anything
+                                    pass
+                                else:
+                                    if mindur <= 0:
+                                        print("Negative weight, what just happened?")
+                                    else:
+                                        print("Cluster departing before arriving?")
+                                newScheduleStatus[lane] += (1-fracSent)*(tSent/dur) - 1 #In case a phase is so long we span two maxdurs. Ex: Previously sent 2/3 of a cluster, now sending 1/2 of what's left (since dur tracks what's left). Full fraction sent needs to increase by 1/2 * the 1/3 of the cluster we're working with. -1 to cancel the +1 we'll have from assuming we sent a full cluster
+                                if debugMode:
+                                    assert(math.floor(newScheduleStatus[lane]-1e-10) == clusterind-1)
+                                #dur -= tSent
+                                superclusterComplete=False
 
-                    #Build the new schedule (including the new (partially?)-sent cluster)
-                    ast = max(ist, pst)
-                    newdur = max(dur - (ast-ist), mindur) #Compress cluster once cars start stopping
+                        #Build the new schedule (including the new (partially?)-sent cluster)
+                        ast = max(ist, pst)
+                        newdur = max(dur - (ast-ist), mindur) #Compress cluster once cars start stopping
 
-                    newPrePredict = copy(schedule[9])#pickle.loads(pickle.dumps(schedule[9]))
-                    # print(np.shape(newPrePredict))
-                    # print(lightoutlanes[light])
-                    # print(lane)
-                    # print(laneindex)
-                    # print(newScheduleStatus[lane])
+                        newPrePredict = copy(schedule[9])#pickle.loads(pickle.dumps(schedule[9]))
 
-                    newPrePredict[laneindex][math.floor(newScheduleStatus[lane])].append([0, 0, 0, 0])
-                    newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][0] = ast #-1 because zero-indexing; first cluster has newScheduleStatus[lane] = 1, but is stored at index 0
-                    if dur <= mindur:
-                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][1] = 0 #Squish factor = 0 (no squishing)
-                    else:
-                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][1] = (dur-newdur)/(dur-mindur) #Squish factor equals this thing
-                        #If newdur = mindur, compression factor = 1, all gaps are 2.5 (=mindur)
-                        #If newdur = dur, compression factor = 0, all gaps are original values
-                        #Otherwise smoothly interpolate
-                    newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][2] = fracSent #Stuff sent before this (so where this subcluster starts). TODO probably don't need this
-                    newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][3] = (1-fracSent)*(tSent/dur) #Stuff sent including this (so where this subcluster ends)
-                    
-                    #Tell other clusters to also start no sooner than max(new ast, old directionalMakespan value) to preserve order
-                    #That max is important, though; blind overwriting is wrong, as you could send a long cluster, then a short one, then change the light before the long one finishes
-                    assert(len(directionalMakespans) == len(surtracdata[light][i]["lanes"]))
-                    directionalMakespans[j] = ast+newdur+mingap
+                        laneindex = lightlanes[light].index(lane)
 
-                    directionalMakespans = np.maximum(directionalMakespans, ast).tolist()
-                                                    
-                    delay += tSent/dur*clusters[surtracdata[light][i]["lanes"][j]][clusterind]["weight"]*(1-fracSent)*((ast-ist)-1/2*(dur-newdur) ) #Weight of stuff sent through, times amount the start time got delayed minus half the squishibility
-                    #delay +=           clusters[surtracdata[light][i]["lanes"][j]][clusterind]["weight"]*(1-fracSent)*((ast-ist)-1/2*(dur-newdur) ) #Delay += #cars * (actual-desired). 1/2(dur-newdur) compensates for the cluster packing together as it waits (I assume uniform compression)
-                    try:
-                        assert(delay >= schedule[5] - 1e-10) #Make sure delay doesn't go negative somehow
-                    except AssertionError as e:
-                        print("Negative delay, printing lots of debug stuff")
-                        #print(clusters)
-                        print(light)
-                        print(lane)
-                        print(clusters[surtracdata[light][i]["lanes"][j]][clusterind])
-                        print(ast)
-                        print(ist)
-                        print(dur)
-                        print(newdur)
-                        print((ast-ist)-1/2*(dur-newdur))
-                        raise(e)
+                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])].append([0, 0, 0, 0])
+                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][0] = ast #-1 because zero-indexing; first cluster has newScheduleStatus[lane] = 1, but is stored at index 0
+                        if dur <= mindur:
+                            newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][1] = 0 #Squish factor = 0 (no squishing)
+                        else:
+                            newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][1] = (dur-newdur)/(dur-mindur) #Squish factor equals this thing
+                            #If newdur = mindur, compression factor = 1, all gaps are 2.5 (=mindur)
+                            #If newdur = dur, compression factor = 0, all gaps are original values
+                            #Otherwise smoothly interpolate
+                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][2] = fracSent #Stuff sent before this (so where this subcluster starts). TODO probably don't need this
+                        newPrePredict[laneindex][math.floor(newScheduleStatus[lane])][-1][3] = (1-fracSent)*(tSent/dur) #Stuff sent including this (so where this subcluster ends)
+                        
+                        assert(len(directionalMakespans) == len(surtracdata[light][i]["lanes"]))
+                        directionalMakespans[j] = ast+newdur+mingap
+                        #Don't strictly enforce cluster order now that we're using superclusters
+                        #directionalMakespans = np.maximum(directionalMakespans, ast).tolist()
+                                                        
+                        delay += tSent/dur*clusters[surtracdata[light][i]["lanes"][j]][clusterind]["weight"]*(1-fracSent)*((ast-ist)-1/2*(dur-newdur) ) #Weight of stuff sent through, times amount the start time got delayed minus half the squishibility
+                        #delay +=           clusters[surtracdata[light][i]["lanes"][j]][clusterind]["weight"]*(1-fracSent)*((ast-ist)-1/2*(dur-newdur) ) #Delay += #cars * (actual-desired). 1/2(dur-newdur) compensates for the cluster packing together as it waits (I assume uniform compression)
+                        try:
+                            assert(delay >= schedule[5] - 1e-10) #Make sure delay doesn't go negative somehow
+                        except AssertionError as e:
+                            print("Negative delay, printing lots of debug stuff")
+                            #print(clusters)
+                            print(light)
+                            print(lane)
+                            print(clusters[surtracdata[light][i]["lanes"][j]][clusterind])
+                            print(ast)
+                            print(ist)
+                            print(dur)
+                            print(newdur)
+                            print((ast-ist)-1/2*(dur-newdur))
+                            raise(e)
 
-                    newMakespan = max(directionalMakespans)
-                    currentDuration = newMakespan - newLastSwitch
+                        newMakespan = max(directionalMakespans)
+                        currentDuration = newMakespan - newLastSwitch
 
-                    newDurations[-1] = currentDuration 
-                    #Stuff in the partial schedule tuple
-                    #0: list of indices of the clusters we've scheduled
-                    #1: schedule status (how many clusters from each lane we've scheduled)
-                    #2: current light phase
-                    #3: time when each direction will have finished its last scheduled cluster
-                    #4: time when all directions are finished with scheduled clusters ("total makespan" + starting time...)
-                    #5: total delay
-                    #6: last switch time
-                    #7: planned total durations of all phases
-                    #8: predicted outflows (as clusters - arrival, departure, list of cars, weights, etc.) Blank for now since I'll generate it at the end.
-                    #9: pre-predict data (cluster start times and compression factors) which I'll use to figure out predicted outflows once we've determined the best schedule
-                    
-                    newScheduleStatus[lane] = math.floor(newScheduleStatus[lane]+1) #Successfully sent cluster (or subtracted 1 to compensate if partial send)
-                    newschedule = (schedule[0]+[(i, j)], newScheduleStatus, i, directionalMakespans, newMakespan, delay, newLastSwitch, newDurations, [], newPrePredict)
-                    
-                    #DP on partial schedules
+                        newDurations[-1] = currentDuration 
+                        #Stuff in the partial schedule tuple
+                        #0: list of indices of the clusters we've scheduled
+                        #1: schedule status (how many clusters from each lane we've scheduled)
+                        #2: current light phase
+                        #3: time when each direction will have finished its last scheduled cluster
+                        #4: time when all directions are finished with scheduled clusters ("total makespan" + starting time...)
+                        #5: total delay
+                        #6: last switch time
+                        #7: planned total durations of all phases
+                        #8: predicted outflows (as clusters - arrival, departure, list of cars, weights, etc.) Blank for now since I'll generate it at the end.
+                        #9: pre-predict data (cluster start times and compression factors) which I'll use to figure out predicted outflows once we've determined the best schedule
+                        
+                        newScheduleStatus[lane] = math.floor(newScheduleStatus[lane]+1) #Successfully sent cluster (or subtracted 1 to compensate if partial send)
+                        newschedule = (schedule[0]+[(i, j)], newScheduleStatus, i, directionalMakespans, newMakespan, delay, newLastSwitch, newDurations, [], newPrePredict)
+                        didSomething = True
+
+                    #We've now processed the entire supercluster
+                    if superclusterComplete:
+                        newschedule[1][superclusterphases] += 1
+                    #Else we hit maxdur partway through and didn't send all clusters yet
+
+                    #Run DP on partial schedules
                     key = (tuple(newschedule[1].values()), newschedule[2]) #Key needs to be something immutable (like a tuple, not a list)
                     #TODO: This could be bad at pruning if clusters are routinely exceeding maxDur, since then we'll have fractional parts of clusters running around... Hopefully it's fine?
 
@@ -2633,7 +2710,13 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
                                 "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
     else:
         try:
-            traci.start([sumoBinary, "-c", sumoconfig,
+            if noGUI:
+                traci.start([checkBinary('sumo'), "-c", sumoconfig,
+                                        "--additional-files", "additional_autogen.xml",
+                                        "--no-step-log", "true",
+                                        "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
+            else:
+                traci.start([sumoBinary, "-c", sumoconfig,
                                     "--additional-files", "additional_autogen.xml",
                                     "--no-step-log", "true",
                                     "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"], label="main")
@@ -3675,7 +3758,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
 #@profile
 #NOTE: Profiling says this function isn't terrible, probably don't need to speed it up right now
-def removeVehicleFromPredictions(sumoPredClusters, id, lastedge):
+def removeVehicleFromPredictions(sumoPredClusters, idrem, lastedge):
     for predlane in sumoPredClusters.keys():
         #Don't bother checking lanes on edges that weren't the last edge
         if not predlane.split("_")[0] == lastedge:
@@ -3690,7 +3773,7 @@ def removeVehicleFromPredictions(sumoPredClusters, id, lastedge):
             maxarr = -inf
             while predcarind < len(predcluster["cars"]):
                 predcartuple = predcluster["cars"][predcarind]
-                if predcartuple[0] == id:
+                if predcartuple[0] == idrem:
                     predcluster["cars"].pop(predcarind)
                     predcluster["weight"] -= predcartuple[2]
                 else:
@@ -3706,6 +3789,7 @@ def removeVehicleFromPredictions(sumoPredClusters, id, lastedge):
                 for predcarind in range(len(predcluster["cars"])):
                     weightsum += predcluster["cars"][predcarind][2]
                 assert(abs(weightsum - predcluster["weight"]) < 1e-10)
+                assert(predcluster["weight"] >= 0)
 
             #Remove empty clusters
             if len(predcluster["cars"]) == 0:
