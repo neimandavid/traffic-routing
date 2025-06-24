@@ -106,7 +106,7 @@ recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedu
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 20 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = predCutoffMain #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
-predDiscount = 0.4 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
+predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
