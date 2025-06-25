@@ -1336,7 +1336,6 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
     else:
         predictionCutoff = predCutoffMain #Main simulation
     
-
     if not predClusters == None:
         clusters = mergePredictions(realclusters, predClusters)
     else:
@@ -1479,14 +1478,17 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                                     #Make sure we're predicting this cluster
 
                                     #New math: Discount departure times too
-                                    newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] - catpreds[nextlane][-1]["arrival"])
+                                    #newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] + fftimes[nextlane] + intersectionTime - catpreds[nextlane][-1]["arrival"])
+                                    #Or not:
+                                    newarr = cartuple[1] + fftimes[nextlane] + intersectionTime
                                     modcartuple = (cartuple[0], newarr+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane] / normprobs[lane][nextedge], cartuple[3])                                
                                     catpreds[nextlane][-1]["cars"].append(modcartuple)
                                     catpreds[nextlane][-1]["weight"] += modcartuple[2]
 
                         else:
                             for nextlane in predLanes:
-                                newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] - catpreds[nextlane][-1]["arrival"])
+                                #newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] + fftimes[nextlane] + intersectionTime - catpreds[nextlane][-1]["arrival"])
+                                newarr = cartuple[1] + fftimes[nextlane] + intersectionTime
                                 modcartuple = (cartuple[0], newarr+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane], cartuple[3])
                                 catpreds[nextlane][-1]["cars"].append(modcartuple)
                                 catpreds[nextlane][-1]["weight"] += modcartuple[2]

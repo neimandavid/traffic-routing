@@ -266,6 +266,9 @@ def mergePredictions(clusters, predClusters):
     mergedClusters = pickle.loads(pickle.dumps(clusters)) #Because pass-by-value stuff
     for lane in clusters:
         if lane in predClusters:
+            print("test")
+            print(mergedClusters[lane])
+            print(fftimes[lane])
             mergedClusters[lane] += predClusters[lane] #Concatenate known clusters with predicted clusters
             mergedClusters[lane] = consolidateClusters(mergedClusters[lane])
     return mergedClusters
@@ -278,6 +281,13 @@ def consolidateClusters(clusters):
     while i < len(clusters):
         j = i+1
         while j < len(clusters):
+            if debugMode:
+                try:
+                    assert(clusters[j]["arrival"] >= clusters[i]["arrival"]) #Fails, not sure why
+                except:
+                    print(clusters)
+                    asdf
+                
             #Check if clusters i and j should merge
             #if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
             if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
@@ -1186,6 +1196,11 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                             newPredClusters[nextlane][-1]["weight"] += modcartuple[2]
                             if arr > newPredClusters[nextlane][-1]["departure"]:
                                 newPredClusters[nextlane][-1]["departure"] = arr
+
+                            if debugMode:
+                                assert(newPredClusters[nextlane][-1]["departure"] >= newPredClusters[nextlane][-1]["arrival"])
+                                if len(newPredClusters[nextlane]) > 1:
+                                    assert(newPredClusters[nextlane][-1]["arrival"] > newPredClusters[nextlane][-2]["arrival"])
                     
                     #Added car to predictions, now set up the next car
                     carNums[lane] += 1
@@ -1336,7 +1351,6 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
     else:
         predictionCutoff = predCutoffMain #Main simulation
     
-
     if not predClusters == None:
         clusters = mergePredictions(realclusters, predClusters)
     else:
@@ -1479,14 +1493,17 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                                     #Make sure we're predicting this cluster
 
                                     #New math: Discount departure times too
-                                    newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] - catpreds[nextlane][-1]["arrival"])
+                                    #newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] + fftimes[nextlane] + intersectionTime - catpreds[nextlane][-1]["arrival"])
+                                    #Or not:
+                                    newarr = cartuple[1] + fftimes[nextlane] + intersectionTime
                                     modcartuple = (cartuple[0], newarr+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane] / normprobs[lane][nextedge], cartuple[3])                                
                                     catpreds[nextlane][-1]["cars"].append(modcartuple)
                                     catpreds[nextlane][-1]["weight"] += modcartuple[2]
 
                         else:
                             for nextlane in predLanes:
-                                newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] - catpreds[nextlane][-1]["arrival"])
+                                #newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] + fftimes[nextlane] + intersectionTime - catpreds[nextlane][-1]["arrival"])
+                                newarr = cartuple[1] + fftimes[nextlane] + intersectionTime
                                 modcartuple = (cartuple[0], newarr+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane], cartuple[3])
                                 catpreds[nextlane][-1]["cars"].append(modcartuple)
                                 catpreds[nextlane][-1]["weight"] += modcartuple[2]
