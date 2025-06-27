@@ -108,7 +108,7 @@ disableSurtracComms = False #Speeds up code by having Surtrac no longer predict 
 predCutoffMain = 60 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = predCutoffMain #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
-intersectionTime = 1.5#.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
+intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
@@ -282,7 +282,7 @@ def consolidateClusters(clusters):
         while j < len(clusters):
             if debugMode:
                 try:
-                    assert(clusters[j]["arrival"] >= clusters[i]["arrival"]) #Fails, not sure why
+                    assert(clusters[j]["arrival"] >= clusters[i]["arrival"]+1) #Without the +1, we sometimes have issues with vehicles entering a new road. Old cluster arrives at >= simtime-1+fftimes[lane], new cluster arrives at <= simtime+fftimes[lane]. To be fair, removeVehicleFromPredictions should probably sort this? But ignoring it is probably fine.
                 except:
                     print("Assert fail: Clusters out of order")
                     print(clusters)
