@@ -266,6 +266,10 @@ def mergePredictions(clusters, predClusters):
     mergedClusters = pickle.loads(pickle.dumps(clusters)) #Because pass-by-value stuff
     for lane in clusters:
         if lane in predClusters:
+            print("test")
+            print(lane)
+            print(mergedClusters[lane])
+            print(fftimes[lane])
             if len(mergedClusters[lane]) > 0:
                 mergedClusters[lane][-1]["test"] = "lastseencluster"
             mergedClusters[lane] += predClusters[lane] #Concatenate known clusters with predicted clusters
@@ -479,19 +483,16 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
         rawlaneind = laneind
         assert(laneind < maxnlanes)
 
+        #Not sharing weights so I'll skip this
+        #Last lane on road assumed to be left-turn only and being inserted in last slot
+        # if laneind + 1 == nLanes[road] or laneind + 1 >= maxnlanes:
+        #     laneind = maxnlanes - 1
+
         for clusterind in range(len(clusters[lane])):
-            if clusterind >= maxnclusters:
+            if clusterind > maxnclusters:
                 print("Warning: Too many clusters on " + str(lane) + ", ignoring the last ones")
                 break
-            try:
-                clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [(clusters[lane][clusterind]["arrival"]-simtime)/60, (clusters[lane][clusterind]["departure"]-simtime)/60, (clusters[lane][clusterind]["weight"])/20]
-            except:
-                print([(clusters[lane][clusterind]["arrival"]-simtime)/60, (clusters[lane][clusterind]["departure"]-simtime)/60, (clusters[lane][clusterind]["weight"])/20])
-                print(clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster]) #[], apparently. Out of bounds?
-                print(((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster)
-                print(((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster)
-                print(len(clusterdata))
-                asdf
+            clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [(clusters[lane][clusterind]["arrival"]-simtime)/60, (clusters[lane][clusterind]["departure"]-simtime)/60, (clusters[lane][clusterind]["weight"])/20]
 
 
         for i in range(len(surtracdata[light])):
@@ -1429,185 +1430,108 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
 
 
     #Communicate-ahead for everything else; assume no delays.
-    #Most of this was copy-pasted from doSurtracThread
-    if not disableSurtracComms and not (inRoutingSim and (predCutoffRouting == 0 or testNN)):
-        newPredClusters = dict()
+    if not disableSurtracComms:
         for light in notLights:
-            for lane in notlightoutlanes[light]:
-                newPredClusters[lane] = []
             for lane in notlightlanes[light]:
                 if not lane in turndata:
                     continue
                 edge = lane.split("_")[0]
 
-                nextSendTimes = [] #Priority queue
-                clusterNums = dict()
-                subclusterNums = dict()
-                carNums = dict()
-                #for lane in lightlanes[light]:
-                for laneind in range(len(notlightlanes[light])):
-                    lane = notlightlanes[light][laneind]
-                    clusterNums[lane] = 0
-                    subclusterNums[lane] = 0
-                    carNums[lane] = 0
-
-                    if len(clusters[lane]) > clusterNums[lane]: #If there are clusters on this lane, toss the first car from that cluster into the priority queue
-                        heappush(nextSendTimes, (clusters[lane][clusterNums[lane]]["cars"][carNums[lane]][1], laneind)) #Pre-predict for appropriate lane for first cluster, get departure time, stuff into a priority queue
-                        #We're pushing the next time the next to-be-processed car from each lane departs the current intersection, and once we process a car we'll heappush the car behind it into the queue
-
-                while len(nextSendTimes) > 0:
-                    (nextSendTime, laneind) = heappop(nextSendTimes)
-                    lane = notlightlanes[light][laneind]
+                #This might not merge cars coming from different lanes in chronological order. Is this a problem?
+                
+                for clusterind in range(len(clusters[lane])): #TODO: This is going to be really bad at chronological ordering. Should probably just recompute clusters at the end
+                    predLanes = []
+                    for outlane in turndata[lane]: #turndata has psuedocounts so everything should be fine here?
                     
-                    #We're having issues with empty clusters when we do predictions and use libsumo (multithreaded routing apparently not necessary to break stuff). Not sure why this is happening, but let's just deal with those cases and hope everything's fine
-                    #NEXT TODO can I delete this? Apparently not, how bad is this?
-                    while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
-                        clusterNums[lane] += 1
-                        subclusterNums[lane] = 0 #TODO check this, previous comments scare me here
-                        carNums[lane] = 0
-                    if len(clusters[lane]) == clusterNums[lane]:
-                        #Nothing left on this lane, we're done here
-                        #nextSendTimes.pop(lane)
-                        continue
-
-                    try:
-                        cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
-                    except:
-                        print("Oops???????????")
-                        print(clusterNums[lane])
-                        print(clusters[lane])
-                        print(carNums[lane])
-                        print(clusters[lane][clusterNums[lane]]["cars"])
-                        asdf
-                    if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
-                        #Split on "|" and "_" to deal with splitty cars correctly
-                        route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
-                        edge = lane.split("_")[0]
-                        if not edge in route:
-                            #Not sure if or why this happens - maybe the route is changing and predictions aren't updating?
-                            #Can definitely happen for a splitty car inside QueueSim
-                            #Regardless, don't predict this car forward and hope for the best?
-                            if not "|" in cartuple[0] and not "_" in cartuple[0]:
-                                #Smart car is on an edge we didn't expect. Most likely it changed route between the previous and current Surtrac calls. Get rid of it for now; can we be cleverer?
-                                # print(cartuple[0])
-                                # print(route)
-                                # print(edge)
-                                # print("Warning, smart car on an edge that's not in its route. This shouldn't happen? Assuming a mispredict and removing")
-                                continue
-                            #TODO: else should predict it goes everywhere?
-                            continue
-                        edgeind = route.index(edge)
-                        if edgeind+1 == len(route):
-                            #At end of route, don't care
-                            continue
-                        nextedge = route[edgeind+1]
+                        ist = clusters[lane][clusterind]["arrival"] #Intended start time = cluster arrival time
+                        dur = clusters[lane][clusterind]["departure"] - ist
                         
-                        if not lane in normprobs:
-                            #This happens if it's not in turndata. Which is weird, since we're not at the end of the route so we should be able to go places so it should be in turndata. Weird.
-                            #Looks like this can happen if there's a merge. One lane is set up to not go anywhere, and those vehicles then have to change lanes. Not sure how much of a problem this is; ignoring for now
-                            #TODO it'd be better to steal the turndata and normprobs numbers from the closest lane on that road?
-                            print(lane + " not in normprobs. This tends to happen for lane merges where one lane doesn't go anywhere. Ignoring")
+                        arr = ist + fftimes[outlane] + intersectionTime
+                        if arr > simtime + predictionCutoff:
+                            #Cluster is farther in the future than we want to predict; skip it
                             continue
-                        if not nextedge in normprobs[lane]:
-                            #Means normprobs[lane] would be 0; nobody turned from this lane to this edge in the initial data
-                            #Might be happening if the car needs to make a last-minute lane change to stay on its route?
-                            #TODO: Find a lane where it can continue with the route and go from there? Ignoring for now
-                            #NEXT TODO: Apparently still a thing even with splitting the initial VOI to multiple lanes???
+                        newPredCluster = dict()
+                        newPredCluster["endpos"] = 0
+                        newPredCluster["time"] = simtime#ist
+                        newPredCluster["arrival"] = arr
+                        newPredCluster["departure"] = newPredCluster["arrival"] + dur
+                        newPredCluster["cars"] = []
+                        newPredCluster["weight"] = 0
+                        newPredCluster["test"] = "nonlightpred"
+                        if outlane in catpreds:
+                            catpreds[outlane].append(newPredCluster)
+                        else:
+                            catpreds[outlane] = [newPredCluster]
+                        predLanes.append(outlane) #Track which lanes' clusters are within the prediction cutoff
+                        assert(len(catpreds[outlane]) >= 1)
+                    #Add cars to new clusters
+                    for cartuple in clusters[lane][clusterind]["cars"]:
+                        #cartuple[0] is name of car; cartuple[1] is departure time; cartuple[2] is debug info
+                        #assert(cartuple[0] in isSmart)
+                        if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from the routing sim, in which case we may have ghost cars or off-network predicted cars that we don't have routes for
+                            route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
+                            if not edge in route:
+                                #Not sure if or why this happens - maybe the route is changing and predictions aren't updating?
+                                #Can definitely happen for a splitty car inside QueueSim
+                                #Regardless, don't predict this car forward and hope for the best?
+                                if not "|" in cartuple[0]:
+                                    pass
+                                    #TODO: This still happens sometimes, not sure why
+                                    #print("Warning, smart car on an edge that's not in its route. Assuming a mispredict and removing")
+                                #TODO: Else should predict it goes everywhere? Does this happen??
+                                continue
+                            edgeind = route.index(edge)
+                            if edgeind+1 == len(route):
+                                #At end of route, don't care
+                                continue
+                            nextedge = route[edgeind+1]
+
+                            if not nextedge in normprobs[lane]:
+                                #Might be happening if the car needs to make a last-minute lane change to stay on its route?
+                                #TODO: Find a lane where it can continue with the route and go from there? Ignoring for now
+                                #NEXT TODO: We're splitting the initial vehicle onto all starting lanes; this shouldn't be happening at all anymore. Verify?
+                                #This seems fine, but similar code in doSurtracThread is still triggering. This is the code for prediction through non-lights, though, which probably just doesn't come up often enough for me to notice a problem. Probably still bad.
+                                ##print("Warning, no data, having Surtrac prediction ignore this car instead of making something up")
+                                #print(lane)
+                                #print("normprob == 0, something's probably wrong??")
+                                continue
+
+                            for nextlaneind in range(nLanes[nextedge]):
+                                nextlane = nextedge+"_"+str(nextlaneind)
+                                if nextlane in predLanes:
+                                    #Make sure we're predicting this cluster
+
+                                    #New math: Discount departure times too
+                                    #newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] + fftimes[nextlane] + intersectionTime - catpreds[nextlane][-1]["arrival"])
+                                    #Or not:
+                                    newarr = cartuple[1] + fftimes[nextlane] + intersectionTime
+                                    modcartuple = (cartuple[0], newarr+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane] / normprobs[lane][nextedge], cartuple[3])                                
+                                    catpreds[nextlane][-1]["cars"].append(modcartuple)
+                                    catpreds[nextlane][-1]["weight"] += modcartuple[2]
+
+                        else:
+                            for nextlane in predLanes:
+                                #newarr = catpreds[nextlane][-1]["arrival"] + predDiscount*(cartuple[1] + fftimes[nextlane] + intersectionTime - catpreds[nextlane][-1]["arrival"])
+                                newarr = cartuple[1] + fftimes[nextlane] + intersectionTime
+                                modcartuple = (cartuple[0], newarr+fftimes[nextlane], cartuple[2]*predDiscount*turndata[lane][nextlane], cartuple[3])
+                                catpreds[nextlane][-1]["cars"].append(modcartuple)
+                                catpreds[nextlane][-1]["weight"] += modcartuple[2]
+
+                    for outlane in predLanes:
+                        if catpreds[outlane][-1]["weight"] == 0:
+                            #Remove predicted clusters that are empty
+                            catpreds[outlane].pop(-1)
                             continue
 
-                        for nextlaneind in range(nLanes[nextedge]):
-                            nextlane = nextedge+"_"+str(nextlaneind)
-
-                            if not nextlane in notlightoutlanes[light]:
-                                #Something's weird and our data says vehicles are skipping lanes
-                                #Might be a teleport in the initial turn data
-                                #Regardless, skip it and hope it's fine?
-                                continue
-
-                            arr = nextSendTime + fftimes[nextlane] + intersectionTime
-                            if arr > simtime + predictionCutoff:
-                                #Don't add to prediction; it's too far in the future. And it'll be too far into the future for all other lanes on this edge too, so just stop
-                                break
-
-                            if not nextlane in turndata[lane] or turndata[lane][nextlane] == 0:
-                                #Car has zero chance of going here, skip
-                                continue
-
-                            if not nextlane in newPredClusters:
-                                newPredClusters[nextlane] = []
-                            if len(newPredClusters[nextlane]) == 0 or arr > newPredClusters[nextlane][-1]["departure"] + clusterthresh:
-                                #Add a new cluster
-                                newPredCluster = dict()
-                                newPredCluster["endpos"] = 0
-                                newPredCluster["time"] = simtime
-                                newPredCluster["arrival"] = arr
-                                newPredCluster["departure"] = arr
-                                newPredCluster["cars"] = []
-                                newPredCluster["weight"] = 0
-                                newPredClusters[nextlane].append(newPredCluster)
-
-                            modcartuple = (cartuple[0], arr, cartuple[2]*predDiscount*turndata[lane][nextlane] / normprobs[lane][nextedge], cartuple[3])
-                            newPredClusters[nextlane][-1]["cars"].append(modcartuple)
-                            newPredClusters[nextlane][-1]["weight"] += modcartuple[2]
-                            if arr > newPredClusters[nextlane][-1]["departure"]:
-                                newPredClusters[nextlane][-1]["departure"] = arr
-                    else:
-                        if not lane in turndata:
-                            #This lane goes nowhere, thus should be an exit road and we don't care
-                            continue
-                        for nextlane in turndata[lane]:
-                            if not nextlane in notlightoutlanes[light]:
-                                #Something's weird and our data says vehicles are skipping lanes
-                                #Might be a teleport in the initial turn data
-                                #Regardless, skip it and hope it's fine?
-                                #TODO is this fixed now (for PittsburghLongIn+10New...)?
-                                continue
-                            
-                            #Copy-paste previous logic for creating a new cluster
-                            arr = nextSendTime + fftimes[nextlane] + intersectionTime
-                            if arr > simtime + predictionCutoff:
-                                #Don't add to prediction; it's too far in the future. Other lanes may differ though
-                                continue
-
-                            if not nextlane in turndata[lane] or turndata[lane][nextlane] == 0:
-                                #Car has zero chance of going here, skip
-                                continue
-
-                            if len(newPredClusters[nextlane]) == 0 or arr > newPredClusters[nextlane][-1]["departure"] + clusterthresh:
-                                #Add a new cluster
-                                newPredCluster = dict()
-                                newPredCluster["endpos"] = 0
-                                newPredCluster["time"] = simtime
-                                newPredCluster["arrival"] = arr
-                                newPredCluster["departure"] = arr
-                                newPredCluster["cars"] = []
-                                newPredCluster["weight"] = 0
-                                newPredClusters[nextlane].append(newPredCluster)
-
-                            modcartuple = (cartuple[0], arr, cartuple[2]*predDiscount*turndata[lane][nextlane], cartuple[3])
-                            newPredClusters[nextlane][-1]["cars"].append(modcartuple)
-                            newPredClusters[nextlane][-1]["weight"] += modcartuple[2]
-                            if arr > newPredClusters[nextlane][-1]["departure"]:
-                                newPredClusters[nextlane][-1]["departure"] = arr
-
-                            if debugMode:
-                                assert(newPredClusters[nextlane][-1]["departure"] >= newPredClusters[nextlane][-1]["arrival"])
-                                if len(newPredClusters[nextlane]) > 1:
-                                    assert(newPredClusters[nextlane][-1]["arrival"] > newPredClusters[nextlane][-2]["arrival"])
-                    
-                    #Added car to predictions, now set up the next car
-                    carNums[lane] += 1
-                    while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
-                        clusterNums[lane] += 1
-                        carNums[lane] = 0
-                    if len(clusters[lane]) == clusterNums[lane]:
-                        #Nothing left on this lane, we're done here
-                        #nextSendTimes.pop(lane)
-                        continue
-                    heappush(nextSendTimes, (clusters[lane][clusterNums[lane]]["cars"][carNums[lane]][1], laneind))
-        
-        catpreds.update(newPredClusters)
-        #End blind CP from doSurtracThread
+                        if len(catpreds[outlane]) >=2 and catpreds[outlane][-1]["arrival"] - catpreds[outlane][-2]["departure"] < clusterthresh:
+                            #Merge this cluster with the previous one
+                            #Pos and time don't do anything here
+                            #Arrival doesn't change - previous cluster arrived first
+                            #I expect this to trigger if multiple clusters are planning to merge together while waiting for a green light, and then consolidate into one big communicated cluster
+                            catpreds[outlane][-2]["departure"] = max(catpreds[outlane][-2]["departure"], catpreds[outlane][-1]["departure"])
+                            catpreds[outlane][-2]["cars"] += catpreds[outlane][-1]["cars"] # += concatenates
+                            catpreds[outlane][-2]["weight"] += catpreds[outlane][-1]["weight"]
+                            catpreds[outlane].pop(-1)
 
         #Confirm that weight of cluster = sum of weights of cars
         if debugMode:
