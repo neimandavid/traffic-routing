@@ -866,9 +866,9 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                 else:
                                     if mindur <= 0:
                                         print("Negative weight, what just happened?")
-                                        print(cluster)
-                                        print(superclusters[superclusterphases])
-                                        asfd
+                                        # print(cluster)
+                                        # print(superclusters[superclusterphases])
+                                        # asfd
                                     else:
                                         print("Cluster departing before arriving?")
                                 newScheduleStatus[lane] += (1-fracSent)*(tSent/dur) - 1 #In case a phase is so long we span two maxdurs. Ex: Previously sent 2/3 of a cluster, now sending 1/2 of what's left (since dur tracks what's left). Full fraction sent needs to increase by 1/2 * the 1/3 of the cluster we're working with. -1 to cancel the +1 we'll have from assuming we sent a full cluster
