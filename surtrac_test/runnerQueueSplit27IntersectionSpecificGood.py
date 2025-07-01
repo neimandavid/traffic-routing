@@ -107,7 +107,7 @@ recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedu
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 60 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = predCutoffMain #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
-predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
+predDiscount = 0#0.5 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
@@ -865,10 +865,10 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                     pass
                                 else:
                                     if mindur <= 0:
-                                        print("Negative weight, what just happened?")
-                                        print(cluster)
-                                        print(superclusters[superclusterphases])
-                                        asfd
+                                        print("Negative weight, what just happened? Is discount factor 0?") #This goes off with 0 discount, likely because we're getting 0-weight clusters
+                                        # print(cluster)
+                                        # print(superclusters[superclusterphases])
+                                        # asfd
                                     else:
                                         print("Cluster departing before arriving?")
                                 newScheduleStatus[lane] += (1-fracSent)*(tSent/dur) - 1 #In case a phase is so long we span two maxdurs. Ex: Previously sent 2/3 of a cluster, now sending 1/2 of what's left (since dur tracks what's left). Full fraction sent needs to increase by 1/2 * the 1/3 of the cluster we're working with. -1 to cancel the +1 we'll have from assuming we sent a full cluster

@@ -268,7 +268,7 @@ def mergePredictions(clusters, predClusters):
         if lane in predClusters:
             if len(mergedClusters[lane]) > 0:
                 mergedClusters[lane][-1]["test"] = "lastseencluster"
-            mergedClusters[lane] += predClusters[lane] #Concatenate known clusters with predicted clusters
+            mergedClusters[lane] += pickle.loads(pickle.dumps(predClusters[lane])) #Concatenate known clusters with predicted clusters
             #mergedClusters[lane] = consolidateClusters(mergedClusters[lane])
     return mergedClusters
 
@@ -293,12 +293,15 @@ def consolidateClusters(clusters):
             if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
                 #Merge j into i
                 #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                
                 clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
                 clusters[i]["weight"] += clusters[j]["weight"]
                 clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
                 clusters.pop(j)
+
                 stuffHappened = True
                 continue
+
             # else:
             #     if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
             #         #Merge i into j
@@ -516,6 +519,8 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
     global totalSurtracRuns
     global totalSurtracClusters
     global totalSurtracTime
+    
+    tempcountervar = 0 #For priority queue stuff to make sure we don't get a tie in key values that then throws an error
 
     if inRoutingSim:
         freq = max(routingSurtracFreq, timestep)
@@ -646,11 +651,13 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
             for i in range(len(clusters[lane])):
                 superclusters[key].append([(clusters[lane][i], (lane, i))])
         for keyy in superclusters:
-            #Sort the clusters by start time
+            #Sort the superclusters by start time
 
             #NOTE: superclusters[key][superclusterind][superclustersubind] = (clusterdata, [lane, clusterind])
             list.sort(superclusters[keyy], key = lambda clustertuple:clustertuple[0][0]["arrival"])
 
+            #Allow superclusters to contain more than one cluster. This might speed up the code, but risks being suboptimal if cluster relative start times change due to red lights
+            
             # i = 1
             # while i < len(superclusters[keyy]):
             #     maxdep = -np.inf
@@ -727,7 +734,8 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
         pq = []
         heuristic = 0
-        heappush(pq, (schedules[0][5]+heuristic, schedules[0]))
+        heappush(pq, (schedules[0][5]+heuristic, tempcountervar, schedules[0]))
+        tempcountervar += 1
         bestcost = np.inf
         bestschedule = None
 
@@ -736,7 +744,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         while len(pq) > 0:
             stateToExpand = heappop(pq)
             fval = stateToExpand[0]
-            schedule = stateToExpand[1]
+            schedule = stateToExpand[2]
             startschedule = schedule
             gval = schedule[5] #Delay so far
 
@@ -781,6 +789,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     didSomething = False
 
                     newschedule = startschedule
+                    
                     
                     for superclustersubind in range(len(superclusters[superclusterphases][superclusterind])):
                         cluster = superclusters[superclusterphases][superclusterind][superclustersubind][0] #Don't think I need this, can look this up off clusters as needed
@@ -829,7 +838,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                             if not phase == i or surtracdata[light][i]["maxDur"] - (max(ist, ast)-schedule[6]) < 1e-5:
                                 #Have to switch light phases NOW - either we're in the wrong phase or the current phase hits max duration before we can send anything from this cluster
                                 
-                                #TODO: I think I'm being sloppy here. Is it possible the first cluster from this supercluster can't go in current phase, triggering the light switch, but a later one can (ex: maybe a previous supercluster had a huge makespan on the lane for the first cluster from the second supercluster?) Going to hope this is fine...
+                                #TODO: I think there's potential for suboptimality here. Is it possible the first cluster from this supercluster can't go in current phase, triggering the light switch, but a later one can (ex: maybe a previous supercluster had a huge makespan on the lane for the first cluster from the second supercluster?) Going to hope this is fine...
                                 if didSomething:
                                     #We've alreadyprocessed part of this supercluster before having to switch the light due to maxDur
                                     #So skip this cluster, fit any other clusters we can in before the change, then stop
@@ -865,7 +874,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                     pass
                                 else:
                                     if mindur <= 0:
-                                        print("Negative weight, what just happened?") #This goes off with 0 discount, likely because we're getting 0-weight clusters
+                                        print("Negative weight, what just happened? Is discount factor 0?") #This goes off with 0 discount, likely because we're getting 0-weight clusters
                                         # print(cluster)
                                         # print(superclusters[superclusterphases])
                                         # asfd
@@ -940,6 +949,10 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         didSomething = True
 
                     #We've now processed the entire supercluster
+                    if not didSomething:
+                        #Empty supercluster???
+                        newschedule = deepcopy(startschedule)
+                        
                     if superclusterComplete:
                         newschedule[1][superclusterphases] += 1
                     #Else we hit maxdur partway through and didn't send all clusters yet
@@ -987,6 +1000,8 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         testscheduleind += 1
 
                     if keep: #New schedule not dominated by any previous schedules
+                        if debugMode:
+                            assert(key == (tuple(newschedule[1].values()), newschedule[2]))
                         scheduleHashDict[key].append(newschedule)
                         # print("Adding to PQ")
                         # print(pq)
@@ -1050,7 +1065,14 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
                         # heuristic = 0
                         #heappush(pq, (newschedule[5], newschedule)) #Add to A* priority queue
-                        heappush(pq, (newschedule[5]+heuristic, newschedule)) #Add to A* priority queue
+                        try:
+                            heappush(pq, (newschedule[5]+heuristic, tempcountervar, newschedule)) #Add to A* priority queue
+                            tempcountervar += 1
+                        except:
+                            print(pq)
+                            print(newschedule)
+                            print(newschedule[5]+heuristic)
+                            asdf
 
                     if debugMode:
                         assert(len(scheduleHashDict[key]) > 0)
@@ -2780,8 +2802,12 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     global sumoconfig
     global netfile
     global predDiscount
+    global disableSurtracComms
 
     predDiscount = predDiscountIn
+    if predDiscount == 0:
+        print("predDiscount == 0, disabling Surtrac comms")
+        disableSurtracComms = True
 
     sumoconfig = sumoconfigin
     #options = get_options()
