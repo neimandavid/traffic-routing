@@ -958,8 +958,20 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
                         #These asserts should follow from how I set up scheduleHashDict
                         if debugMode:
-                            assert(newschedule[1] == testschedule[1])
-                            assert(newschedule[2] == testschedule[2])
+                            try:
+                                assert(newschedule[1] == testschedule[1])
+                            except:
+                                print(key)
+                                print(newschedule[1])
+                                print(testschedule[1])
+                                asdf
+                            try:
+                                assert(newschedule[2] == testschedule[2])
+                            except:
+                                print(key)
+                                print(newschedule[2])
+                                print(testschedule[2])
+                                asdf
                         
                         #NOTE: If we're going to go for truly optimal, we also need to check all makespans, plus the current phase duration
                         #OTOH, if people seem to think fast greedy approximations are good enough, I'm fine with that
