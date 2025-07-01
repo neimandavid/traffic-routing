@@ -865,7 +865,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                     pass
                                 else:
                                     if mindur <= 0:
-                                        print("Negative weight, what just happened?")
+                                        print("Negative weight, what just happened?") #This goes off with 0 discount, likely because we're getting 0-weight clusters
                                         # print(cluster)
                                         # print(superclusters[superclusterphases])
                                         # asfd
@@ -983,60 +983,60 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         heuristic = 0
                         newphase = newschedule[2]
                         #For each lane, find the first phase it can go, then how fast we can get to that phase and run everything
-                        for laneindex2 in range(lenlightlaneslight):
-                            lane2 = lightlanes[light][laneindex2]
+                        # for laneindex2 in range(lenlightlaneslight):
+                        #     lane2 = lightlanes[light][laneindex2]
 
-                            if newschedule[1][lane2] == fullStatus[lane2]:
-                                #Everything's scheduled here, no need to estimate delay
-                                continue
-                            newclusterind = newschedule[1][lane2] #Start with the first unscheduled cluster. There's a +1-1 cancellation here because indexing
+                        #     if newschedule[1][lane2] == fullStatus[lane2]:
+                        #         #Everything's scheduled here, no need to estimate delay
+                        #         continue
+                        #     newclusterind = newschedule[1][lane2] #Start with the first unscheduled cluster. There's a +1-1 cancellation here because indexing
                             
-                            #Now loop over all phases where we can clear this cluster
-                            try:
-                                assert(len(lanephases[lane2]) > 0)
-                            except:
-                                print(lane2)
-                                print("ERROR: Can't clear this lane ever?")
+                        #     #Now loop over all phases where we can clear this cluster
+                        #     try:
+                        #         assert(len(lanephases[lane2]) > 0)
+                        #     except:
+                        #         print(lane2)
+                        #         print("ERROR: Can't clear this lane ever?")
                                 
-                            if newphase in lanephases[lane2]:
-                                pst = simtime
-                            else:
-                                bestLastSwitch = np.inf
-                                newFirstSwitch = max(newschedule[6] + surtracdata[light][newphase]["minDur"], newschedule[4]-mingap, simtime) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed. Except for first phase, which usually wants to switch 2.5s in the past if there's no clusters
-                                for newi in lanephases[lane2]:
-                                    if not learnYellow and ("Y" in lightphasedata[light][newi].state or "y" in lightphasedata[light][newi].state): #TODO should we just never schedule stuff on yellow (in which case drop the learnYellow condition)?
-                                        continue
-                                    testLastSwitch = newFirstSwitch + surtracdata[light][(newphase+1)%nPhases]["timeTo"][newi]
-                                    if testLastSwitch < bestLastSwitch:
-                                        bestLastSwitch = testLastSwitch
-                                if bestLastSwitch == np.inf:
-                                    print("Lane can't go ever?")
-                                    asdf
-                                    continue #We'd just compute infinite delay here, which is obviously wrong, so ignore it I guess?
-                                pst = bestLastSwitch+sult
+                        #     if newphase in lanephases[lane2]:
+                        #         pst = simtime
+                        #     else:
+                        #         bestLastSwitch = np.inf
+                        #         newFirstSwitch = max(newschedule[6] + surtracdata[light][newphase]["minDur"], newschedule[4]-mingap, simtime) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed. Except for first phase, which usually wants to switch 2.5s in the past if there's no clusters
+                        #         for newi in lanephases[lane2]:
+                        #             if not learnYellow and ("Y" in lightphasedata[light][newi].state or "y" in lightphasedata[light][newi].state): #TODO should we just never schedule stuff on yellow (in which case drop the learnYellow condition)?
+                        #                 continue
+                        #             testLastSwitch = newFirstSwitch + surtracdata[light][(newphase+1)%nPhases]["timeTo"][newi]
+                        #             if testLastSwitch < bestLastSwitch:
+                        #                 bestLastSwitch = testLastSwitch
+                        #         if bestLastSwitch == np.inf:
+                        #             print("Lane can't go ever?")
+                        #             asdf
+                        #             continue #We'd just compute infinite delay here, which is obviously wrong, so ignore it I guess?
+                        #         pst = bestLastSwitch+sult
                             
-                            #Now we loop through all the clusters and figure out how soon they can start
-                            while newclusterind < len(clusters[lane2]):
-                                #pst = simtime #This should make there be no delay ever
-                                ist = clusters[lane2][newclusterind]["arrival"] #Intended start time = cluster arrival time
-                                dur = clusters[lane2][newclusterind]["departure"] - ist + mingap #+mingap because next cluster can't start until mingap after current cluster finishes
+                        #     #Now we loop through all the clusters and figure out how soon they can start
+                        #     while newclusterind < len(clusters[lane2]):
+                        #         #pst = simtime #This should make there be no delay ever
+                        #         ist = clusters[lane2][newclusterind]["arrival"] #Intended start time = cluster arrival time
+                        #         dur = clusters[lane2][newclusterind]["departure"] - ist + mingap #+mingap because next cluster can't start until mingap after current cluster finishes
                                 
-                                mindur = max((clusters[lane2][newclusterind]["weight"] )*mingap, 0)
-                                ast = max(ist, pst)
+                        #         mindur = max((clusters[lane2][newclusterind]["weight"] )*mingap, 0)
+                        #         ast = max(ist, pst)
 
-                                # if ast == ist:
-                                #     #No delay
-                                #     pst = clusters[lane2][clusterind]["departure"]+mingap #For next cluster
-                                # else:
-                                newdur = max(dur - (ast-ist), mindur) #Compress cluster if cars start stopping
-                                if clusters[lane2][newclusterind]["weight"]*((ast-ist)-1/2*(dur-newdur)) < 0:
-                                    print("Heuristic going down???")
-                                heuristic += clusters[lane2][newclusterind]["weight"]*((ast-ist)-1/2*(dur-newdur))
+                        #         # if ast == ist:
+                        #         #     #No delay
+                        #         #     pst = clusters[lane2][clusterind]["departure"]+mingap #For next cluster
+                        #         # else:
+                        #         newdur = max(dur - (ast-ist), mindur) #Compress cluster if cars start stopping
+                        #         if clusters[lane2][newclusterind]["weight"]*((ast-ist)-1/2*(dur-newdur)) < 0:
+                        #             print("Heuristic going down???")
+                        #         heuristic += clusters[lane2][newclusterind]["weight"]*((ast-ist)-1/2*(dur-newdur))
 
-                                pst = ast+newdur
-                                newclusterind += 1
+                        #         pst = ast+newdur
+                        #         newclusterind += 1
 
-                        heuristic = 0
+                        # heuristic = 0
                         #heappush(pq, (newschedule[5], newschedule)) #Add to A* priority queue
                         heappush(pq, (newschedule[5]+heuristic, newschedule)) #Add to A* priority queue
 
