@@ -107,7 +107,7 @@ recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedu
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 60 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = predCutoffMain #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
-predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
+predDiscount = 0.5 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
@@ -269,7 +269,7 @@ def mergePredictions(clusters, predClusters):
             if len(mergedClusters[lane]) > 0:
                 mergedClusters[lane][-1]["test"] = "lastseencluster"
             mergedClusters[lane] += predClusters[lane] #Concatenate known clusters with predicted clusters
-            mergedClusters[lane] = consolidateClusters(mergedClusters[lane])
+            #mergedClusters[lane] = consolidateClusters(mergedClusters[lane])
     return mergedClusters
 
 def consolidateClusters(clusters):
@@ -3898,8 +3898,8 @@ def removeVehicleFromPredictions(sumoPredClusters, idrem, lastedge):
                     asfd
 
             #Remove empty clusters
-            if len(predcluster["cars"]) == 0:
-#                                sumoPredClusters[predlane].remove(predcluster)
+            if len(predcluster["cars"]) == 0 or predcluster["weight"] == 0:
+                #sumoPredClusters[predlane].remove(predcluster)
                 #sumoPredClusters[predlane].pop(predclusterind)
                 sumoPredClusters[predlane] = sumoPredClusters[predlane][0:predclusterind]+sumoPredClusters[predlane][predclusterind+1:] #Apparently this is necessary when working with manager dict stuff? Maybe it's immutable??
             else:
