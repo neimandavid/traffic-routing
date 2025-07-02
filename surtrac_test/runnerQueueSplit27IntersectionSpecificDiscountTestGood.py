@@ -2778,7 +2778,7 @@ def sampleRouteFromTurnData(startlane, turndata):
                     return route
 
                 #Check if current road connects to nextlane's road. It should, assuming turndata is accurate
-                for templaneind in range(len(nLanes[lane.split("_")[0]])): #Loop over all lanes on current road
+                for templaneind in range(nLanes[lane.split("_")[0]]): #Loop over all lanes on current road
                     templane = lane.split("_")[0] + "_" + str(templaneind)
                     for nextlinktuple in links[templane]: #Loop over all links out from lanes on current road
                         tempnextedge = nextlinktuple[0].split("_")[0]
