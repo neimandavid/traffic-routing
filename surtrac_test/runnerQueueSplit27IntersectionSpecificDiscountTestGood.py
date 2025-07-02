@@ -2772,28 +2772,31 @@ def sampleRouteFromTurnData(startlane, turndata):
         for nextlane in turndata[lane]:
             r -= turndata[lane][nextlane]
             if r <= 0:
+                #We've now picked a nextlane randomly from turndata
                 if nextlane.split("_")[0] == lane.split("_")[0]:
                     print("Warning: Sampling is infinite looping, stopping early")
                     return route
 
-                #Check if lane connects to nextlane
-                for nextlinktuple in links[lane]:
-                    tempnextedge = nextlinktuple[0].split("_")[0]
-                    if nextlane.split("_")[0] == tempnextedge:
-                        oops = False
+                #Check if current road connects to nextlane's road. It should, assuming turndata is accurate
+                for templaneind in range(len(nLanes[lane.split("_")[0]])): #Loop over all lanes on current road
+                    templane = lane.split("_")[0] + "_" + str(templaneind)
+                    for nextlinktuple in links[templane]: #Loop over all links out from lanes on current road
+                        tempnextedge = nextlinktuple[0].split("_")[0]
+                        if nextlane.split("_")[0] == tempnextedge: #And check if any of them go to the desired next road
+                            oops = False
+                            break
+                    if not oops:
                         break
+
                 if oops:
                     print("sampleRouteFromTurnData found an invalid connection??? Trying again...")
                     print(lane + " -> " + nextlane)
                     break
-                # else:
-                #     print("Yay, did a thing!!!")
-                #     print(lane + " -> " + nextlane)
+
                 lane = nextlane
                 break
         if not oops:
             route.append(lane.split("_")[0])
-        #print(route)
     return route
 
 def readSumoCfg(sumocfg):
