@@ -165,7 +165,7 @@ for v in ["", "2", "3", "0"]:
     ax.text(0.05, 1, s, transform = ax.transAxes, fontsize=8, verticalalignment='top', bbox=props)
     ax.text(0, 1.1, sys.argv[1], transform = ax.transAxes, fontsize=8)
 
-    plt.xlabel("Adoption Probability")
+    plt.xlabel("Discount Factor")
     plt.ylabel("Average Delay (s)")
     plt.title("Delays"+v)
     plt.legend()
@@ -220,7 +220,7 @@ for w in ["Runtime", "NTeleports"]:
         ax.text(0.05, 1, s, transform = ax.transAxes, fontsize=8, verticalalignment='top', bbox=props)
         ax.text(0, 1.1, sys.argv[1], transform = ax.transAxes, fontsize=8)
 
-        plt.xlabel("Adoption Probability")
+        plt.xlabel("Discount Factor")
         plt.ylabel(w)
         plt.title(w)
         plt.legend()
@@ -325,7 +325,7 @@ for v in ["", "2", "3", "0"]:
     ax.text(0.05, 1, s, transform = ax.transAxes, fontsize=8, verticalalignment='top', bbox=props)
     ax.text(0, 1.1, sys.argv[1], transform = ax.transAxes, fontsize=8)
 
-    plt.xlabel("Adoption Probability")
+    plt.xlabel("Discount Factor")
     plt.ylabel("Average Delay (s)")
     plt.title("No Teleport Delays"+v)
     plt.legend()
@@ -380,7 +380,7 @@ for w in ["Runtime", "NTeleports"]:
         ax.text(0.05, 1, s, transform = ax.transAxes, fontsize=8, verticalalignment='top', bbox=props)
         ax.text(0, 1.1, sys.argv[1], transform = ax.transAxes, fontsize=8)
 
-        plt.xlabel("Adoption Probability")
+        plt.xlabel("Discount Factor")
         plt.ylabel(w)
         plt.title("No Teleport " + w)
         plt.legend()

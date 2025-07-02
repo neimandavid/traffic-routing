@@ -106,7 +106,7 @@ routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in t
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 60 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
-predCutoffRouting = predCutoffMain #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
+predCutoffRouting = 0 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 0.5 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
@@ -301,10 +301,8 @@ def consolidateClusters(clusters):
                 clusters[i]["weight"] += clusters[j]["weight"]
                 clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
                 clusters.pop(j)
-
                 stuffHappened = True
                 continue
-
             # else:
             #     if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
             #         #Merge i into j
@@ -786,14 +784,14 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     
                 for i in superclusterphases:
                     if not learnYellow and ("Y" in lightphasedata[light][i].state or "y" in lightphasedata[light][i].state):
-                        print("Skipping yellow phase")
+                        #print("Skipping yellow phase")
+                        #print(superclusterphases)
                         continue
 
                     superclusterComplete = True
                     didSomething = False
 
                     newschedule = startschedule
-                    
                     
                     for superclustersubind in range(len(superclusters[superclusterphases][superclusterind])):
                         cluster = superclusters[superclusterphases][superclusterind][superclustersubind][0] #Don't think I need this, can look this up off clusters as needed
@@ -1075,16 +1073,10 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         #         newclusterind += 1
 
                         # heuristic = 0
-                        #heappush(pq, (newschedule[5], newschedule)) #Add to A* priority queue
-                        try:
-                            heappush(pq, (newschedule[5]+heuristic, tempcountervar, newschedule)) #Add to A* priority queue
-                            tempcountervar += 1
-                        except:
-                            print(pq)
-                            print(newschedule)
-                            print(newschedule[5]+heuristic)
-                            asdf
 
+                        heappush(pq, (newschedule[5]+heuristic, tempcountervar, newschedule)) #Add to A* priority queue
+                        tempcountervar += 1
+                        
                     if debugMode:
                         assert(len(scheduleHashDict[key]) > 0)
 
@@ -2787,7 +2779,6 @@ def sampleRouteFromTurnData(startlane, turndata):
                             break
                     if not oops:
                         break
-
                 if oops:
                     print("sampleRouteFromTurnData found an invalid connection??? Trying again...")
                     print(lane + " -> " + nextlane)
