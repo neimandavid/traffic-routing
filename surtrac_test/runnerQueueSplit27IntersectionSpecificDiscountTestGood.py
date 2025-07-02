@@ -293,17 +293,17 @@ def consolidateClusters(clusters):
                 
             # #Check if clusters i and j should merge
             # #if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-            # if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-            #     #Merge j into i
-            #     #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+            if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+                #Merge j into i
+                #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
                 
-            #     clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
-            #     clusters[i]["weight"] += clusters[j]["weight"]
-            #     clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
-            #     clusters.pop(j)
+                clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
+                clusters[i]["weight"] += clusters[j]["weight"]
+                clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
+                clusters.pop(j)
 
-            #     stuffHappened = True
-            #     continue
+                stuffHappened = True
+                continue
 
             # else:
             #     if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
