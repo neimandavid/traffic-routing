@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-06-10 15:22:13 by Eclipse SUMO netedit Version 1.20.0
+<!-- generated on 2025-07-02 08:10:38 by Eclipse SUMO netedit Version 1.20.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
 
     <input>
@@ -696,11 +696,9 @@
         <request index="2" response="000" foes="000"/>
     </junction>
     <junction id="cluster_104650336_4599846713_5308524119_5308525596_5308525747_8484067051_8484284962_8484284963" type="priority" x="597.94" y="245.75" incLanes="Grant-Forbes-Fourth_0 Grant-Forbes-Fourth_1 Grant-Fourth-Forbes_0" intLanes="" shape="587.52,239.30 601.80,232.09 601.33,231.10 601.22,230.73 601.15,230.35 601.13,229.88 601.12,229.25 597.92,229.25">
-        <request index="0" response="11100" foes="11100"/>
-        <request index="1" response="11100" foes="11100"/>
-        <request index="2" response="00000" foes="00011"/>
-        <request index="3" response="00000" foes="00011"/>
-        <request index="4" response="00000" foes="00011"/>
+        <request index="0" response="000" foes="000"/>
+        <request index="1" response="000" foes="000"/>
+        <request index="2" response="000" foes="000"/>
     </junction>
     <junction id="cluster_104650348_8484067046_8484067048_8484067049_8484067050" type="priority" x="704.54" y="196.10" incLanes="Ross-Forbes-Fourth_0 Ross-Forbes-Fourth_1 Ross-Fourth-Forbes_0" intLanes="" shape="701.06,204.26 715.58,197.53 713.54,193.71 711.67,190.94 710.08,188.67 708.83,186.32 708.02,183.32 707.73,179.11 704.53,179.11 703.91,184.59 702.45,188.72 700.80,192.13 699.59,195.45 699.47,199.28">
         <request index="0" response="11100" foes="11100"/>
@@ -894,8 +892,6 @@
     <connection from="Grant-Forbes-Fifth" to="Grant-Fifth-Oliver" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="9" dir="s" state="o"/>
     <connection from="Grant-Forbes-Fifth" to="Grant-Fifth-Oliver" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="10" dir="s" state="o"/>
     <connection from="Grant-Forbes-Fifth" to="Fifth-Grant-WilliamPenn" fromLane="2" toLane="2" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="11" dir="l" state="o"/>
-    <connection from="Grant-Forbes-Fourth" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="0" dir="t" state="m"/>
-    <connection from="Grant-Forbes-Fourth" to="Grant-Fourth-Forbes-2" fromLane="1" toLane="1" dir="t" state="m"/>
     <connection from="Grant-Fourth-Forbes" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from="Grant-Fourth-Forbes" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="1" dir="s" state="M"/>
     <connection from="Grant-Fourth-Forbes" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="2" dir="s" state="M"/>

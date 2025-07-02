@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-05-01 22:30:37 by Eclipse SUMO netedit Version 1.20.0
+<!-- generated on 2025-07-02 08:09:33 by Eclipse SUMO netedit Version 1.20.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="/Users/davidneiman/Documents/GitHub.nosync/traffic-routing/surtrac_test/pittsburghsmaller2l5.net.xml"/>
+        <sumo-net-file value="pittsburghsmaller2l5.net.xml"/>
     </input>
 
     <output>
-        <output-file value="/Users/davidneiman/Documents/GitHub.nosync/traffic-routing/surtrac_test/pittsburghsmaller2l5.net.xml"/>
+        <output-file value="pittsburghsmaller2l5.net.xml"/>
         <output.street-names value="true"/>
     </output>
 
@@ -472,27 +472,27 @@
     </tlLogic>
     <tlLogic id="cluster_104572642_4599846707_8484284983_8484443873_8484443874_8484443879_8484443880_8484443881" type="static" programID="0" offset="0">
         <phase duration="30" state="GGGgrrrrGGGgrrrr"/>
-        <phase duration="5" state="yyygrrrryyygrrrr"/>
-        <phase duration="5" state="rrrGrrrrrrrGrrrr"/>
-        <phase duration="5" state="rrryrrrrrrryrrrr"/>
+        <phase duration="5"  state="yyygrrrryyygrrrr"/>
+        <phase duration="5"  state="rrrGrrrrrrrGrrrr"/>
+        <phase duration="5"  state="rrryrrrrrrryrrrr"/>
         <phase duration="30" state="rrrrGGGgrrrrGGGg"/>
-        <phase duration="5" state="rrrryyygrrrryyyg"/>
-        <phase duration="5" state="rrrrrrrGrrrrrrrG"/>
-        <phase duration="5" state="rrrrrrryrrrrrrry"/>
+        <phase duration="5"  state="rrrryyygrrrryyyg"/>
+        <phase duration="5"  state="rrrrrrrGrrrrrrrG"/>
+        <phase duration="5"  state="rrrrrrryrrrrrrry"/>
     </tlLogic>
     <tlLogic id="cluster_104945598_8484284971_8484443912_8484445225" type="static" programID="0" offset="0">
         <phase duration="30" state="rrGGgG"/>
-        <phase duration="5" state="rryygy"/>
-        <phase duration="5" state="rrrrGr"/>
-        <phase duration="5" state="rrrryr"/>
+        <phase duration="5"  state="rryygy"/>
+        <phase duration="5"  state="rrrrGr"/>
+        <phase duration="5"  state="rrrryr"/>
         <phase duration="40" state="GGrrrr"/>
         <phase duration="5"  state="yyrrrr"/>
     </tlLogic>
     <tlLogic id="cluster_105012331_5312909754_5312909756_8484445227_8484452927" type="static" programID="0" offset="0">
         <phase duration="30" state="rrrGGgGGG"/>
-        <phase duration="5" state="rrryygyyy"/>
-        <phase duration="5" state="rrrrrGrrr"/>
-        <phase duration="5" state="rrrrryrrr"/>
+        <phase duration="5"  state="rrryygyyy"/>
+        <phase duration="5"  state="rrrrrGrrr"/>
+        <phase duration="5"  state="rrrrryrrr"/>
         <phase duration="40" state="GGGrrrrrr"/>
         <phase duration="5"  state="yyyrrrrrr"/>
     </tlLogic>
@@ -512,33 +512,33 @@
     </tlLogic>
     <tlLogic id="cluster_105012751_8484067060_8484067061_8484284979_8484284980" type="static" programID="0" offset="0">
         <phase duration="30" state="rrrrGGGgrrrrGGg"/>
-        <phase duration="5" state="rrrryyygrrrryyg"/>
-        <phase duration="5" state="rrrrrrrGrrrrrrG"/>
-        <phase duration="5" state="rrrrrrryrrrrrry"/>
+        <phase duration="5"  state="rrrryyygrrrryyg"/>
+        <phase duration="5"  state="rrrrrrrGrrrrrrG"/>
+        <phase duration="5"  state="rrrrrrryrrrrrry"/>
         <phase duration="30" state="GGGgrrrrGGGgrrr"/>
-        <phase duration="5" state="yyygrrrryyygrrr"/>
-        <phase duration="5" state="rrrGrrrrrrrGrrr"/>
-        <phase duration="5" state="rrryrrrrrrryrrr"/>
+        <phase duration="5"  state="yyygrrrryyygrrr"/>
+        <phase duration="5"  state="rrrGrrrrrrrGrrr"/>
+        <phase duration="5"  state="rrryrrrrrrryrrr"/>
     </tlLogic>
     <tlLogic id="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" type="static" programID="0" offset="0">
         <phase duration="30" state="rrrrGGGggrrrrGGGg"/>
-        <phase duration="5" state="rrrryyyggrrrryyyg"/>
-        <phase duration="5" state="rrrrrrrGGrrrrrrrG"/>
-        <phase duration="5" state="rrrrrrryyrrrrrrry"/>
+        <phase duration="5"  state="rrrryyyggrrrryyyg"/>
+        <phase duration="5"  state="rrrrrrrGGrrrrrrrG"/>
+        <phase duration="5"  state="rrrrrrryyrrrrrrry"/>
         <phase duration="30" state="GGGgrrrrrGGGgrrrr"/>
-        <phase duration="5" state="yyygrrrrryyygrrrr"/>
-        <phase duration="5" state="rrrGrrrrrrrrGrrrr"/>
-        <phase duration="5" state="rrryrrrrrrrryrrrr"/>
+        <phase duration="5"  state="yyygrrrrryyygrrrr"/>
+        <phase duration="5"  state="rrrGrrrrrrrrGrrrr"/>
+        <phase duration="5"  state="rrryrrrrrrrryrrrr"/>
     </tlLogic>
     <tlLogic id="cluster_105096435_8484284984_8484284985_8484285004_8484285005" type="static" programID="0" offset="0">
         <phase duration="30" state="rrrrGGgrrrrGGg"/>
-        <phase duration="5" state="rrrryygrrrryyg"/>
-        <phase duration="5" state="rrrrrrGrrrrrrG"/>
-        <phase duration="5" state="rrrrrryrrrrrry"/>
+        <phase duration="5"  state="rrrryygrrrryyg"/>
+        <phase duration="5"  state="rrrrrrGrrrrrrG"/>
+        <phase duration="5"  state="rrrrrryrrrrrry"/>
         <phase duration="30" state="GGGgrrrGGGgrrr"/>
-        <phase duration="5" state="yyygrrryyygrrr"/>
-        <phase duration="5" state="rrrGrrrrrrGrrr"/>
-        <phase duration="5" state="rrryrrrrrryrrr"/>
+        <phase duration="5"  state="yyygrrryyygrrr"/>
+        <phase duration="5"  state="rrrGrrrrrrGrrr"/>
+        <phase duration="5"  state="rrryrrrrrryrrr"/>
     </tlLogic>
     <tlLogic id="cluster_105938052_4599846710_8484443884_8484443885_8484443891_8484443893_8484443894" type="static" programID="0" offset="0">
         <phase duration="40" state="GGGGrr"/>
@@ -636,11 +636,9 @@
         <request index="1" response="00" foes="00"/>
     </junction>
     <junction id="cluster_104650336_4599846713_5308524119_5308525596_5308525747_8484067051_8484284962_8484284963" type="priority" x="597.94" y="245.75" incLanes="Grant-Forbes-Fourth_0 Grant-Forbes-Fourth_1 Grant-Fourth-Forbes_0" intLanes="" shape="587.52,239.30 601.80,232.09 601.33,231.10 601.22,230.73 601.15,230.35 601.13,229.88 601.12,229.25 597.92,229.25">
-        <request index="0" response="11100" foes="11100"/>
-        <request index="1" response="11100" foes="11100"/>
-        <request index="2" response="00000" foes="00011"/>
-        <request index="3" response="00000" foes="00011"/>
-        <request index="4" response="00000" foes="00011"/>
+        <request index="0" response="000" foes="000"/>
+        <request index="1" response="000" foes="000"/>
+        <request index="2" response="000" foes="000"/>
     </junction>
     <junction id="cluster_104650348_8484067046_8484067048_8484067049_8484067050" type="priority" x="704.54" y="196.10" incLanes="Ross-Forbes-Fourth_0 Ross-Forbes-Fourth_1 Ross-Fourth-Forbes_0" intLanes="" shape="701.06,204.26 712.68,198.88 711.18,195.89 709.95,193.68 708.99,191.82 708.29,189.90 707.88,187.51 707.73,184.23 704.53,184.23 703.98,188.60 702.69,191.89 701.20,194.60 700.06,197.23 699.84,200.28">
         <request index="0" response="00" foes="00"/>
@@ -820,8 +818,6 @@
     <connection from="Grant-Forbes-Fifth" to="Grant-Fifth-Oliver" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="10" dir="s" state="o"/>
     <connection from="Grant-Forbes-Fifth" to="Grant-Fifth-Oliver" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="11" dir="s" state="o"/>
     <connection from="Grant-Forbes-Fifth" to="Fifth-Grant-WilliamPenn" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="12" dir="l" state="o"/>
-    <connection from="Grant-Forbes-Fourth" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="0" dir="t" state="m"/>
-    <connection from="Grant-Forbes-Fourth" to="Grant-Fourth-Forbes-2" fromLane="1" toLane="1" dir="t" state="m"/>
     <connection from="Grant-Fourth-Forbes" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from="Grant-Fourth-Forbes" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="1" dir="s" state="M"/>
     <connection from="Grant-Fourth-Forbes" to="Grant-Fourth-Forbes-2" fromLane="0" toLane="2" dir="s" state="M"/>
