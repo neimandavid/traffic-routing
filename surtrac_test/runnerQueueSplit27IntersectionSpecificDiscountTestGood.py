@@ -1269,7 +1269,9 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         heappush(nextSendTimes, (bestschedule[9][laneind][clusterNums[lane]][0][0], laneind)) #Time next cluster is scheduled to be sent
                     else:
                         newSubcluster = False
-                        while carNums[lane] > bestschedule[9][laneind][clusterNums[lane]][subclusterNums[lane]][3]*len(clusters[lane][clusterNums[lane]]["cars"]): #Should be while in case of very very small clusters, I guess
+                        #TODO without first check this errored once. Possible floating-point error for subcluster lengths s.t. last subcluster thinks it doesn't contain last car, in which case we just stick with the last subcluster anyway
+                        #I'm hoping the first check fixes this but I'm not certain
+                        while subclusterNums[lane]+1 < len(bestschedule[9][laneind][clusterNums[lane]]) and carNums[lane] > bestschedule[9][laneind][clusterNums[lane]][subclusterNums[lane]][3]*len(clusters[lane][clusterNums[lane]]["cars"]): #Should be while in case of very very small clusters, I guess
                             subclusterNums[lane] += 1
                             newSubcluster = True
                         if newSubcluster:
