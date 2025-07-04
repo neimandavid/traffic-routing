@@ -104,7 +104,7 @@ routingSimUsesSUMO = True #Only switch this if we go back to custom routing simu
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
-disableSurtracComms = True#False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
+disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 60 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 0 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 0.5 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
@@ -291,18 +291,19 @@ def consolidateClusters(clusters):
             if clusters[j]["arrival"] < clusters[i]["arrival"]: #Again, this is because -1s across road boundaries
                 clusters[j]["arrival"] = clusters[i]["arrival"]
                 
-            # #Check if clusters i and j should merge
-            # #if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-            if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-                #Merge j into i
-                #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+            # # #Check if clusters i and j should merge
+            # # #if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+            # if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+            #     #Merge j into i
+            #     #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
                 
-                clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
-                clusters[i]["weight"] += clusters[j]["weight"]
-                clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
-                clusters.pop(j)
-                stuffHappened = True
-                continue
+            #     clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
+            #     clusters[i]["weight"] += clusters[j]["weight"]
+            #     clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
+            #     clusters.pop(j)
+            #     stuffHappened = True
+            #     continue
+
             # else:
             #     if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
             #         #Merge i into j

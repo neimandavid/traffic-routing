@@ -794,7 +794,6 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
                     newschedule = startschedule
                     
-                    
                     for superclustersubind in range(len(superclusters[superclusterphases][superclusterind])):
                         cluster = superclusters[superclusterphases][superclusterind][superclustersubind][0] #Don't think I need this, can look this up off clusters as needed
                         (lane, tempclusternum) = superclusters[superclusterphases][superclusterind][superclustersubind][1] #OTOH, I very much need the lane, and I need tempclusternum so I know not to reprocess clusters in case of max duration problems
@@ -2772,6 +2771,7 @@ def sampleRouteFromTurnData(startlane, turndata):
         for nextlane in turndata[lane]:
             r -= turndata[lane][nextlane]
             if r <= 0:
+                #We've now picked a nextlane randomly from turndata
                 if nextlane.split("_")[0] == lane.split("_")[0]:
                     print("Warning: Sampling is infinite looping, stopping early")
                     return route
@@ -2786,14 +2786,11 @@ def sampleRouteFromTurnData(startlane, turndata):
                     print("sampleRouteFromTurnData found an invalid connection??? Trying again...")
                     print(lane + " -> " + nextlane)
                     break
-                # else:
-                #     print("Yay, did a thing!!!")
-                #     print(lane + " -> " + nextlane)
+
                 lane = nextlane
                 break
         if not oops:
             route.append(lane.split("_")[0])
-        #print(route)
     return route
 
 def readSumoCfg(sumocfg):
