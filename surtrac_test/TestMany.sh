@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -e
 echo "Test script"
 
 for n in {1..5};
