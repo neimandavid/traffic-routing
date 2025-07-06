@@ -10,8 +10,8 @@ do
 
 #Run everything!
 python3 runnerQueueSplit27IntersectionSpecificGood.py blocks51hNewestester_auto.sumocfg $p
-python3 runnerQueueSplit27IntersectionSpecificGood.py PittsburghPMDataSmallerLongInNewestester_auto.sumocfg $p
-python3 runnerQueueSplit27IntersectionSpecificGood.py PittsburghPMDataSmallerLongIn+15Newestester_auto.sumocfg $p
+python3 runnerQueueSplit27IntersectionSpecificGood.py PittsburghPMDataSmallerLongInNewestester_fixedroutes_auto.sumocfg $p
+python3 runnerQueueSplit27IntersectionSpecificGood.py PittsburghPMDataSmallerLongIn+15Newestester_fixedroutes_auto.sumocfg $p
 python3 runnerQueueSplit27IntersectionSpecificGood.py shortlongshort3_auto.sumocfg $p
 
 done
