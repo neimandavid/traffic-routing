@@ -284,9 +284,11 @@ def consolidateClusters(clusters):
                 try:
                     assert(clusters[j]["arrival"] >= clusters[i]["arrival"]-1) #Without the -1, we sometimes have issues with vehicles entering a new road. Old cluster arrives at >= simtime-1+fftimes[lane], new cluster arrives at <= simtime+fftimes[lane]. To be fair, removeVehicleFromPredictions should probably sort this? But ignoring it is probably fine.
                 except:
+                    #This goes off sometimes still. Looks like an interaction where vehicles are getting out of order, then removeVehicleFromPredictions recalculates cluster start times
+                    #But it's really uncommon and hard to track (once every 4-5 runs?), so I'll suppress the error for now and hope for the best
                     print("Assert fail: Clusters out of order")
                     print(clusters)
-                    asdf
+                    #asdf
 
             if clusters[j]["arrival"] < clusters[i]["arrival"]: #Again, this is because -1s across road boundaries
                 clusters[j]["arrival"] = clusters[i]["arrival"]

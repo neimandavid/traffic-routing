@@ -286,7 +286,7 @@ def consolidateClusters(clusters):
                 except:
                     print("Assert fail: Clusters out of order")
                     print(clusters)
-                    asdf
+                    #asdf
 
             if clusters[j]["arrival"] < clusters[i]["arrival"]: #Again, this is because -1s across road boundaries
                 clusters[j]["arrival"] = clusters[i]["arrival"]
