@@ -104,10 +104,10 @@ routingSimUsesSUMO = True #Only switch this if we go back to custom routing simu
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
-disableSurtracComms = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
+disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 60 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 0 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
-predDiscount = 0.5 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
+predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
