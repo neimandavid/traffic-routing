@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-07-02 08:09:33 by Eclipse SUMO netedit Version 1.20.0
+<!-- generated on 2025-07-08 19:40:13 by Eclipse SUMO netedit Version 1.20.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
 
     <input>
@@ -712,23 +712,22 @@
         <request index="1" response="00" foes="00"/>
     </junction>
     <junction id="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" type="traffic_light" x="673.59" y="396.76" incLanes="Grant-Oliver-Fifth_0 Grant-Oliver-Fifth_1 Fifth-Ross-Grant-2_0 Fifth-Ross-Grant-2_1 Grant-Forbes-Fifth_0 Grant-Forbes-Fifth_1 Fifth-WilliamPenn-Grant_0 Fifth-WilliamPenn-Grant_1" intLanes="" shape="672.13,408.90 683.76,403.55 683.21,401.30 683.38,400.34 683.85,399.49 684.61,398.76 685.67,398.13 680.20,386.56 677.95,387.09 676.96,386.90 676.08,386.39 675.29,385.57 674.60,384.44 663.15,390.14 663.73,392.32 663.58,393.25 663.12,394.08 662.36,394.80 661.31,395.42 666.73,407.01 668.99,406.44 669.94,406.61 670.79,407.07 671.52,407.84">
-        <request index="0"  response="00000000001100000" foes="00000000001100000"/>
-        <request index="1"  response="11110000011100000" foes="11111000011100000"/>
-        <request index="2"  response="11110000011100000" foes="11111000011100000"/>
-        <request index="3"  response="11100110011100000" foes="11100110111100000"/>
-        <request index="4"  response="00000000000000000" foes="00000110000000000"/>
-        <request index="5"  response="00000000000000000" foes="10001110000001111"/>
-        <request index="6"  response="00000000000000000" foes="10001110000001111"/>
-        <request index="7"  response="01100000000000000" foes="01101110000001110"/>
-        <request index="8"  response="01100000000001000" foes="01100000000001000"/>
-        <request index="9"  response="01100000000000000" foes="01100000000000000"/>
-        <request index="10" response="11100000011110000" foes="11100000011111000"/>
-        <request index="11" response="11100000011110000" foes="11100000011111000"/>
-        <request index="12" response="11100000011100110" foes="11100000011100110"/>
-        <request index="13" response="00000000000000000" foes="00000000000000110"/>
-        <request index="14" response="00000000000000000" foes="00001111110001110"/>
-        <request index="15" response="00000000000000000" foes="00001111110001110"/>
-        <request index="16" response="00000000001100000" foes="00001110001101110"/>
+        <request index="0"  response="0000000001100000" foes="0000000001100000"/>
+        <request index="1"  response="1111000011100000" foes="1111100011100000"/>
+        <request index="2"  response="1111000011100000" foes="1111100011100000"/>
+        <request index="3"  response="1110011011100000" foes="1110011011100000"/>
+        <request index="4"  response="0000000000000000" foes="0000011000000000"/>
+        <request index="5"  response="0000000000000000" foes="1000111000001111"/>
+        <request index="6"  response="0000000000000000" foes="1000111000001111"/>
+        <request index="7"  response="0110000000000000" foes="0110111000001110"/>
+        <request index="8"  response="0110000000000000" foes="0110000000000000"/>
+        <request index="9"  response="1110000011110000" foes="1110000011111000"/>
+        <request index="10" response="1110000011110000" foes="1110000011111000"/>
+        <request index="11" response="1110000011100110" foes="1110000011100110"/>
+        <request index="12" response="0000000000000000" foes="0000000000000110"/>
+        <request index="13" response="0000000000000000" foes="0000111110001110"/>
+        <request index="14" response="0000000000000000" foes="0000111110001110"/>
+        <request index="15" response="0000000001100000" foes="0000111001101110"/>
     </junction>
     <junction id="cluster_105096435_8484284984_8484284985_8484285004_8484285005" type="traffic_light" x="775.50" y="352.93" incLanes="Ross-Sixth-Fifth_0 Ross-Sixth-Fifth_1 Fifth-RHS-Ross-2_0 Ross-Forbes-Fifth_0 Ross-Forbes-Fifth_1 Fifth-Grant-Ross-2_0" intLanes="" shape="773.34,364.39 785.22,359.63 784.68,357.16 784.89,356.29 785.42,355.67 786.28,355.28 787.45,355.14 787.35,348.74 785.29,348.58 783.41,348.03 781.72,347.10 780.22,345.78 778.91,344.07 777.79,341.97 766.11,347.21 766.96,350.19 766.88,351.37 766.48,352.36 765.73,353.15 764.66,353.73 766.99,359.69 769.41,359.54 770.51,360.11 771.53,361.11 772.47,362.53">
         <request index="0"  response="00000000000000" foes="00010000100000"/>
@@ -780,7 +779,6 @@
     <connection from="Fifth-Ross-Grant-2" to="Fifth-Grant-WilliamPenn" fromLane="0" toLane="0" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="5" dir="s" state="O"/>
     <connection from="Fifth-Ross-Grant-2" to="Fifth-Grant-WilliamPenn" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="6" dir="s" state="O"/>
     <connection from="Fifth-Ross-Grant-2" to="Grant-Fifth-Forbes" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="7" dir="l" state="o"/>
-    <connection from="Fifth-Ross-Grant-2" to="Fifth-Grant-Ross" fromLane="1" toLane="1" tl="cluster_105096416_4599846711_8484284981_8484443895_8484443896_8484443903_8484443904_8484443905" linkIndex="8" dir="t" state="o"/>
     <connection from="Fifth-Smithfield-WilliamPenn" to="Fifth-Smithfield-WilliamPenn-2" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from="Fifth-Smithfield-WilliamPenn" to="Fifth-Smithfield-WilliamPenn-2" fromLane="0" toLane="1" dir="s" state="M"/>
     <connection from="Fifth-Smithfield-WilliamPenn-2" to="WilliamPenn-Fifth-Forbes" fromLane="0" toLane="0" tl="cluster_105012331_5312909754_5312909756_8484445227_8484452927" linkIndex="6" dir="r" state="O"/>
