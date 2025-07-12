@@ -93,7 +93,7 @@ detectordist = 50 #How far before the end of a road the detectors that trigger r
 simdetectordist = 0 #How far after the start of a road the detectors for reconstructing initial routing sim traffic state are. TODO I'm not actually using this when making detectors, I just assume they're at start of lane. But then they miss all the cars, so I'm just faking those detectors anyway
 
 #Hyperparameters for multithreading
-multithreadRouting = False #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
+multithreadRouting = True #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
 if not useLibsumo:
     multithreadRouting = False
 multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
@@ -2384,6 +2384,7 @@ def dumpIntersectionDataFun(intersectionData):
         for dtheta in thetabooks:
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
+@profile
 def loadClusters(simtime, VOI=None):
     global totalLoadCars
     global nVehicles
@@ -3179,6 +3180,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     return [outdata, rngstate]
 
 #Tell all the detectors to reroute the cars they've seen
+@profile
 def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     global delay3adjdict
     #Clear any stored Surtrac stuff
@@ -3433,6 +3435,7 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDi
             VOIs[newghostcar] = [nextlane, newspeed, ghostcarpos, oldroute+[nextedge], leftedge, True]
     return dontReRemove2
 
+@profile
 def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchtimes, sumoPredClusters3, lightphases, simtime, reroutedata):
     global nRoutingCalls
     global nSuccessfulRoutingCalls
@@ -3820,7 +3823,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         #Remove it from detections
                         #Consider doing the delete-and-rename thing from before? But we're in a routing sim, we can assume perfect information. So this might be better
                         #Pretty sure this isn't redundant - we moved from old edge to new edge during standard car stuff, but now need to delete from new edge
-                        if id in edgeDict3 and edgeDict3[id] in nonExitEdgeDetections2:
+                        if edgeDict3[id] in nonExitEdgeDetections2:
                             vehicletupleind = 0
                             oldEdgeStuff = nonExitEdgeDetections2[edgeDict3[id]][0] #Since we're only storing stuff in index 0 anyway
                             while vehicletupleind < len(oldEdgeStuff):
@@ -3912,6 +3915,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                 else:
                     print("Unrecognized light " + light + ", this shouldn't happen")
 
+@profile
 #NOTE: Profiling says this function isn't terrible, probably don't need to speed it up right now
 def removeVehicleFromPredictions(sumoPredClusters, idrem, lastedge):
     for predlane in sumoPredClusters.keys():
