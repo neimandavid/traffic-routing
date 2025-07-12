@@ -55,7 +55,7 @@ else:
 
 from sumolib import checkBinary
 
-useLibsumo = True
+useLibsumo = False#True
 if useLibsumo:
     try:
         import libsumo as traci
@@ -64,7 +64,7 @@ if useLibsumo:
         useLibsumo = False
 if not useLibsumo:
     import traci  #To interface with SUMO simulations
-noGUI = useLibsumo
+noGUI = True#useLibsumo
 
 import sumolib #To query node/edge stuff about the network
 import pickle #To save/load traffic light states
@@ -2384,7 +2384,6 @@ def dumpIntersectionDataFun(intersectionData):
         for dtheta in thetabooks:
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
-@profile
 def loadClusters(simtime, VOI=None):
     global totalLoadCars
     global nVehicles
@@ -3180,7 +3179,6 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     return [outdata, rngstate]
 
 #Tell all the detectors to reroute the cars they've seen
-@profile
 def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     global delay3adjdict
     #Clear any stored Surtrac stuff
@@ -3435,7 +3433,6 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDi
             VOIs[newghostcar] = [nextlane, newspeed, ghostcarpos, oldroute+[nextedge], leftedge, True]
     return dontReRemove2
 
-@profile
 def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchtimes, sumoPredClusters3, lightphases, simtime, reroutedata):
     global nRoutingCalls
     global nSuccessfulRoutingCalls
@@ -3915,7 +3912,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                 else:
                     print("Unrecognized light " + light + ", this shouldn't happen")
 
-@profile
 #NOTE: Profiling says this function isn't terrible, probably don't need to speed it up right now
 def removeVehicleFromPredictions(sumoPredClusters, idrem, lastedge):
     for predlane in sumoPredClusters.keys():
