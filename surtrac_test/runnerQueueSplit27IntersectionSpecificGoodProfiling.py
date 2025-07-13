@@ -2385,8 +2385,8 @@ def dumpIntersectionDataFun(intersectionData):
         for dtheta in thetabooks:
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
-@profile
-#def loadClusters(simtime, VOI=None):
+#@profile
+def loadClusters(simtime, VOI=None):
     global totalLoadCars
     global nVehicles
     #Load locations of cars and current traffic light states into custom data structures
