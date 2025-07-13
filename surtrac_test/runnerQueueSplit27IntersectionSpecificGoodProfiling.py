@@ -433,6 +433,7 @@ def dumbtracActuated(simtime, light, clusters, lightphases, lastswitchtimes):
 #     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
 #     return torch.Tensor(np.array([np.concatenate((nqueued, ntotal, [phase], [phaselenprop]))]))
 
+#@profile
 def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes):
     maxnlanes = 3 #Going to assume we have at most 3 lanes per road, and that the biggest number lane is left-turn only
     maxnroads = 4 #And assume 4-way intersections for now
@@ -518,7 +519,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
     return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
 
-@profile
+#@profile
 def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
     global totalSurtracRuns
     global totalSurtracClusters
@@ -1707,7 +1708,7 @@ def backwardDijkstra(network, goal):
             heappush(pq, (gval+c+h, succ))
     return gvals
 
-@profile
+#@profile
 def run(network, rerouters, pSmart, verbose = True):
     global sumoPredClusters
     global currentRoutes
@@ -2384,7 +2385,8 @@ def dumpIntersectionDataFun(intersectionData):
         for dtheta in thetabooks:
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
-def loadClusters(simtime, VOI=None):
+@profile
+#def loadClusters(simtime, VOI=None):
     global totalLoadCars
     global nVehicles
     #Load locations of cars and current traffic light states into custom data structures
