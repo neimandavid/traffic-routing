@@ -3821,16 +3821,17 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         #Remove it from detections
                         #Consider doing the delete-and-rename thing from before? But we're in a routing sim, we can assume perfect information. So this might be better
                         #Pretty sure this isn't redundant - we moved from old edge to new edge during standard car stuff, but now need to delete from new edge
-                        if edgeDict3[id] in nonExitEdgeDetections2:
-                            vehicletupleind = 0
-                            oldEdgeStuff = nonExitEdgeDetections2[edgeDict3[id]][0] #Since we're only storing stuff in index 0 anyway
-                            while vehicletupleind < len(oldEdgeStuff):
-                                if oldEdgeStuff[vehicletupleind][0] == id:
-                                    oldEdgeStuff.pop(vehicletupleind)
-                                else:
-                                    vehicletupleind += 1
-                        laneDict3.pop(id)
-                        edgeDict3.pop(id)
+                        if id in edgeDict3:
+                            if edgeDict3[id] in nonExitEdgeDetections2:
+                                vehicletupleind = 0
+                                oldEdgeStuff = nonExitEdgeDetections2[edgeDict3[id]][0] #Since we're only storing stuff in index 0 anyway
+                                while vehicletupleind < len(oldEdgeStuff):
+                                    if oldEdgeStuff[vehicletupleind][0] == id:
+                                        oldEdgeStuff.pop(vehicletupleind)
+                                    else:
+                                        vehicletupleind += 1
+                            laneDict3.pop(id)
+                            edgeDict3.pop(id)
 
                         prepGhostCars(VOIs, id, ghostcarlanes, True, ghostcardata, simtime)    
 
