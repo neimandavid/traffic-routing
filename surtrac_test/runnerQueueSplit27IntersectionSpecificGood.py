@@ -1820,8 +1820,9 @@ def run(network, rerouters, pSmart, verbose = True):
                         if vehicletuple[0] == vehicle:
                             nonExitEdgeDetections[edgeDict[vehicle]][0][vehicletupleind] = (edgeDict[vehicle]+".0oldsmartcar."+str(simtime), vehicletuple[1], vehicletuple[2]) #This seems to alias as intended
 
-            edgeDict.pop(vehicle)
-            laneDict.pop(vehicle)
+            if vehicle in edgeDict:
+                edgeDict.pop(vehicle)
+                laneDict.pop(vehicle)
             dontReroute.append(vehicle) #Vehicle has left network and does not need to be rerouted
 
         vehiclesOnNetwork = traci.vehicle.getIDList()
