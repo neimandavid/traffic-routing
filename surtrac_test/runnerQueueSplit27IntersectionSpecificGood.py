@@ -93,7 +93,7 @@ detectordist = 50 #How far before the end of a road the detectors that trigger r
 simdetectordist = 0 #How far after the start of a road the detectors for reconstructing initial routing sim traffic state are. TODO I'm not actually using this when making detectors, I just assume they're at start of lane. But then they miss all the cars, so I'm just faking those detectors anyway
 
 #Hyperparameters for multithreading
-multithreadRouting = True #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
+multithreadRouting = False #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
 if not useLibsumo:
     multithreadRouting = False
 multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
@@ -1806,7 +1806,7 @@ def run(network, rerouters, pSmart, verbose = True):
             endDict[vehicle] = simtime
 
             #In case the target was a non-exit road, delete from old road detections
-            if edgeDict[vehicle] in nonExitEdgeDetections:
+            if vehicle in edgeDict and edgeDict[vehicle] in nonExitEdgeDetections:
                 oldEdgeStuff = nonExitEdgeDetections[edgeDict[vehicle]][0] #Since we're only storing stuff in index 0 anyway
                 if len(oldEdgeStuff) > 0:
                     oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane. Might not actually be the adopter in question
