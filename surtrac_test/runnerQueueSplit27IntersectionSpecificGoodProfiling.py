@@ -502,19 +502,19 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
                 asdf
 
 
-        for i in range(len(surtracdata[light])):
-            assert(i < maxnphases)
-            if lane in surtracdata[light][i]["lanes"]:
-                #greenlanes[roadind*maxnlanes*maxnphases+laneind*maxnphases+i] = 1
-                #greenlanes should look like [road1lane1greenphases, road1lane2greenphases, etc] where each of those is just a binary vector with 1s for green phases
-                #Hack in fake extra non-left lanes with no cars if not enough lanes
-                #But those lanes still need to look like actual lanes that just happen to not have cars so we don't need to learn this explicitly
-                #So we'll just update all future lanes, then overwrite them later?
-                for templaneind in range(rawlaneind, maxnlanes):
-                    greenlanes[roadind*maxnlanes*maxnphases+templaneind*maxnphases+i] = 1
-            else:
-                for templaneind in range(rawlaneind, maxnlanes):
-                    greenlanes[roadind*maxnlanes*maxnphases+templaneind*maxnphases+i] = 0
+        # for i in range(len(surtracdata[light])):
+        #     assert(i < maxnphases)
+        #     if lane in surtracdata[light][i]["lanes"]:
+        #         #greenlanes[roadind*maxnlanes*maxnphases+laneind*maxnphases+i] = 1
+        #         #greenlanes should look like [road1lane1greenphases, road1lane2greenphases, etc] where each of those is just a binary vector with 1s for green phases
+        #         #Hack in fake extra non-left lanes with no cars if not enough lanes
+        #         #But those lanes still need to look like actual lanes that just happen to not have cars so we don't need to learn this explicitly
+        #         #So we'll just update all future lanes, then overwrite them later?
+        #         for templaneind in range(rawlaneind, maxnlanes):
+        #             greenlanes[roadind*maxnlanes*maxnphases+templaneind*maxnphases+i] = 1
+        #     else:
+        #         for templaneind in range(rawlaneind, maxnlanes):
+        #             greenlanes[roadind*maxnlanes*maxnphases+templaneind*maxnphases+i] = 0
 
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
     return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
