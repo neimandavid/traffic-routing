@@ -3236,7 +3236,7 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
                             assert(traci.getLabel() == "main")
                         else:
                             #(remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases) = loadStateInfo("MAIN", simtime)
-                            loadStateInfo(savename, simtime)
+                            loadStateInfo(savename, simtime, False) #Reload the start state, but don't resample the non-adopters
                     #assert(traci.getLabel() == "main")
 
                 except traci.exceptions.TraCIException as e:
@@ -3490,9 +3490,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         #                         "--log", "LOGFILE", "--xml-validation", "never", "--start", "--quit-on-end"])
         (remainingDuration, lastSwitchTimes, sumoPredClusters3, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime)
     else:
-        #saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters3, lightphases) #Saves the traffic state and traffic light timings #TODO pretty sure I do this at the start of reroute - at some point, make sure nothing breaks if I comment this
         traci.switch("test")
-
         (remainingDuration, lastSwitchTimes, sumoPredClusters3, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime)
     
     #assert(traci.vehicle.getRoadID(vehicle) == startedge) #This fails with loadStateInfoDetectors; apparently getRoadID returns an empty string. Does adding vehicles not register until the next timestep? (But loading the save the normal way does?)
@@ -3989,7 +3987,7 @@ def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, li
         pickle.dump(lightphases, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
-def loadStateInfo(prevedge, simtime): #simtime is just so I can pass it into loadStateInfoDetectors...
+def loadStateInfo(prevedge, simtime, resample=True): #simtime is just so I can pass it into loadStateInfoDetectors...
     if detectorRouting:
         return loadStateInfoDetectors(prevedge, simtime)
 
@@ -4000,12 +3998,13 @@ def loadStateInfo(prevedge, simtime): #simtime is just so I can pass it into loa
         lightStates = pickle.load(handle)
 
     #Randomize non-adopter routes
-    for lane in lanes:
-        if len(lane) == 0 or lane[0] == ":":
-            continue
-        for vehicle in traci.lane.getLastStepVehicleIDs(lane):
-            if not vehicle in isSmart or not isSmart[vehicle]:
-                traci.vehicle.setRoute(vehicle, sampleRouteFromTurnData(lane, turndata))
+    if resample:
+        for lane in lanes:
+            if len(lane) == 0 or lane[0] == ":":
+                continue
+            for vehicle in traci.lane.getLastStepVehicleIDs(lane):
+                if not vehicle in isSmart or not isSmart[vehicle]:
+                    traci.vehicle.setRoute(vehicle, sampleRouteFromTurnData(lane, turndata))
 
     #Copy traffic light timings
     for light in traci.trafficlight.getIDList():
@@ -4023,7 +4022,7 @@ def loadStateInfo(prevedge, simtime): #simtime is just so I can pass it into loa
     return (remainingDuration, lastSwitchTimes, sumoPredClusters2, lightphases, deepcopy(edgeDict), deepcopy(laneDict))
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
-def loadStateInfoDetectors(prevedge, simtime):
+def loadStateInfoDetectors(prevedge, simtime, resample):
     global netfile
 
     newEdgeDict = dict()
@@ -4120,6 +4119,14 @@ def loadStateInfoDetectors(prevedge, simtime):
         lightStates = pickle.load(handle)
 
     #Randomize non-adopter routes
+    #TODO make sure this doesn't break anything, looks like it was deleted by mistake at some point
+    if resample:
+        for lane in lanes:
+            if len(lane) == 0 or lane[0] == ":":
+                continue
+            for vehicle in traci.lane.getLastStepVehicleIDs(lane):
+                if not vehicle in isSmart or not isSmart[vehicle]:
+                    traci.vehicle.setRoute(vehicle, sampleRouteFromTurnData(lane, turndata))
 
     #Copy traffic light timings
     for light in traci.trafficlight.getIDList():
