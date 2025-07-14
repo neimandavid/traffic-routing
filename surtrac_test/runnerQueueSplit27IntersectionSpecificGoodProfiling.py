@@ -505,7 +505,6 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
         for i in range(len(surtracdata[light])):
             assert(i < maxnphases)
             if lane in surtracdata[light][i]["lanes"]:
-            
                 #greenlanes[roadind*maxnlanes*maxnphases+laneind*maxnphases+i] = 1
                 #greenlanes should look like [road1lane1greenphases, road1lane2greenphases, etc] where each of those is just a binary vector with 1s for green phases
                 #Hack in fake extra non-left lanes with no cars if not enough lanes
