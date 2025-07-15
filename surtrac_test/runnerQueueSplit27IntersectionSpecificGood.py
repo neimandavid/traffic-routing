@@ -3863,6 +3863,10 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             updateLights = True
             if not(reuseSurtrac and simtime in surtracDict): #Overwrite unless we want to reuse
                 updateLights = False
+                if testNN or predCutoffRouting == 0:
+                    sumoPredCluters3 = None
+                else:
+                    print("Using predicted clusters for routing Surtrac")
                 surtracDict[simtime] = doSurtrac(simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters3, True, nonExitEdgeDetections2)
             # else:
             #     print("Reusing Surtrac, yay!")

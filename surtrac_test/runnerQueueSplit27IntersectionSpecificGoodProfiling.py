@@ -195,7 +195,6 @@ nonExitLaneDetectors = dict() #nonExitLaneDetections[lane] = [(detectorname1, de
 wasFull = dict() #We're now using this to store stats for lane transition probabilities (specifically, the times we saw vehicles)
 wasFullWindow = 300
 vehiclesOnNetwork = []
-dontReroute = []
 surtracDict = dict()
 adopterinfo = dict()
 leftedges = dict()
@@ -1745,8 +1744,6 @@ def run(network, rerouters, pSmart, verbose = True):
             assert(simtime == traci.simulation.getTime())
         clustersCache = None #Clear stored clusters list
 
-        dontReroute = []
-
         #Decide whether new vehicles use our routing
         for vehicle in traci.simulation.getDepartedIDList():
             isSmart[vehicle] = random.random() < pSmart
@@ -1824,7 +1821,6 @@ def run(network, rerouters, pSmart, verbose = True):
             if vehicle in edgeDict:
                 edgeDict.pop(vehicle)
                 laneDict.pop(vehicle)
-            dontReroute.append(vehicle) #Vehicle has left network and does not need to be rerouted
 
         vehiclesOnNetwork = traci.vehicle.getIDList()
         carsOnNetwork.append(len(vehiclesOnNetwork)) #Store number of cars on network (for plotting)
@@ -1832,8 +1828,6 @@ def run(network, rerouters, pSmart, verbose = True):
         #Count left turns
         for id in laneDict:
             newlane = traci.vehicle.getLaneID(id)
-            if len(newlane) == 0 or newlane[0] == ":":
-                dontReroute.append(id) #Vehicle is mid-intersection or off network, don't try to reroute them
             if newlane != laneDict[id] and len(newlane) > 0 and  newlane[0] != ":":
                 newloc = traci.vehicle.getRoadID(id)
 
@@ -3868,6 +3862,10 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             updateLights = True
             if not(reuseSurtrac and simtime in surtracDict): #Overwrite unless we want to reuse
                 updateLights = False
+                if testNN or predCutoffRouting == 0:
+                    sumoPredCluters3 = None
+                else:
+                    print("Using predicted clusters for routing Surtrac")
                 surtracDict[simtime] = doSurtrac(simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters3, True, nonExitEdgeDetections2)
             # else:
             #     print("Reusing Surtrac, yay!")
