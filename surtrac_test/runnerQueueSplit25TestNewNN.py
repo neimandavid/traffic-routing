@@ -102,7 +102,7 @@ predCutoffMain = 10 #Surtrac receives communications about clusters arriving thi
 predCutoffRouting = 10 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 
-testNNdefault = False #Uses NN over Dumbtrac for light control if both are true
+testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
 testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
@@ -382,12 +382,15 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
     maxnroads = 4 #And assume 4-way intersections for now
     maxnclusters = 5 #And assume at most 10 clusters per lane
     ndatapercluster = 3 #Arrival, departure, weight
+    maxnphases = 12 #Should be enough to handle both leading and lagging lefts
+    phasevec = np.zeros(maxnphases)
+    
 
     clusterdata = np.zeros(maxnroads*maxnlanes*maxnclusters*ndatapercluster)
+    greenlanes = np.zeros(maxnphases*maxnroads*maxnlanes)
 
-    nqueued = np.zeros(maxnroads*maxnlanes)
-    ntotal = np.zeros(maxnroads*maxnlanes)
     phase = lightphases[light]
+    phasevec[phase] = 1
     lastSwitch = lastswitchtimes[light]
 
     maxfreq = max(routingSurtracFreq, mainSurtracFreq, timestep, 1)
@@ -404,6 +407,8 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
     #phaselenprop = (simtime - lastSwitch - surtracdata[light][phase]["minDur"])/surtracdata[light][phase]["maxDur"]
     #phaselenprop is negative if we're less than minDur, and greater than 1 if we're greater than maxDur
 
+        phaselenprop = (surtracdata[light][phase]["maxDur"] - (simtime - lastSwitch)) #Time until we hit max dur
+
     prevRoad = None
     roadind = -1
     laneind = -1
@@ -416,23 +421,46 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
         lanenum = int(temp[-1])
         if road != prevRoad or roadind < 0:
             roadind += 1
+            assert(roadind < maxnroads)
             laneind = -1
             prevRoad = road
         laneind += 1
-
-        #Not sharing weights so I'll skip this
-        #Last lane on road assumed to be left-turn only and being inserted in last slot
-        # if laneind + 1 == nLanes[road] or laneind + 1 >= maxnlanes:
-        #     laneind = maxnlanes - 1
+        if nLanes[road] > 1 and lanenum == nLanes[road]-1:
+            laneind = maxnlanes-1 #Left lane on left always
+        rawlaneind = laneind
+        assert(laneind < maxnlanes)
 
         for clusterind in range(len(clusters[lane])):
-            if clusterind > maxnclusters:
+            if clusterind >= maxnclusters:
                 print("Warning: Too many clusters on " + str(lane) + ", ignoring the last ones")
                 break
-            clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [clusters[lane][clusterind]["arrival"]-simtime, clusters[lane][clusterind]["departure"]-simtime, clusters[lane][clusterind]["weight"]]
+            try:
+                clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [(clusters[lane][clusterind]["arrival"]-simtime)/60, (clusters[lane][clusterind]["departure"]-simtime)/60, (clusters[lane][clusterind]["weight"])/20]
+            except:
+                print([(clusters[lane][clusterind]["arrival"]-simtime)/60, (clusters[lane][clusterind]["departure"]-simtime)/60, (clusters[lane][clusterind]["weight"])/20])
+                print(clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster]) #[], apparently. Out of bounds?
+                print(((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster)
+                print(((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster)
+                print(len(clusterdata))
+                asdf
+
+
+        # for i in range(len(surtracdata[light])):
+        #     assert(i < maxnphases)
+        #     if lane in surtracdata[light][i]["lanes"]:
+        #         #greenlanes[roadind*maxnlanes*maxnphases+laneind*maxnphases+i] = 1
+        #         #greenlanes should look like [road1lane1greenphases, road1lane2greenphases, etc] where each of those is just a binary vector with 1s for green phases
+        #         #Hack in fake extra non-left lanes with no cars if not enough lanes
+        #         #But those lanes still need to look like actual lanes that just happen to not have cars so we don't need to learn this explicitly
+        #         #So we'll just update all future lanes, then overwrite them later?
+        #         for templaneind in range(rawlaneind, maxnlanes):
+        #             greenlanes[roadind*maxnlanes*maxnphases+templaneind*maxnphases+i] = 1
+        #     else:
+        #         for templaneind in range(rawlaneind, maxnlanes):
+        #             greenlanes[roadind*maxnlanes*maxnphases+templaneind*maxnphases+i] = 0
 
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
-    return torch.Tensor(np.array([np.concatenate((clusterdata, [phase], [phaselenprop]))]))
+    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
 
 #@profile
 def doSurtracThread(network, simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
