@@ -515,7 +515,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
         #             greenlanes[roadind*maxnlanes*maxnphases+templaneind*maxnphases+i] = 0
 
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
-    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
+    return torch.Tensor(np.array([np.concatenate((clusterdata, phasevec, [phaselenprop/120]))]))
 
 #@profile
 def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
@@ -3101,7 +3101,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             maxnphases = 12 #Should be enough to handle both leading and lagging lefts
             
             nextra = 1 #Proportion of phase length used
-            ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
+            ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnphases + nextra
 
             if crossEntropyLoss:
                 agents[light] = Net(ninputs, 2, 128)

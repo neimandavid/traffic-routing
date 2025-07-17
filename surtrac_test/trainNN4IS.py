@@ -167,7 +167,8 @@ def main(sumoconfigs):
         maxnphases = 12 #Should be enough to handle both leading and lagging lefts
         
         nextra = 1 #Remaining time in current lane, current time (garbage, set to 0)
-        ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra #180+144+12+1=337
+        #ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra #180+144+12+1=337
+        ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnphases + nextra #180+12+1=193
 
         if crossEntropyLoss:
             agents[light] = Net(ninputs, 2, 128)
