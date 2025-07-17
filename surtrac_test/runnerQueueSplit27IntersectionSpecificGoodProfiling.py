@@ -516,7 +516,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
         #             greenlanes[roadind*maxnlanes*maxnphases+templaneind*maxnphases+i] = 0
 
     #return torch.Tensor(np.array([np.concatenate(([phase], [phaselenprop]))]))
-    return torch.Tensor(np.array([np.concatenate((clusterdata, greenlanes, phasevec, [phaselenprop/120]))]))
+    return torch.Tensor(np.array([np.concatenate((clusterdata, phasevec, [phaselenprop/120]))]))
 
 @profile
 def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
@@ -3102,7 +3102,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             maxnphases = 12 #Should be enough to handle both leading and lagging lefts
             
             nextra = 1 #Proportion of phase length used
-            ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnlanes*maxnroads*maxnphases + maxnphases + nextra
+            ninputs = maxnlanes*maxnroads*maxnclusters*ndatapercluster + maxnphases + nextra
 
             if crossEntropyLoss:
                 agents[light] = Net(ninputs, 2, 128)
@@ -3176,6 +3176,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     return [outdata, rngstate]
 
 #Tell all the detectors to reroute the cars they've seen
+#@profile
 def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     global delay3adjdict
     #Clear any stored Surtrac stuff
@@ -3913,6 +3914,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                 else:
                     print("Unrecognized light " + light + ", this shouldn't happen")
 
+@profile
 #NOTE: Profiling says this function isn't terrible, probably don't need to speed it up right now
 def removeVehicleFromPredictions(sumoPredClusters, idrem, lastedge):
     for predlane in sumoPredClusters.keys():
@@ -3987,7 +3989,7 @@ def saveStateInfo(edge, remainingDuration, lastSwitchTimes, sumoPredClusters, li
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
 def loadStateInfo(prevedge, simtime, resample=True): #simtime is just so I can pass it into loadStateInfoDetectors...
-    if detectorRouting:
+    if detectorRouting and not resample: #Only time to not resample is if we need accurate stuff (ex: singlethreaded recreating the initial sim state after routing)
         return loadStateInfoDetectors(prevedge, simtime)
 
     #Load traffic state
@@ -4021,7 +4023,7 @@ def loadStateInfo(prevedge, simtime, resample=True): #simtime is just so I can p
     return (remainingDuration, lastSwitchTimes, sumoPredClusters2, lightphases, deepcopy(edgeDict), deepcopy(laneDict))
 
 #prevedge is just used as part of the filename - can pass in a constant string so we overwrite, or something like a timestamp to support multiple instances of the code running at once
-def loadStateInfoDetectors(prevedge, simtime, resample):
+def loadStateInfoDetectors(prevedge, simtime):
     global netfile
 
     newEdgeDict = dict()
@@ -4116,16 +4118,6 @@ def loadStateInfoDetectors(prevedge, simtime, resample):
     #Load light state
     with open("savestates/lightstate_"+prevedge+".pickle", 'rb') as handle:
         lightStates = pickle.load(handle)
-
-    #Randomize non-adopter routes
-    #TODO make sure this doesn't break anything, looks like it was deleted by mistake at some point
-    if resample:
-        for lane in lanes:
-            if len(lane) == 0 or lane[0] == ":":
-                continue
-            for vehicle in traci.lane.getLastStepVehicleIDs(lane):
-                if not vehicle in isSmart or not isSmart[vehicle]:
-                    traci.vehicle.setRoute(vehicle, sampleRouteFromTurnData(lane, turndata))
 
     #Copy traffic light timings
     for light in traci.trafficlight.getIDList():
