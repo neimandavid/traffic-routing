@@ -1880,30 +1880,31 @@ def run(network, rerouters, pSmart, verbose = True):
                         else:
                             nonExitEdgeDetections[newloc][0].append((newlane+".0maindetect."+str(simtime), newlane, simtime))
 
-                #Remove vehicle from predictions, since the next intersection should actually see it now
-                if not disableSurtracComms:
-                    removeVehicleFromPredictions(sumoPredClusters, id, edgeDict[id])
+                    #Remove vehicle from predictions, since the next intersection should actually see it now
+                    if not disableSurtracComms:
+                        removeVehicleFromPredictions(sumoPredClusters, id, edgeDict[id])
 
-                cs = endpointcoords[edgeDict[id]]
-                theta0 = math.atan2(cs[3]-cs[1], cs[2]-cs[0])
-                cn = endpointcoords[newloc]
-                theta1 = math.atan2(cn[3]-cn[1], cn[2]-cn[0])
+                    cs = endpointcoords[edgeDict[id]]
+                    theta0 = math.atan2(cs[3]-cs[1], cs[2]-cs[0])
+                    cn = endpointcoords[newloc]
+                    theta1 = math.atan2(cn[3]-cn[1], cn[2]-cn[0])
 
-                if (theta1-theta0+math.pi)%(2*math.pi)-math.pi > 0:
-                    leftDict[id] += 1
+                    if (theta1-theta0+math.pi)%(2*math.pi)-math.pi > 0:
+                        leftDict[id] += 1
+
+                    #Start routing sim
+                    if multithreadRouting and id in isSmart and isSmart[id]:
+                        saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
+                        startroute = traci.vehicle.getRoute(id)
+                        startind = startroute.index(newlane.split("_")[0])
+                        startroute = startroute[startind:]
+                        routingresults[id] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
+                        routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults))
+                        routingthreads[id].start()
+                        stopDict[id] = False
+
                 laneDict[id] = newlane
                 edgeDict[id] = newloc
-
-                #Start routing sim
-                if multithreadRouting and id in isSmart and isSmart[id]:
-                    saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
-                    startroute = traci.vehicle.getRoute(id)
-                    startind = startroute.index(newlane.split("_")[0])
-                    startroute = startroute[startind:]
-                    routingresults[id] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
-                    routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults))
-                    routingthreads[id].start()
-                    stopDict[id] = False
 
                 #assert(laneDict[id] == traci.vehicle.getLaneID(id))
                 try:
@@ -3219,12 +3220,8 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     global surtracDict
     global routingthreads
     global routingresults
+
     surtracDict = dict()
-
-    # routingthreads = dict()
-    # routingresults = manager.dict()
-
-    
 
     if not multithreadRouting:
         saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
