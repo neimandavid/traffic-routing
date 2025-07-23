@@ -3221,8 +3221,8 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     global routingresults
     surtracDict = dict()
 
-    routingthreads = dict()
-    routingresults = manager.dict()
+    # routingthreads = dict()
+    # routingresults = manager.dict()
 
     
 
