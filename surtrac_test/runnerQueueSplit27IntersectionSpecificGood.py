@@ -24,6 +24,7 @@
 #25: New plan for lane changes - blindly sample which lane stuff ends up in
 #26: Detector model for Surtrac in routing as well (since the goal is to approximate what the main simulation would be doing)
 #27: Support new SurtracNet (single network for all intersections, takes in intersection geometry and light phase info)
+#This particular version hopefully does everything we want except improved parallelization (starting routing sims at road start and running them alongside the main sim when possible). For that version, see runnerQueueSplit30.py
 
 from __future__ import absolute_import
 from __future__ import print_function
