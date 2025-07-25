@@ -1747,7 +1747,8 @@ def run(network, rerouters, pSmart, verbose = True):
 
                     #Timeout more often
                     if time.time() - tstart >= simspeedfactor*simtime:
-                        noThreadsRunning = False
+                        #noThreadsRunning = False
+                        #We're behind schedule and don't care if anything's running, break early and continue main sim
                         break
 
                     routingthreads[vehicle].join(timeout=0)
@@ -3275,11 +3276,15 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
                     
                     if multithreadRouting:
                         #We're near the intersection and should stop routing
+                        routingthreads[vehicle].join(timeout=0)
+                        if routingthreads[vehicle].is_alive():
+                            print("Stopping routing for vehicle " + vehicle)
                         stopDict[vehicle] = True
                         routingthreads[vehicle].terminate()
                     else:
                         print("multithreadRouting == False???")
                         routingresults[vehicle] = manager.list([None, None])
+                        #We're not multithreading, so just call this as a normal function
                         rerouteSUMOGC(vehicle, lane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults)
                     
                         if not useLibsumo:
