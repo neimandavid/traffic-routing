@@ -1818,7 +1818,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 startind = startroute.index(lane.split("_")[0])
                 startroute = startroute[startind:]
                 routingresults[vehicle] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
-                if id in routingthreads:
+                if vehicle in routingthreads:
                     print("Warning: Newly-created vehicle apparently already in routing threads???")
                     routingthreads[vehicle].terminate()
                 routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults))
