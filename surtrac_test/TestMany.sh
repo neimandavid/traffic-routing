@@ -11,7 +11,7 @@ do
 #Run everything!
 python3 runnerQueueSplit30.py blocks51hNewestester_auto.sumocfg $p
 python3 runnerQueueSplit30.py PittsburghPMDataSmallerLongIn+15NewestesterYesLeftTurns_fixedroutes_auto.sumocfg $p
-python3 runnerQueueSplit30.py shortlongshort3_auto.sumocfg $p
+python3 runnerQueueSplit30.py shortlongshort4_auto.sumocfg $p
 
 done
 done

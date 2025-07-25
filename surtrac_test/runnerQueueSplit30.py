@@ -1811,6 +1811,17 @@ def run(network, rerouters, pSmart, verbose = True):
                 else:
                     nonExitEdgeDetections[edge][0].append((lane+"."+str(simtime), lane, simtime))
 
+            #Start routing sim
+            if multithreadRouting and vehicle in isSmart and isSmart[vehicle]:
+                saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
+                startroute = traci.vehicle.getRoute(vehicle)
+                startind = startroute.index(lane.split("_")[0])
+                startroute = startroute[startind:]
+                routingresults[vehicle] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
+                routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults))
+                routingthreads[vehicle].start()
+                stopDict[vehicle] = False
+
         #Check predicted vs. actual travel times
         for vehicle in traci.simulation.getArrivedIDList():
             if isSmart[vehicle]:
@@ -3260,7 +3271,14 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
                     if multithreadRouting:
                         #We're near the intersection and should stop routing
                         stopDict[vehicle] = True
-                        routingthreads[vehicle].terminate()
+                        try:
+                            routingthreads[vehicle].terminate()
+                        except:
+                            print(vehicle)
+                            print(laneDict[vehicle])
+                            print(traci.vehicle.getLaneID(vehicle))
+                            print(routingthreads)
+                            asdf
                     else:
                         print("multithreadRouting == False???")
                         routingresults[vehicle] = manager.list([None, None])
