@@ -1822,9 +1822,9 @@ def run(network, rerouters, pSmart, verbose = True):
                 if vehicle in routingthreads:
                     print("Warning: Newly-created vehicle apparently already in routing threads???")
                     routingthreads[vehicle].terminate()
+                stopDict[vehicle] = False
                 routingthreads[vehicle] = Process(target=rerouteSUMOGC, args=(vehicle, lane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults))
                 routingthreads[vehicle].start()
-                stopDict[vehicle] = False
 
         #Check predicted vs. actual travel times
         for vehicle in traci.simulation.getArrivedIDList():
@@ -1916,9 +1916,9 @@ def run(network, rerouters, pSmart, verbose = True):
                         routingresults[id] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
                         if id in routingthreads:
                             routingthreads[id].terminate()
+                        stopDict[id] = False
                         routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults))
                         routingthreads[id].start()
-                        stopDict[id] = False
 
                 laneDict[id] = newlane
                 edgeDict[id] = newloc
