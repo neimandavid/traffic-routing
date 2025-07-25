@@ -122,7 +122,7 @@ resetTrainingData = False#True
 appendTrainingData = False#True
 crossEntropyLoss = True
 
-detectorModel = False #REMINDER: As currently implemented, turning this on makes even 0% and 100% routing non-deterministic, as we're guessing lanes for vehicles before running Surtrac
+detectorModel = True #REMINDER: As currently implemented, turning this on makes even 0% and 100% routing non-deterministic, as we're guessing lanes for vehicles before running Surtrac
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
