@@ -257,6 +257,8 @@ def main(sumoconfigs):
                     trainingdata = pickle.load(handle)
             dumpTrainingData(trainingdata)
 
+        firstIter = False
+
         #Load current dataset
         print("Loading training data")
         trafficdataset = dict()
@@ -266,7 +268,6 @@ def main(sumoconfigs):
 
         except FileNotFoundError as e:
             #No data, so generate some, then loop back
-            firstIter = False
             continue
         
         #Train everything once - note that all losses are likely to spike after new training data comes in
