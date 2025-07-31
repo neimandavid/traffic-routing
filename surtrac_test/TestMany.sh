@@ -3,10 +3,11 @@
 set -e #Error out if something goes wrong, useful for debug
 
 echo "Moving previous data to backup folder"
+mkdir delaydata/DummyDir
 mkdir -p Backup
 NOW=$( date '+%F_%H:%M:%S' )
 mkdir Backup/$NOW
-[ -f delaydata/* ] mv delaydata/* Backup/$NOW
+mv delaydata/* Backup/$NOW
 
 echo "Running code"
 for n in {1..5};
