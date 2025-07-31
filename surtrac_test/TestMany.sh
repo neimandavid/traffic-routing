@@ -6,7 +6,7 @@ echo "Moving previous data to backup folder"
 mkdir -p Backup
 NOW=$( date '+%F_%H:%M:%S' )
 mkdir Backup/$NOW
-mv delaydata/* Backup/$NOW
+[ -f delaydata/* ] mv delaydata/* Backup/$NOW
 
 echo "Running code"
 for n in {1..5};
