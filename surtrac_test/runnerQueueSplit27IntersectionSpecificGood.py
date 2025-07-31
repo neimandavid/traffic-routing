@@ -114,7 +114,7 @@ intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to acc
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
 debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
-testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
+testDumbtrac = True #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
 FTP = True #If false, and testDumbtrac = True, runs actuated control instead of fixed timing plans. If true, runs fixed timing plans (should now be same as SUMO defaults)
 resetTrainingData = False#True
 appendTrainingData = False#True
