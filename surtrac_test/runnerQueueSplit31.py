@@ -2476,16 +2476,12 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
             #Read LA_lane, put any vehicles where they say they are
             ids = traci.lanearea.getLastStepVehicleIDs("LA_"+lane) #Vehicles seen directly
             for vehicle in reversed(ids): #By default reads vehicles from start of lane to end of lane, we want this reversed
-                print(vehicle)
                 if True:#not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsSurtrac:
                     nNonAdoptersSeen += 1
                     #Place vehicle in correct position
                     if traci.vehicle.getLaneID(vehicle) == lane:
-                        print(lane)
                         lanepos = traci.vehicle.getLanePosition(vehicle)
-                        print(lanepos)
                     else:
-                        print("test")
                         continue
 
                 #Blind copy-paste from below
