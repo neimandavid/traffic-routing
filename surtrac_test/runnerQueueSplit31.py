@@ -2762,7 +2762,8 @@ def generate_additionalfile(sumoconfig, networkfile):
                 lane = edge+"_"+str(lanenum)
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
                       % (lane, lane, detectordist), file=additional)
-                print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" endPos="-0.01" length="20" friendlyPos="true" />' \
+                #print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" endPos="-0.01" length="20" friendlyPos="true" />' \
+                print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" friendlyPos="true" />' \
                       % (lane, lane), file=additional)
                 
                 if len(net.getEdge(edge).getOutgoing()) > 1:
