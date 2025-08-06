@@ -2484,6 +2484,7 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
                         lanepos = traci.vehicle.getLanePosition(vehicle)
                         print(lanepos)
                     else:
+                        print("test")
                         continue
 
                 #Blind copy-paste from below
