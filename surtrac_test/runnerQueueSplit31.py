@@ -2474,9 +2474,8 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
         for lanenum in range(nLanes[edge]):
             lane = edge + "_" + str(lanenum)
             #Read LA_lane, put any vehicles where they say they are
-            assert("LA_"+lane in traci.lanearea.getIDList())
             ids = traci.lanearea.getLastStepVehicleIDs("LA_"+lane) #Vehicles seen directly
-            for vehicle in ids:
+            for vehicle in reversed(ids): #By default reads vehicles from start of lane to end of lane, we want this reversed
                 print(vehicle)
                 if True:#not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsSurtrac:
                     nNonAdoptersSeen += 1
@@ -2765,7 +2764,7 @@ def generate_additionalfile(sumoconfig, networkfile):
                 lane = edge+"_"+str(lanenum)
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
                       % (lane, lane, detectordist), file=additional)
-                print('    <laneAreaDetector id="LA_%s" freq="2" file="outputAuto.xml" lane="%s" endPos="-0.01" length="20" friendlyPos="true" />' \
+                print('    <laneAreaDetector id="LA_%s" freq="2" file="outputAuto.xml" lane="%s" endPos="-0.01" length="2000" friendlyPos="true" />' \
                       % (lane, lane), file=additional)
                 
                 if len(net.getEdge(edge).getOutgoing()) > 1:
@@ -2796,7 +2795,7 @@ def generate_additionalfile(sumoconfig, networkfile):
                 lane = edge+"_"+str(lanenum)
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
                       % (lane, lane, detectordist), file=additional)
-                print('    <laneAreaDetector id="LA_%s" freq="2" file="outputAuto.xml" lane="%s" endPos="-0.01" len="20" friendlyPos="true" />' \
+                print('    <laneAreaDetector id="LA_%s" freq="2" file="outputAuto.xml" lane="%s" endPos="-0.01" len="2000" friendlyPos="true" />' \
                       % (lane, lane), file=additional)
                 if len(net.getEdge(edge).getOutgoing()) > 0:
                     for dist in [0, lengths[lane]-2]: #Add to this if we need more detectors, remember to update it both here and above in additional_autogen
