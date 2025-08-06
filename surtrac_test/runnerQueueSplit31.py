@@ -2471,7 +2471,7 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
     
     for edge in nonExitEdgeDetections3: #Assuming exit lanes don't matter since they shouldn't have traffic - this saves us from extra exit detectors at their ends
         nNonAdoptersSeen = 0
-        for lanenum in range(len(nLanes[edge])):
+        for lanenum in range(nLanes[edge]):
             lane = edge + "_" + str(lanenum)
             #Read LA_lane, put any vehicles where they say they are
             assert("LA_"+lane in traci.lanearea.getIDList())
