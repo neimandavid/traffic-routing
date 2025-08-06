@@ -2468,6 +2468,7 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
             lane = edge + "_" + str(laneind)
             clusters[lane] = []
             totallanedata[edge] += len(wasFull[nonExitLaneDetectors[lane][1][0]]) + 1 #[lane][1][0] because 1 is the index of the exit detector and 0 is the index of its name. +1 as a permanent psuedocount on all detectors, mostly in case we have no data whatsoever
+    
     for edge in nonExitEdgeDetections3: #Assuming exit lanes don't matter since they shouldn't have traffic - this saves us from extra exit detectors at their ends
         nNonAdoptersSeen = 0
         for lanenum in range(len(nLanes[edge])):
@@ -2479,7 +2480,9 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
                     nNonAdoptersSeen += 1
                     #Place vehicle in correct position
                     if traci.vehicle.getLaneID(vehicle) == lane:
+                        print(lane)
                         lanepos = traci.vehicle.getLanePosition(vehicle)
+                        print(lanepos)
                     else:
                         continue
 
