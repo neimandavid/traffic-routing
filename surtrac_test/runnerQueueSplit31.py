@@ -2474,8 +2474,10 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
         for lanenum in range(len(nLanes[edge])):
             lane = edge + "_" + str(lanenum)
             #Read LA_lane, put any vehicles where they say they are
+            assert("LA_"+lane in traci.lanearea.getIDList())
             ids = traci.lanearea.getLastStepVehicleIDs("LA_"+lane) #Vehicles seen directly
             for vehicle in ids:
+                print(vehicle)
                 if True:#not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsSurtrac:
                     nNonAdoptersSeen += 1
                     #Place vehicle in correct position
