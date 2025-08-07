@@ -2456,7 +2456,6 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
     global nVehicles
     #Load locations of cars and current traffic light states into custom data structures
     #If given, VOI is the vehicle triggering the routing call that triggered this, and needs to be unaffected when we add noise
-    #TODO: We're caching the loaded clusters, which means we'll need to be better about not adding noise to any vehicles that could potentially be routed
     clusters = dict()
     nVehicles.append(0)
 
@@ -2477,12 +2476,12 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
             ids = traci.lanearea.getLastStepVehicleIDs("LA_"+lane) #Vehicles seen directly
             for vehicle in reversed(ids): #By default reads vehicles from start of lane to end of lane, we want this reversed
                 if True:#not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsSurtrac:
-                    nNonAdoptersSeen += 1
                     #Place vehicle in correct position
                     if traci.vehicle.getLaneID(vehicle) == lane:
                         lanepos = traci.vehicle.getLanePosition(vehicle)
                     else:
                         continue
+                    nNonAdoptersSeen += 1
 
                 #Blind copy-paste from below
                 if len(clusters[lane]) > 0 and abs(clusters[lane][-1]["time"] - simtime) < clusterthresh and abs(clusters[lane][-1]["endpos"] - lanepos)/speeds[edge] < clusterthresh:
@@ -2600,6 +2599,7 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
                 # print(clusters[lane][-1]["departure"] - clusters[lane][-1]["arrival"])
                 # print(clusters[lane][-1])
                 #assert(clusters[lane][-1]["departure"] > clusters[lane][-1]["arrival"] - 1e-10)
+        print(nNonAdoptersSeen)
 
     #Decompress all clusters to max allowed density (detector model believes vehicles stuck in a queue are all literally stacked on top of each other at the stop bar)
     #This is mostly for NN input stuff; Surtrac code can sort this itself
