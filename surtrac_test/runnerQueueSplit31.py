@@ -2461,7 +2461,7 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
 
     #Cluster data structures
     totallanedata = dict()
-    for edge in nonExitEdgeDetections3: #Assuming exit lanes don't matter since they shouldn't have traffic - this saves us from extra exit detectors at their ends
+    for edge in edges: #Assuming exit lanes don't matter since they shouldn't have traffic - this saves us from extra exit detectors at their ends
         totallanedata[edge] = 0
         for laneind in range(nLanes[edge]):
             lane = edge + "_" + str(laneind)
