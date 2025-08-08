@@ -27,6 +27,7 @@
 #28: Better multithreading. Start routing sims when a vehicle enters a road, early stop when it nears an intersection
 #29: A* Surtrac
 #30: Hopefully final thesis defense code. Merges compatible lanes when doing Surtrac, removes unnecessary NN input for intersection-specific NNs, and has Surtrac intersection communication that's working and hopefully helpful at reducing delay!
+#PROBLEM: It's slow. Also, starting a routing simulation grabs nonExitEdgeDetections as a global, which seems sketchy because parallelization (what if main sim progresses before routing sim really gets started). (A)pparently it's fine, we just get a copy anyway?)
 
 from __future__ import absolute_import
 from __future__ import print_function

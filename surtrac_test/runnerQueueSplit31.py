@@ -146,7 +146,7 @@ learnMinMaxDurations = False #False to strictly enforce min/max duration limits 
 #For testing durations to see if there's drift between fixed timing plans executed in main simulation and routing simulations.
 simdurations = dict()
 simdurationsUsed = False
-realdurations = dict()
+#realdurations = dict()
 
 dumpIntersectionData = False
 intersectionData = dict()
@@ -1969,7 +1969,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 else:
                     print("Unrecognized light " + light + ", this shouldn't happen")
         
-        realdurations[simtime] = pickle.loads(pickle.dumps(remainingDuration))
+        #realdurations[simtime] = pickle.loads(pickle.dumps(remainingDuration))
         # if simtime in simdurations:
         #     print("DURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
         #     print(simdurations[simtime][lights[0]])
@@ -2547,6 +2547,7 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
                         lane = traci.vehicle.getLaneID(vehicle)
                         lanepos = traci.vehicle.getLanePosition(vehicle)
                     except:
+                        #Pretty sure this means we're off the network. So remove is being sketchy, but the except should be fine?
                         print("Failing to look up adopter data")
                         print(simtime)
                         print(vehicle)
@@ -2763,8 +2764,8 @@ def generate_additionalfile(sumoconfig, networkfile):
                 lane = edge+"_"+str(lanenum)
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
                       % (lane, lane, detectordist), file=additional)
-                #print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" endPos="-0.01" length="20" friendlyPos="true" />' \
-                print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" friendlyPos="true" />' \
+                print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" endPos="-0.01" length="20" friendlyPos="true" />' \
+                #print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" friendlyPos="true" />' \
                       % (lane, lane), file=additional)
                 
                 if len(net.getEdge(edge).getOutgoing()) > 1:
@@ -2795,8 +2796,8 @@ def generate_additionalfile(sumoconfig, networkfile):
                 lane = edge+"_"+str(lanenum)
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
                       % (lane, lane, detectordist), file=additional)
-                #print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" endPos="-0.01" len="20" friendlyPos="true" />' \
-                print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" friendlyPos="true" />' \
+                print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" endPos="-0.01" len="20" friendlyPos="true" />' \
+                #print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" friendlyPos="true" />' \
                       % (lane, lane), file=additional)
                 if len(net.getEdge(edge).getOutgoing()) > 0:
                     for dist in [0, lengths[lane]-2]: #Add to this if we need more detectors, remember to update it both here and above in additional_autogen
@@ -3611,6 +3612,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             if lanepos <= VOIs[startvehicle][2] - carcardist:
                 #Passed the insertion point, no need to keep checking cars
                 break
+
         #If no existing car can be replaced, make a new one
         if newghostcar == None:
             newghostcar = vehicle+"newghostcar"+nextlane #Hopefully this name isn't taken...
@@ -3624,6 +3626,9 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             #Not going to insert a detector reading for these, hopefully it's fine
             traci.vehicle.moveTo(newghostcar, nextlane, VOIs[startvehicle][2])
             #traci.vehicle.setSpeed(newghostcar, newspeed)
+
+            #Prepend the new ghost car to nonExitEdgeDetections2
+            nonExitEdgeDetections2[edgeDict3[tempveh]][0] = [(newghostcar, nextlane, simtime-(lengths[nextlane]-20)/speeds[nextlane.split("_")[0]] )] + nonExitEdgeDetections2[edgeDict3[tempveh]][0]
             
         #Regardless of whether we had to make a new ghost car or could convert an existing one, make it look like a ghost car
         traci.vehicle.setColor(newghostcar, [0, 255, 255, 255]) #Make the ghost car white for debug purposes
