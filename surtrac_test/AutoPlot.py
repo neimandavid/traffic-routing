@@ -32,7 +32,7 @@ for filename in os.listdir(directory):
     filepath = directory+filename
     
     if not filepath.endswith(".pickle"):
-        os.rename(filepath, savedir+"/"+filename)
+        os.rename(filepath, presavedir+"/"+filename)
         continue
     print(filepath)
 
