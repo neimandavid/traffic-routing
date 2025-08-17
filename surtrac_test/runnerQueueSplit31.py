@@ -2603,7 +2603,7 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
                 # print(clusters[lane][-1]["departure"] - clusters[lane][-1]["arrival"])
                 # print(clusters[lane][-1])
                 #assert(clusters[lane][-1]["departure"] > clusters[lane][-1]["arrival"] - 1e-10)
-        print(nNonAdoptersSeen)
+        #print(nNonAdoptersSeen)
 
     #Decompress all clusters to max allowed density (detector model believes vehicles stuck in a queue are all literally stacked on top of each other at the stop bar)
     #This is mostly for NN input stuff; Surtrac code can sort this itself
