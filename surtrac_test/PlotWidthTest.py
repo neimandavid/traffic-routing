@@ -52,6 +52,9 @@ for p in data:
     print("Delay")
     print(data[p]["All"])
     #print(data[p]["All2"])
+    if "Runtime" in data[p]:
+        print("Runtime")
+        print(data[p]["Runtime"])
     if "NTeleports" in data[p]:
         print("NTeleports")
         print(data[p]["NTeleports"])
