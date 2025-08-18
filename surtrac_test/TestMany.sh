@@ -9,7 +9,8 @@ NOW=$( date '+%F_%H:%M:%S' )
 mkdir Backup/$NOW
 mv delaydata/* Backup/$NOW
 
-CODE=$'runnerQueueSplit27IntersectionSpecificGood.py'
+CODE=$'runnerQueueSplit31.py'
+#'runnerQueueSplit27IntersectionSpecificGood.py'
 cp $CODE delaydata/
 cp TestMany.sh delaydata
 
