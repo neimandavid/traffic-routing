@@ -3628,7 +3628,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             #traci.vehicle.setSpeed(newghostcar, newspeed)
 
             #Prepend the new ghost car to nonExitEdgeDetections2
-            nonExitEdgeDetections2[edgeDict3[tempveh]][0] = [(newghostcar, nextlane, simtime-(lengths[nextlane]-detectordist)/speeds[nextlane.split("_")[0]] )] + nonExitEdgeDetections2[edgeDict3[tempveh]][0]
+            nonExitEdgeDetections2[edgeDict3[newghostcar]][0] = [(newghostcar, nextlane, simtime-(lengths[nextlane]-detectordist)/speeds[nextlane.split("_")[0]] )] + nonExitEdgeDetections2[edgeDict3[tempveh]][0]
             
         #Regardless of whether we had to make a new ghost car or could convert an existing one, make it look like a ghost car
         traci.vehicle.setColor(newghostcar, [0, 255, 255, 255]) #Make the ghost car white for debug purposes
