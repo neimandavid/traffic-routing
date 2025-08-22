@@ -237,8 +237,6 @@ savename = "MAIN_" + str(time.time())
 netfile = "UNKNOWN_FILENAME_OOPS"
 
 #Neural net things
-import torch
-from torch import nn
 LOG_FILE = 'imitate.log' # Logs will be appended every time the code is run.
 MODEL_FILES = dict()
 def log(*args, **kwargs):
@@ -1810,6 +1808,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 if len(oldEdgeStuff) > 0:
                     oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane. Might not actually be the adopter in question
                 else:
+                    print("In run(), vehicle arrived")
                     print("Warning: Ran out of cars to remove on edge " + edgeDict[vehicle] + "!!!!!!!!!!!!!!!!!")
 
                 #Make sure we don't have a duplicate of this adopter on the last edge. If we do, make it a random car instead
@@ -1840,6 +1839,7 @@ def run(network, rerouters, pSmart, verbose = True):
                         if len(oldEdgeStuff) > 0:
                             oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane. Might not actually be the adopter in question
                         else:
+                            print("In run(), vehicle changed roads")
                             print("Warning: Ran out of cars to remove on edge " + edgeDict[id] + "!!!!!!!!!!!!!!!!!")
 
                         #Make sure we don't have a duplicate of this adopter on the last edge. If we do, make it a random car instead
@@ -3598,6 +3598,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             if len(oldEdgeStuff) > 0:
                                 oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane
                             else:
+                                print("In rerouteSUMOGC(), making space for initial ghost cars")
                                 print("Warning: Ran out of cars to remove on edge " + edgeDict3[vehicle] + "!!!!!!!!!!!!!!!!!")
 
                             #If we deleted the wrong car, rename the "correct" version of the thing we just deleted
@@ -3764,6 +3765,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane
                             #TODO what if this deletes an adopter? Actual adopter shows up later and fixes itself?
                         else:
+                            print("In rerouteSUMOGC(), vehicle changed roads")
                             print("Warning: Ran out of cars to remove on edge " + edgeDict3[id] + "!!!!!!!!!!!!!!!!!")
 
                         #If we didn't delete the "correct" vehicle, rename the non-deleted copy to some generic non-adopter
