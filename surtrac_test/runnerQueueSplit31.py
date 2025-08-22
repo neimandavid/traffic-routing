@@ -2603,7 +2603,6 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
                 # print(clusters[lane][-1]["departure"] - clusters[lane][-1]["arrival"])
                 # print(clusters[lane][-1])
                 #assert(clusters[lane][-1]["departure"] > clusters[lane][-1]["arrival"] - 1e-10)
-        #print(nNonAdoptersSeen)
 
     #Decompress all clusters to max allowed density (detector model believes vehicles stuck in a queue are all literally stacked on top of each other at the stop bar)
     #This is mostly for NN input stuff; Surtrac code can sort this itself
@@ -3613,7 +3612,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             if lanepos <= VOIs[startvehicle][2] - carcardist:
                 #Passed the insertion point, no need to keep checking cars
                 break
-
         #If no existing car can be replaced, make a new one
         if newghostcar == None:
             newghostcar = vehicle+"newghostcar"+nextlane #Hopefully this name isn't taken...
