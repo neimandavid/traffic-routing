@@ -106,7 +106,7 @@ routingSimUsesSUMO = True #Only switch this if we go back to custom routing simu
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
-disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
+disableSurtracComms = True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 30 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 0 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
@@ -2481,7 +2481,7 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
                     #Place vehicle in correct position
                     if traci.vehicle.getLaneID(vehicle) == lane: #Shouldn't be needed now that we read the lane directly
                         lanepos = traci.vehicle.getLanePosition(vehicle)
-                        if lengths[lane] - lanepos > 2000:
+                        if lengths[lane] - lanepos > 20:
                             break
                     else:
                         continue
