@@ -398,7 +398,8 @@ def getSuccessors(edge, network):
 
 def main(netfile, sumoconfig):
 
-    sumoBinary = checkBinary('sumo-gui')
+    #sumoBinary = checkBinary('sumo-gui')
+    sumoBinary = checkBinary('sumo')
 
     rerouters = generate_additionalfile(sumoconfig, netfile)
     print("MAX_EDGE_SPEED 2.0: {}".format(max_edge_speed))
