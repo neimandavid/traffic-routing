@@ -63,8 +63,8 @@ def run(netfile, rerouters, sumoconfig):
     (testnetfile, testroutefile) = readSumoCfg(sumoconfig)
     routefileparts = testroutefile.split(".")
     nonroutefileparts = testroutefile.split(".") #I'm scared of copy-by-location here...
-    routefileparts[0] = sumoconfig.split(".")[0]+"_auto" #routefileparts[0]+"_auto"
-    nonroutefileparts[0] = sumoconfig.split(".")[0]+"_noroutes_auto"
+    routefileparts[0] = sumoconfig.split(".")[0]+"_random_auto" #routefileparts[0]+"_auto"
+    nonroutefileparts[0] = sumoconfig.split(".")[0]+"_random_noroutes_auto"
     routefilename = ""
     nonroutefilename = ""
     for i in range(len(routefileparts)):
