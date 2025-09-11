@@ -2474,18 +2474,22 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
         for lanenum in range(nLanes[edge]):
             lane = edge + "_" + str(lanenum)
             #Read LA_lane, put any vehicles where they say they are
-            ids = traci.lanearea.getLastStepVehicleIDs("LA_"+lane) #Vehicles seen directly
+            #ids = traci.lanearea.getLastStepVehicleIDs("LA_"+lane) #Vehicles seen directly
             #for vehicle in reversed(ids): #By default reads vehicles from start of lane to end of lane, we want this reversed
+                # if True:#not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsSurtrac:
+                #         #Place vehicle in correct position
+                #         if traci.vehicle.getLaneID(vehicle) == lane: #Shouldn't be needed now that we read the lane directly
+                #             lanepos = traci.vehicle.getLanePosition(vehicle)
+                #             if lengths[lane] - lanepos > 20:
+                #                 break
+                #         else:
+                #             continue
+                #         nNonAdoptersSeen += 1
             for vehicle in reversed(traci.lane.getLastStepVehicleIDs(lane)):
-                if True:#not vehicle in isSmart or not isSmart[vehicle] or not adopterCommsSurtrac:
-                    #Place vehicle in correct position
-                    if traci.vehicle.getLaneID(vehicle) == lane: #Shouldn't be needed now that we read the lane directly
-                        lanepos = traci.vehicle.getLanePosition(vehicle)
-                        if lengths[lane] - lanepos > 20:
-                            break
-                    else:
-                        continue
-                    nNonAdoptersSeen += 1
+                lanepos = traci.vehicle.getLanePosition(vehicle)
+                if lengths[lane] - lanepos > 20:
+                    break
+                nNonAdoptersSeen += 1
 
                 #Blind copy-paste from below
                 if len(clusters[lane]) > 0 and abs(clusters[lane][-1]["time"] - simtime) < clusterthresh and abs(clusters[lane][-1]["endpos"] - lanepos)/speeds[edge] < clusterthresh:
@@ -2766,7 +2770,7 @@ def generate_additionalfile(sumoconfig, networkfile):
                 lane = edge+"_"+str(lanenum)
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
                       % (lane, lane, detectordist), file=additional)
-                print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" endPos="-0.01" length="20" friendlyPos="true" />' \
+                #print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" endPos="-0.01" length="20" friendlyPos="true" />' \
                 #print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" friendlyPos="true" />' \
                       % (lane, lane), file=additional)
                 
@@ -2798,7 +2802,7 @@ def generate_additionalfile(sumoconfig, networkfile):
                 lane = edge+"_"+str(lanenum)
                 print('    <inductionLoop id="IL_%s" freq="1" file="outputAuto.xml" lane="%s" pos="-%i" friendlyPos="true" />' \
                       % (lane, lane, detectordist), file=additional)
-                print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" endPos="-0.01" len="20" friendlyPos="true" />' \
+                #print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" endPos="-0.01" len="20" friendlyPos="true" />' \
                 #print('    <laneAreaDetector id="LA_%s" freq="1" file="outputAuto.xml" lane="%s" friendlyPos="true" />' \
                       % (lane, lane), file=additional)
                 if len(net.getEdge(edge).getOutgoing()) > 0:
