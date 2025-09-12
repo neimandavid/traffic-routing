@@ -1348,7 +1348,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         bestschedules[light] = testnnschedule
         
 
-@profile
+#@profile
 def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True, nonExitEdgeDetections4 = nonExitEdgeDetections): #deepcopy breaks main Surtrac somehow?!
     global clustersCache
     global totalLoadRuns
@@ -2451,7 +2451,7 @@ def loadClusters(simtime, VOI=None):
     return (clusters, lightphases)
 
 #This is currently only used for Surtrac; should be another function that handles starting routing sims
-@profile
+#@profile
 def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
     global totalLoadCars
     global nVehicles
