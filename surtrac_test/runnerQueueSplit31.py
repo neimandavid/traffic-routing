@@ -100,7 +100,7 @@ if not useLibsumo:
     multithreadRouting = False
 multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
-debugMode = False#True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
+debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
 simToSimStats = False
 routingSimUsesSUMO = True #Only switch this if we go back to custom routing simulator or something
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
@@ -294,16 +294,16 @@ def consolidateClusters(clusters):
                 
             # # #Check if clusters i and j should merge
             # # #if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-            # if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-            #     #Merge j into i
-            #     #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+            if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+                #Merge j into i
+                #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
                 
-            #     clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
-            #     clusters[i]["weight"] += clusters[j]["weight"]
-            #     clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
-            #     clusters.pop(j)
-            #     stuffHappened = True
-            #     continue
+                clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
+                clusters[i]["weight"] += clusters[j]["weight"]
+                clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
+                clusters.pop(j)
+                stuffHappened = True
+                continue
 
             # else:
             #     if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
