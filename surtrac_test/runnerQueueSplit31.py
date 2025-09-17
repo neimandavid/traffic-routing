@@ -294,16 +294,16 @@ def consolidateClusters(clusters):
                 
             # # #Check if clusters i and j should merge
             # # #if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-            if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-                #Merge j into i
-                #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+            # if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+            #     #Merge j into i
+            #     #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
                 
-                clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
-                clusters[i]["weight"] += clusters[j]["weight"]
-                clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
-                clusters.pop(j)
-                stuffHappened = True
-                continue
+            #     clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
+            #     clusters[i]["weight"] += clusters[j]["weight"]
+            #     clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
+            #     clusters.pop(j)
+            #     stuffHappened = True
+            #     continue
 
             # else:
             #     if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
@@ -661,22 +661,22 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
             #Allow superclusters to contain more than one cluster. This might speed up the code, but risks being suboptimal if cluster relative start times change due to red lights
             
-            # i = 1
-            # while i < len(superclusters[keyy]):
-            #     maxdep = -np.inf
-            #     for j in range(len(superclusters[keyy][i-1])):
-            #         maxdep = max(maxdep, superclusters[keyy][i-1][j][0]["departure"])
-            #     #Merge any cluster pairs we can
-            #     if superclusters[keyy][i][0][0]["arrival"] < maxdep+clusterthresh:
-            #         superclusters[keyy][i-1].append(superclusters[keyy][i][0])
-            #         #Logic to try to literally make one giant cluster. Probably slightly faster but suboptimal
-            #         # superclusters[keyy][i-1][0]["departure"] = max(superclusters[keyy][i-1][0]["departure"], superclusters[keyy][i][0]["departure"])
-            #         # superclusters[keyy][i-1][0]["weight"] += superclusters[keyy][i][0]["weight"]
-            #         # superclusters[keyy][i-1][0]["cars"] += superclusters[keyy][i][0]["cars"]
-            #         # superclusters[keyy][i-1][1] += superclusters[keyy][i][1] #Update the list of clusters contained in this supercluster
-            #         superclusters[keyy].pop(i)
-            #     else:
-            #         i+=1
+            i = 1
+            while i < len(superclusters[keyy]):
+                maxdep = -np.inf
+                for j in range(len(superclusters[keyy][i-1])):
+                    maxdep = max(maxdep, superclusters[keyy][i-1][j][0]["departure"])
+                #Merge any cluster pairs we can
+                if superclusters[keyy][i][0][0]["arrival"] < maxdep+clusterthresh:
+                    superclusters[keyy][i-1].append(superclusters[keyy][i][0])
+                    #Logic to try to literally make one giant cluster. Probably slightly faster but suboptimal
+                    # superclusters[keyy][i-1][0]["departure"] = max(superclusters[keyy][i-1][0]["departure"], superclusters[keyy][i][0]["departure"])
+                    # superclusters[keyy][i-1][0]["weight"] += superclusters[keyy][i][0]["weight"]
+                    # superclusters[keyy][i-1][0]["cars"] += superclusters[keyy][i][0]["cars"]
+                    # superclusters[keyy][i-1][1] += superclusters[keyy][i][1] #Update the list of clusters contained in this supercluster
+                    superclusters[keyy].pop(i)
+                else:
+                    i+=1
 
             nSuperclusters += len(superclusters[keyy])
             if maxnSuperclusters < len(superclusters[keyy]):
