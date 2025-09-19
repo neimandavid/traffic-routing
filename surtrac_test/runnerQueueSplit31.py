@@ -89,10 +89,9 @@ pSmart = 1.0 #Adoption probability
 useLastRNGState = False #To rerun the last simulation without changing the seed on the random number generator
 
 clusterthresh = 5 #Time between cars before we split to separate clusters
-mingap = 2.5 #Minimum allowed space between cars
-timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this #NOTE: I'm pretty sure this used to be the timestep length in routing simulations, but I've since just started using SUMO with the default timestep of 1. timestep clearly is still in the code, but I'm not sure what it does anymore
+mingap = 2.5 #Minimum allowed space between cars (used for density estimates in Surtrac queues, etc; changing this number doesn't change SUMO's behavior, just our model of it)
+timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this #NOTE: I'm pretty sure this used to be the timestep length in routing simulations, but I've since just started using SUMO with the default timestep of 1. timestep clearly is still in the code, but I'm not sure what it does anymore. Might need to change this if we ever go back to custom routing simulations
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
-simdetectordist = 0 #How far after the start of a road the detectors for reconstructing initial routing sim traffic state are. TODO I'm not actually using this when making detectors, I just assume they're at start of lane. But then they miss all the cars, so I'm just faking those detectors anyway
 
 #Hyperparameters for multithreading
 multithreadRouting = True #Do each routing simulation in a separate thread. Enable for speed, but can mess with profiling
@@ -101,7 +100,6 @@ if not useLibsumo:
 multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
 debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
-simToSimStats = False
 routingSimUsesSUMO = True #Only switch this if we go back to custom routing simulator or something
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
@@ -114,7 +112,6 @@ intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to acc
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
-debugNNslowness = False #Prints context information whenever loadClusters is slow, and runs the NN 1% of the time ignoring other NN settings
 testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
 FTP = True #If false, and testDumbtrac = True, runs actuated control instead of fixed timing plans. If true, runs fixed timing plans (should now be same as SUMO defaults)
 resetTrainingData = False#True
@@ -136,7 +133,6 @@ clusterLens = []
 clusterGaps = []
 firstClusterGaps = []
 
-testNNrolls = []
 nVehicles = []
 
 learnYellow = False #False to strictly enforce that yellow lights are always their minimum length (no scheduling clusters during yellow+turn arrow, and ML solution isn't used there)
@@ -144,15 +140,12 @@ learnMinMaxDurations = False #False to strictly enforce min/max duration limits 
 
 #Don't change parameters below here
 #For testing durations to see if there's drift between fixed timing plans executed in main simulation and routing simulations.
-simdurations = dict()
-simdurationsUsed = False
+#simdurations = dict()
 #realdurations = dict()
 
 dumpIntersectionData = False
 intersectionData = dict()
 vehicleIntersectionData = dict()
-
-max_edge_speed = 0.0 #Overwritten when we read the route file
 
 lanes = []
 edges = []
@@ -218,17 +211,13 @@ totalLoadCars = 0
 totalLoadRuns = 0
 
 #Threading routing
-toReroute = []
 reroutedata = dict()
 threads = dict()
-killSurtracThread = True
 
 nRoutingCalls = 0
 nSuccessfulRoutingCalls = 0
 routingTime = 0
 routeVerifyData = []
-
-AStarCutoff = inf
 
 oldids = dict()
 timedata = dict()
@@ -254,9 +243,6 @@ learning_rate = 0.0005
 avgloss = 0
 nlosses = 0
 nLossesBeforeReset = 1000
-
-ndumbtrac = 0
-ndumbtracerr = 0
 
 teleportdata = []
 
@@ -1358,10 +1344,6 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
     global totalLoadTime
 
     global testNN
-    global testNNrolls
-    if debugNNslowness:
-        testNN = random.random() < 0.01
-        testNNrolls.append(testNN)
 
     toSwitch = []
     if disableSurtracComms or not multithreadSurtrac:
@@ -1388,10 +1370,6 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
             
         runTime = time.time() - loadStart
         totalLoadTime += runTime
-        if debugNNslowness and runTime > 1.5*totalLoadTime/totalLoadRuns:
-            print(inRoutingSim)
-            print(testNNrolls[-5:])
-            print(nVehicles[-5:])
 
         (temprealclusters, templightphases) = pickle.loads(pickle.dumps(clustersCache))
         if realclusters == None:
@@ -2739,7 +2717,6 @@ def generate_additionalfile(sumoconfig, networkfile):
 
     net = sumolib.net.readNet(networkfile)
     rerouters = dict()
-    global max_edge_speed
 
     #Copying this from run() so I can use these in here too. Annoyingly, lengths needs a SUMO simulation to compute, and the SUMO sim needs to know about the additional file, so ordering these is annoying
     #Edges have speeds, but lanes have lengths, so it's a little annoying to get fftimes...
@@ -2766,9 +2743,6 @@ def generate_additionalfile(sumoconfig, networkfile):
             if edge[0] == ":":
                 #Skip internal edges (=edges for the inside of each intersection)
                 continue
-
-            if (net.getEdge(edge).getSpeed() > max_edge_speed):
-                max_edge_speed = net.getEdge(edge).getSpeed()
 
             for lanenum in range(traci.edge.getLaneNumber(edge)):
                 lane = edge+"_"+str(lanenum)
@@ -2905,7 +2879,6 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     if appendTrainingDataIn:
         #We're training, so overwrite whatever else we're doing
         noNNinMain = False
-        debugNNslowness = False
 
     # this script has been called from the command line. It will start sumo as a
     # server, then connect and run
@@ -4136,7 +4109,7 @@ def loadStateInfoDetectors(prevedge, simtime):
                     if r < 0:
                         break #lane is now equal to a lane sampled from the lane change probabilities data from wasFull
 
-                lanepos = min(lengths[lane], speeds[lane.split("_")[0]] * (simtime - detecttime + 0.5)+simdetectordist) #+0.5 because we crossed the detector, then made somewhere between 0 and 1 seconds worth of forward movement; estimate it as 0.5
+                lanepos = min(lengths[lane], speeds[lane.split("_")[0]] * (simtime - detecttime + 0.5)) #+0.5 because we entered a new road, then made somewhere between 0 and 1 seconds worth of forward movement; estimate it as 0.5
                 #lanepos = traci.vehicle.getLanePosition(vehicle)
 
                 #Because apparently traci.vehicle.add needs a route stored in TraCI with a name, not just a list of edges. Why?!
@@ -4148,7 +4121,6 @@ def loadStateInfoDetectors(prevedge, simtime):
                     if not lane.split("_")[0] == superedge:
                         print("Error: Adopter is apparently on the wrong road, but this should've been fixed earlier")
                     lanepos = adopterinfo[vehicle][1] #Use actual position - apparently bad when combined with non-adopters
-                    #lanepos = min(lengths[lane], speeds[lane.split("_")[0]] * (simtime - detecttime + 0.5)+simdetectordist) #+0.5 because we crossed the detector, then made somewhere between 0 and 1 seconds worth of forward movement; estimate it as 0.5
                     newroute = routeFromHere(vehicle)#currentRoutes[vehicle]
                 except:
                     print("Error when getting adopter info? Skipping and hoping for the best")
