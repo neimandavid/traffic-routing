@@ -283,7 +283,6 @@ def consolidateClusters(clusters):
             #if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
                 #Merge j into i
                 clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
-                
                 #clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
                 clusters[i]["weight"] += clusters[j]["weight"]
                 clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
@@ -306,7 +305,7 @@ def consolidateClusters(clusters):
                     continue
             j+=1
             #Can probably just break here instead of trying all pairs of clusters against each other, since hopefully the orderings are at least roughly correct? If we couldn't merge with the next cluster, we really hope we can't merge with the one after that
-            #break
+            break
         i+=1
 
     #Sort the cluster list
