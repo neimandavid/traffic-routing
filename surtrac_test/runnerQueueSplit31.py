@@ -292,31 +292,31 @@ def consolidateClusters(clusters):
             if clusters[j]["arrival"] < clusters[i]["arrival"]: #Again, this is because -1s across road boundaries
                 clusters[j]["arrival"] = clusters[i]["arrival"]
                 
-            # # #Check if clusters i and j should merge
-            # # #if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-            # if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
-            #     #Merge j into i
-            #     #clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+            # #Check if clusters i and j should merge
+            if clusters[i]["arrival"] <= clusters[j]["arrival"] and clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+            #if clusters[j]["arrival"] <= clusters[i]["departure"] + clusterthresh:
+                #Merge j into i
+                clusters[i]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
                 
-            #     clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
-            #     clusters[i]["weight"] += clusters[j]["weight"]
-            #     clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
-            #     clusters.pop(j)
-            #     stuffHappened = True
-            #     continue
+                #clusters[i]["departure"] += clusters[j]["departure"] - clusters[j]["arrival"] + mingap #Add length of cluster j (plus one car gap) to cluster i departure
+                clusters[i]["weight"] += clusters[j]["weight"]
+                clusters[i]["cars"] += clusters[j]["cars"] #Concatenate (I hope)
+                clusters.pop(j)
+                stuffHappened = True
+                continue
 
-            # else:
-            #     if clusters[j]["arrival"] <= clusters[i]["arrival"] and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
-            #         #Merge i into j
-            #         #clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
-            #         #clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
-            #         clusters[j]["weight"] += clusters[i]["weight"]
-            #         clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
-            #         clusters[i] = pickle.loads(pickle.dumps(clusters[j]))
+            else:
+                if clusters[j]["arrival"] <= clusters[i]["arrival"]:# and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
+                    #Merge i into j
+                    clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
+                    #clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
+                    clusters[j]["weight"] += clusters[i]["weight"]
+                    clusters[j]["cars"] += clusters[i]["cars"] #Concatenate (I hope)
+                    clusters[i] = pickle.loads(pickle.dumps(clusters[j]))
 
-            #         clusters.pop(j)
-            #         stuffHappened = True
-            #         continue
+                    clusters.pop(j)
+                    stuffHappened = True
+                    continue
             j+=1
         i+=1
 
@@ -2498,7 +2498,7 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
                     #Departure time (=time to fully clear cluster) increases, arrival doesn't
                     clusters[lane][-1]["endpos"] = lanepos
                     clusters[lane][-1]["time"] = simtime
-                    clusters[lane][-1]["departure"] = simtime + (lengths[lane]-clusters[lane][-1]["endpos"])/speeds[edge]
+                    clusters[lane][-1]["departure"] = max(clusters[lane][-1]["departure"], simtime + (lengths[lane]-clusters[lane][-1]["endpos"])/speeds[edge])
                     clusters[lane][-1]["cars"].append((vehicle, clusters[lane][-1]["departure"], 1, "Load append"))
                     clusters[lane][-1]["weight"] = len(clusters[lane][-1]["cars"])
                 else:
@@ -2590,7 +2590,7 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
                     #Departure time (=time to fully clear cluster) increases, arrival doesn't
                     clusters[lane][-1]["endpos"] = lanepos
                     clusters[lane][-1]["time"] = simtime
-                    clusters[lane][-1]["departure"] = simtime + (lengths[lane]-clusters[lane][-1]["endpos"])/speeds[edge]
+                    clusters[lane][-1]["departure"] = max(clusters[lane][-1]["departure"], simtime + (lengths[lane]-clusters[lane][-1]["endpos"])/speeds[edge])
                     clusters[lane][-1]["cars"].append((vehicle, clusters[lane][-1]["departure"], 1, "Load append"))
                     clusters[lane][-1]["weight"] = len(clusters[lane][-1]["cars"])
                 else:
