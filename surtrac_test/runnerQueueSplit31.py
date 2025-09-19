@@ -293,7 +293,7 @@ def consolidateClusters(clusters):
 
             else:
                 if clusters[j]["arrival"] <= clusters[i]["arrival"]:# and clusters[i]["arrival"] <= clusters[j]["departure"] + clusterthresh:
-                    #Merge i into j
+                    #Merge i into j, but then toss the result where i was
                     clusters[j]["departure"] = max(clusters[i]["departure"], clusters[j]["departure"])
                     #clusters[j]["departure"] += clusters[i]["departure"] - clusters[i]["arrival"] + mingap #Add length of cluster i (plus one car gap) to cluster j departure
                     clusters[j]["weight"] += clusters[i]["weight"]
@@ -301,7 +301,7 @@ def consolidateClusters(clusters):
                     clusters[i] = pickle.loads(pickle.dumps(clusters[j]))
 
                     clusters.pop(j)
-                    j = i+1 #Have to reset since cluster i got cleared, so i is now the cluster after the old i, and we need j to start from right after that
+                    j = i+1 #Have to reset since cluster i got changed
                     stuffHappened = True
                     continue
             j+=1
