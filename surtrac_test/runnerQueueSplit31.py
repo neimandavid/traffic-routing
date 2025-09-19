@@ -315,9 +315,12 @@ def consolidateClusters(clusters):
                     clusters[i] = pickle.loads(pickle.dumps(clusters[j]))
 
                     clusters.pop(j)
+                    j = i+1 #Have to reset since cluster i got cleared, so i is now the cluster after the old i, and we need j to start from right after that
                     stuffHappened = True
                     continue
             j+=1
+            #Can probably just break here instead of trying all pairs of clusters against each other, since hopefully the orderings are at least roughly correct? If we couldn't merge with the next cluster, we really hope we can't merge with the one after that
+            #break
         i+=1
 
     #Sort the cluster list
