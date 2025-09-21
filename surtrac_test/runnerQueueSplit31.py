@@ -88,7 +88,7 @@ sumoconfig = None
 pSmart = 1.0 #Adoption probability
 useLastRNGState = False #To rerun the last simulation without changing the seed on the random number generator
 
-clusterthresh = 5 #Time between cars before we split to separate clusters
+clusterthresh = 10 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars (used for density estimates in Surtrac queues, etc; changing this number doesn't change SUMO's behavior, just our model of it)
 timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this #NOTE: I'm pretty sure this used to be the timestep length in routing simulations, but I've since just started using SUMO with the default timestep of 1. timestep clearly is still in the code, but I'm not sure what it does anymore. Might need to change this if we ever go back to custom routing simulations
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
@@ -99,7 +99,7 @@ if not useLibsumo:
     multithreadRouting = False
 multithreadSurtrac = False #Compute each light's Surtrac schedule in a separate thread. Enable for speed, but can mess with profiling
 reuseSurtrac = False #Does Surtrac computations in a separate thread, shared between all vehicles doing routing. Keep this true unless we need everything single-threaded (ex: for debugging), or if running with fixed timing plans (routingSurtracFreq is huge) to avoid doing this computation
-debugMode = True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
+debugMode = False#True #Enables some sanity checks and assert statements that are somewhat slow but helpful for debugging
 routingSimUsesSUMO = True #Only switch this if we go back to custom routing simulator or something
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
@@ -305,7 +305,7 @@ def consolidateClusters(clusters):
                     continue
             j+=1
             #Can probably just break here instead of trying all pairs of clusters against each other, since hopefully the orderings are at least roughly correct? If we couldn't merge with the next cluster, we really hope we can't merge with the one after that
-            break
+            #break
         i+=1
 
     #Sort the cluster list
