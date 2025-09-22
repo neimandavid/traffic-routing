@@ -1828,6 +1828,7 @@ def run(network, rerouters, pSmart, verbose = True):
                 if len(oldEdgeStuff) > 0:
                     oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane. Might not actually be the adopter in question
                 else:
+                    print("In run(), vehicle arrived")
                     print("Warning: Ran out of cars to remove on edge " + edgeDict[vehicle] + "!!!!!!!!!!!!!!!!!")
 
                 #Make sure we don't have a duplicate of this adopter on the last edge. If we do, make it a random car instead
@@ -1858,6 +1859,7 @@ def run(network, rerouters, pSmart, verbose = True):
                         if len(oldEdgeStuff) > 0:
                             oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane. Might not actually be the adopter in question
                         else:
+                            print("In run(), vehicle changed roads")
                             print("Warning: Ran out of cars to remove on edge " + edgeDict[id] + "!!!!!!!!!!!!!!!!!")
 
                         #Make sure we don't have a duplicate of this adopter on the last edge. If we do, make it a random car instead
@@ -1876,7 +1878,6 @@ def run(network, rerouters, pSmart, verbose = True):
                             nonExitEdgeDetections[newloc][0].append((newlane+".0maindetect."+str(simtime), newlane, simtime))
 
                     #Remove vehicle from predictions, since the next intersection should actually see it now
-		    #TODO check this, indentation was different in RQS30
                     if not disableSurtracComms:
                         removeVehicleFromPredictions(sumoPredClusters, id, edgeDict[id])
 
@@ -3269,8 +3270,7 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
 
     surtracDict = dict()
 
-    if not multithreadRouting:
-        saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
+    saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
 
     for detector in rerouters:
         ids = traci.inductionloop.getLastStepVehicleIDs(detector) #All vehicles to be rerouted
@@ -3364,7 +3364,6 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
                         
                 if not newroute == None:
                     try:
-                        pass
                         traci.vehicle.setRoute(vehicle, newroute)
                         currentRoutes[vehicle] = newroute
                     except traci.exceptions.TraCIException as e:
@@ -3645,6 +3644,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             if len(oldEdgeStuff) > 0:
                                 oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane
                             else:
+                                print("In rerouteSUMOGC(), making space for initial ghost cars")
                                 print("Warning: Ran out of cars to remove on edge " + edgeDict3[vehicle] + "!!!!!!!!!!!!!!!!!")
 
                             #If we deleted the wrong car, rename the "correct" version of the thing we just deleted
@@ -3812,6 +3812,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane
                             #TODO what if this deletes an adopter? Actual adopter shows up later and fixes itself?
                         else:
+                            print("In rerouteSUMOGC(), vehicle changed roads")
                             print("Warning: Ran out of cars to remove on edge " + edgeDict3[id] + "!!!!!!!!!!!!!!!!!")
 
                         #If we didn't delete the "correct" vehicle, rename the non-deleted copy to some generic non-adopter

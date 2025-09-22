@@ -3313,7 +3313,6 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
                 
         if not newroute == None:
             try:
-                pass
                 traci.vehicle.setRoute(vehicle, newroute)
                 currentRoutes[vehicle] = newroute
             except traci.exceptions.TraCIException as e:
