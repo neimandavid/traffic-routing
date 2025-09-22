@@ -126,6 +126,8 @@ adopterComms = True #Whether adopters communicate their positions when using the
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
 
+simspeedfactor = 1 #How much slower than real-time we want this to run. 1 for real-time, 2 for twice as slow, etc.
+
 clusterStats = False #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
 clusterNumsStats = []
 clusterWeights = []
