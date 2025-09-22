@@ -3303,7 +3303,7 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
             if isSmart[vehicle]:
                 try:
                     
-                    routingresults[vehicle] = manager.list([None, None])
+                    #routingresults[vehicle] = manager.list([None, None])
 
                     if multithreadRouting:
                         #We're near the intersection and should stop routing
