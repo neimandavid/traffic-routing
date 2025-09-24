@@ -88,7 +88,7 @@ sumoconfig = None
 pSmart = 1.0 #Adoption probability
 useLastRNGState = False #To rerun the last simulation without changing the seed on the random number generator
 
-clusterthresh = 10 #Time between cars before we split to separate clusters
+clusterthresh = 5 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars (used for density estimates in Surtrac queues, etc; changing this number doesn't change SUMO's behavior, just our model of it)
 timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this #NOTE: I'm pretty sure this used to be the timestep length in routing simulations, but I've since just started using SUMO with the default timestep of 1. timestep clearly is still in the code, but I'm not sure what it does anymore. Might need to change this if we ever go back to custom routing simulations
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
