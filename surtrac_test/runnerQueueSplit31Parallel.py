@@ -939,7 +939,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     if superclusterComplete:
                         if not didSomething:
                             print("Empty supercluster??")
-                            print(superclusters[superclusterphases])
+                            #print(superclusters[superclusterphases])
                             #Empty supercluster???
                             newschedule = deepcopy(startschedule)
                         newschedule[1][superclusterphases] += 1
