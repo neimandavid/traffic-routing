@@ -798,6 +798,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
                         if tempclusternum+1 <= clusterind:
                             #We've already processed this cluster, skip
+                            print("Already processed this cluster, skipping")
                             continue
 
                         ist = clusters[lane][clusterind]["arrival"] + fracSent*(clusters[lane][clusterind]["departure"]-clusters[lane][clusterind]["arrival"]) #Intended start time = cluster arrival time + fracSent of the total duration
@@ -832,6 +833,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                     #We've already processed part of this supercluster before having to switch the light due to maxDur
                                     #So skip this cluster, fit any other clusters we can in before the change, then stop
                                     superclusterComplete = False #Just in case the last cluster actually finished in time but then this one doesn't have time to start
+                                    print("Processed part of this cluster, switching light and skipping")
                                     continue
                                 
                                 newFirstSwitch = max(schedule[6] + surtracdata[light][phase]["minDur"], schedule[4]-mingap, simtime) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed. Except for first phase, which usually wants to switch 2.5s in the past if there's no clusters
