@@ -798,6 +798,8 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
                         if tempclusternum+1 <= clusterind:
                             #We've already processed this cluster, skip
+                            print(tempclusternum+1)
+                            print(clusterind)
                             print("Already processed this cluster, skipping")
                             continue
 
