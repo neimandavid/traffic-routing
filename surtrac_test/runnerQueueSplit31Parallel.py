@@ -774,6 +774,11 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     didSomething = False
 
                     newschedule = startschedule
+
+                    if len(superclusters[superclusterphases][superclusterind]) == 0:
+                        print("Actually empty supercluster??")
+                        #print(superclusters[superclusterphases])
+                        #Empty supercluster???
                     
                     for superclustersubind in range(len(superclusters[superclusterphases][superclusterind])):
                         cluster = superclusters[superclusterphases][superclusterind][superclustersubind][0] #Don't think I need this, can look this up off clusters as needed
@@ -938,7 +943,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     #We've now processed the entire supercluster
                     if superclusterComplete:
                         if not didSomething:
-                            print("Empty supercluster??")
+                            print("Allegedly empty supercluster??")
                             #print(superclusters[superclusterphases])
                             #Empty supercluster???
                             newschedule = deepcopy(startschedule)
