@@ -2620,10 +2620,11 @@ def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
                         lanepos = traci.vehicle.getLanePosition(vehicle)
                     except:
                         #Pretty sure this means we're off the network. So remove is being sketchy, but the except should be fine?
-                        print("Failing to look up adopter data")
-                        print(simtime)
-                        print(vehicle)
-                        print(laneDict[vehicle])
+                        if debugMode:
+                            print("Failing to look up adopter data")
+                            print(simtime)
+                            print(vehicle)
+                            print(laneDict[vehicle])
 
                         #Not sure what happened; pretend it's a non-adopter?
                         r = random.random()
