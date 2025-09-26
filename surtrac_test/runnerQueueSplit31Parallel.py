@@ -802,6 +802,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
                         #When we half-send a cluster, we update newScheduleStatus[lane] by adding some fraction
                         #clusterind is the floor of that, so it doesn't change
+                        #Idea is that clusterind is the next cluster to be processed. (It starts on 0, so the first cluster we process is cluster 0 on each lane)
                         #When we full-send a cluster we increase newScheduleStatus[lane] to the next int, so clusterind goes up by 1
                         #tempclusternum is the number of the cluster on the lane that we want to check, according to our superclusters list
                         #tempclusternum pulls from superclusters[superclusterphases][superclusterind][superclustersubind]
@@ -891,9 +892,14 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                         print("Cluster departing before arriving?")
                                 newScheduleStatus[lane] += (1-fracSent)*(tSent/dur) - 1 #In case a phase is so long we span two maxdurs. Ex: Previously sent 2/3 of a cluster, now sending 1/2 of what's left (since dur tracks what's left). Full fraction sent needs to increase by 1/2 * the 1/3 of the cluster we're working with. -1 to cancel the +1 we'll have from assuming we sent a full cluster
                                 if debugMode:
-                                    assert(math.floor(newScheduleStatus[lane]-1e-10) == clusterind-1)
+                                    #If nothing were sent, we want newScheduleStatus == clusterind-1 (the -1 is to cancel the +1 we'll do at the end of the loop)
+                                    #Since we're sending part of a cluster, newScheduleStatus[lane] should be strictly between clusterind-1 and clusterind
+                                    assert(newScheduleStatus[lane] > clusterind-1)
+                                    assert(newScheduleStatus[lane] < clusterind)
+                                    assert(math.floor(newScheduleStatus[lane]-1e-10) == clusterind-1) #TODO comment might be wrong: Should equal clusterind, but we have issues with floating-point precision, so drop it very slightly then floor and we should equal clusterind-1???
                                 #dur -= tSent
-                                superclusterComplete=False
+                                if newScheduleStatus[lane] < clusterind:
+                                    superclusterComplete=False
                         else:
                             newScheduleStatus[lane] = math.floor(newScheduleStatus[lane]) #Because we'll send whatever's left of the cluster
 
