@@ -812,11 +812,11 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         #So if the supercluster doesn't full clear, clusterind went up for any early clusters that did send, and then those early clusters register as already processed
                         if tempclusternum+1 <= clusterind:
                             #We've already processed this cluster, skip
-                            print(tempclusternum+1)
-                            print(clusterind)
-                            print(simtime)
-                            print(inRoutingSim)
-                            print("Already processed this cluster, skipping")
+                            # print(tempclusternum+1)
+                            # print(clusterind)
+                            # print(simtime)
+                            # print(inRoutingSim)
+                            # print("Already processed this cluster, skipping")
                             continue
 
                         ist = clusters[lane][clusterind]["arrival"] + fracSent*(clusters[lane][clusterind]["departure"]-clusters[lane][clusterind]["arrival"]) #Intended start time = cluster arrival time + fracSent of the total duration
