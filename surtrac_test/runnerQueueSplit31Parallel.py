@@ -967,11 +967,11 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
 
                     #We've now processed the entire supercluster
                     if superclusterComplete:
-                        if not didSomething:
+                        if debugMode and not didSomething:
                             print("Allegedly empty supercluster??")
                             #print(superclusters[superclusterphases])
                             #Empty supercluster???
-                            newschedule = deepcopy(startschedule)
+                            #newschedule = deepcopy(startschedule)
                         newschedule[1][superclusterphases] += 1
                     # else:
                     #     #Else we hit maxdur partway through and didn't send all clusters yet
