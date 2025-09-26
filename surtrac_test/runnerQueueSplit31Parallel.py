@@ -779,6 +779,9 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         print("Actually empty supercluster??")
                         #print(superclusters[superclusterphases])
                         #Empty supercluster???
+
+                    if len(superclusters[superclusterphases][superclusterind]) > 1:
+                        print("Multiple clusters in this supercluster, didn't expect this to happen")
                     
                     for superclustersubind in range(len(superclusters[superclusterphases][superclusterind])):
                         cluster = superclusters[superclusterphases][superclusterind][superclustersubind][0] #Don't think I need this, can look this up off clusters as needed
@@ -796,10 +799,22 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         fracSent = newScheduleStatus[lane] - clusterind
                         #If we're sending part of a cluster, we'll set the pst to the max, and then we'll be unable to send anything without switching
 
+
+                        #When we half-send a cluster, we update newScheduleStatus[lane] by adding some fraction
+                        #clusterind is the floor of that, so it doesn't change
+                        #When we full-send a cluster we increase newScheduleStatus[lane] to the next int, so clusterind goes up by 1
+                        #tempclusternum is the number of the cluster on the lane that we want to check, according to our superclusters list
+                        #tempclusternum pulls from superclusters[superclusterphases][superclusterind][superclustersubind]
+                        #superclustersubind just indexes into all the clusters in the supercluster. Should just be 1 cluster right now
+                        #superclusterind tells us which supercluster to process next. If that doesn't update, tempclusternum could be smaller than expected, which triggers "already processed"
+                        #superclusterind updates at the end, if superclusterComplete is True. This happens if no cluster gets stuck partially sending
+                        #So if the supercluster doesn't full clear, clusterind went up for any early clusters that did send, and then those early clusters register as already processed
                         if tempclusternum+1 <= clusterind:
                             #We've already processed this cluster, skip
                             print(tempclusternum+1)
                             print(clusterind)
+                            print(simtime)
+                            print(inRoutingSim)
                             print("Already processed this cluster, skipping")
                             continue
 
@@ -835,7 +850,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                     #We've already processed part of this supercluster before having to switch the light due to maxDur
                                     #So skip this cluster, fit any other clusters we can in before the change, then stop
                                     superclusterComplete = False #Just in case the last cluster actually finished in time but then this one doesn't have time to start
-                                    print("Processed part of this cluster, switching light and skipping")
+                                    print("Processed part of this supercluster, switching light and skipping")
                                     continue
                                 
                                 newFirstSwitch = max(schedule[6] + surtracdata[light][phase]["minDur"], schedule[4]-mingap, simtime) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed. Except for first phase, which usually wants to switch 2.5s in the past if there's no clusters
