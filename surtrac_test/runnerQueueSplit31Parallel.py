@@ -1858,8 +1858,9 @@ def run(network, rerouters, pSmart, verbose = True):
                 if len(oldEdgeStuff) > 0:
                     oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane. Might not actually be the adopter in question
                 else:
-                    print("In run(), vehicle arrived")
-                    print("Warning: Ran out of cars to remove on edge " + edgeDict[vehicle] + "!!!!!!!!!!!!!!!!!")
+                    if debugMode:
+                        print("In run(), vehicle arrived")
+                        print("Warning: Ran out of cars to remove on edge " + edgeDict[vehicle] + "!!!!!!!!!!!!!!!!!")
 
                 #Make sure we don't have a duplicate of this adopter on the last edge. If we do, make it a random car instead
                 if isSmart[vehicle]:
@@ -1889,8 +1890,9 @@ def run(network, rerouters, pSmart, verbose = True):
                         if len(oldEdgeStuff) > 0:
                             oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane. Might not actually be the adopter in question
                         else:
-                            print("In run(), vehicle changed roads")
-                            print("Warning: Ran out of cars to remove on edge " + edgeDict[id] + "!!!!!!!!!!!!!!!!!")
+                            if debugMode:
+                                print("In run(), vehicle changed roads")
+                                print("Warning: Ran out of cars to remove on edge " + edgeDict[id] + "!!!!!!!!!!!!!!!!!")
 
                         #Make sure we don't have a duplicate of this adopter on the last edge. If we do, make it a random car instead
                         if isSmart[id]:
@@ -3675,8 +3677,9 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             if len(oldEdgeStuff) > 0:
                                 oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane
                             else:
-                                print("In rerouteSUMOGC(), making space for initial ghost cars")
-                                print("Warning: Ran out of cars to remove on edge " + edgeDict3[vehicle] + "!!!!!!!!!!!!!!!!!")
+                                if debugMode:
+                                    print("In rerouteSUMOGC(), making space for initial ghost cars")
+                                    print("Warning: Ran out of cars to remove on edge " + edgeDict3[vehicle] + "!!!!!!!!!!!!!!!!!")
 
                             #If we deleted the wrong car, rename the "correct" version of the thing we just deleted
                             if tempveh in isSmart and isSmart[tempveh]:
@@ -3843,8 +3846,9 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                             oldEdgeStuff.pop(0) #Pop oldest from old road, don't care from which lane
                             #TODO what if this deletes an adopter? Actual adopter shows up later and fixes itself?
                         else:
-                            print("In rerouteSUMOGC(), vehicle changed roads")
-                            print("Warning: Ran out of cars to remove on edge " + edgeDict3[id] + "!!!!!!!!!!!!!!!!!")
+                            if debugMode:
+                                print("In rerouteSUMOGC(), vehicle changed roads")
+                                print("Warning: Ran out of cars to remove on edge " + edgeDict3[id] + "!!!!!!!!!!!!!!!!!")
 
                         #If we didn't delete the "correct" vehicle, rename the non-deleted copy to some generic non-adopter
                         if id in isSmart and isSmart[id]:
