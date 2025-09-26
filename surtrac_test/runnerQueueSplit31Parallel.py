@@ -755,7 +755,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
             for superclusterphases in superclusters:
 
                 superclusterind = math.floor(newScheduleStatus[superclusterphases])
-                if superclusterind == len(superclusters[superclusterphases]):
+                if superclusterind >= len(superclusters[superclusterphases]):
                     continue #No more superclusters to send in this phase set
 
                 try:
