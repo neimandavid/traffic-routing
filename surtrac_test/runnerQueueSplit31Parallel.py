@@ -3478,13 +3478,13 @@ def prepGhostCars(VOIs, id, ghostcarlanes, spawnLeft, ghostcardata, simtime):
                         newspeed = min(13, oldspeed)
                         ghostcardata[simtime+leftdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
                     elif abs(getDTheta(lane.split("_")[0], nextlane.split("_")[0])) < 0.1: #Straight
-                        straightdelay = 3
+                        straightdelay = 0#3
                         if not simtime + straightdelay in ghostcardata:
                             ghostcardata[simtime+straightdelay] = []
                         newspeed = min(13, oldspeed)
                         ghostcardata[simtime+straightdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
                     else: #Right turn or weird intersection
-                        rightdelay = 5
+                        rightdelay = 0#5
                         if not simtime + rightdelay in ghostcardata:
                             ghostcardata[simtime+rightdelay] = []
                         newspeed = min(10, oldspeed)

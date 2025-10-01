@@ -208,18 +208,18 @@ for w in ["Runtime", "NTeleports"]:
         ax.fill_between(repx, repy - thickness, repy + thickness, label=w)
 
         #Text box code from: https://matplotlib.org/3.3.4/gallery/recipes/placing_text_boxes.html
-        s = "Unknown stuff, help!"
-        if v == "":
-            s = "[time leaving] - [time entering] - [minimum route time]"
-        if v == "2":
-            s = "[time leaving] - [time at first reroute] - [minimum route time]"
-        if v == "3":
-            s = "[time leaving] - [time at first intersection] - [minimum route time]"
-        if v == "0":
-            s = "[time leaving] - [intended time entering] - [minimum route time]"
-        # these are matplotlib.patch.Patch properties
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.05, 1, s, transform = ax.transAxes, fontsize=8, verticalalignment='top', bbox=props)
+        # s = "Unknown stuff, help!"
+        # if v == "":
+        #     s = "[time leaving] - [time entering] - [minimum route time]"
+        # if v == "2":
+        #     s = "[time leaving] - [time at first reroute] - [minimum route time]"
+        # if v == "3":
+        #     s = "[time leaving] - [time at first intersection] - [minimum route time]"
+        # if v == "0":
+        #     s = "[time leaving] - [intended time entering] - [minimum route time]"
+        # # these are matplotlib.patch.Patch properties
+        # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        # ax.text(0.05, 1, s, transform = ax.transAxes, fontsize=8, verticalalignment='top', bbox=props)
         ax.text(0, 1.1, sys.argv[1], transform = ax.transAxes, fontsize=8)
 
         plt.xlabel("Adoption Probability")
