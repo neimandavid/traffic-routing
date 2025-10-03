@@ -3507,7 +3507,7 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDi
             #Check anytime routing. Hopefully this is one road ahead of checking when the vehicle leaves each edge
             if nextlane.split("_")[0] in endroute:
                 newstartind = endroute.index(nextlane.split("_")[0])
-                reroutedata[startvehicle] = [oldroute+tuple(endroute[newstartind+1:]), -1]
+                reroutedata[startvehicle] = [tuple(oldroute)+tuple(endroute[newstartind+1:]), -1]
                 endroute = endroute[newstartind+1:]
 
             if not touchNothing:
