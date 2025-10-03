@@ -3949,15 +3949,15 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         return reroutedata[startvehicle]
 
                     #Else if we've found something new on the initial route, update the first part of the route at least (because anytime routing)
-                    if VOIs[id][0].split("_")[0] in endroute:
-                        print("WARNING: Updating anytime routing as we leave an edge; this should've triggered in spawnGhostCars instead???")
-                        print(startvehicle)
-                        print(VOIs[id][0].split("_")[0])
-                        print(endroute)
-                        print(startroute)
-                        newstartind = endroute.index(VOIs[id][0].split("_")[0])
-                        reroutedata[startvehicle] = [tuple(VOIs[id][3])+tuple(endroute[newstartind+1:]), -1]
-                        endroute = endroute[newstartind+1:]
+                    # if VOIs[id][0].split("_")[0] in endroute:
+                    #     print("WARNING: Updating anytime routing as we leave an edge; this should've triggered in spawnGhostCars instead???")
+                    #     print(startvehicle)
+                    #     print(VOIs[id][0].split("_")[0])
+                    #     print(endroute)
+                    #     print(startroute)
+                    #     newstartind = endroute.index(VOIs[id][0].split("_")[0])
+                    #     reroutedata[startvehicle] = [tuple(VOIs[id][3])+tuple(endroute[newstartind+1:]), -1]
+                    #     endroute = endroute[newstartind+1:]
 
 
                     #If we still need to spawn non-left copies (presumably we're in the intersection), do that
