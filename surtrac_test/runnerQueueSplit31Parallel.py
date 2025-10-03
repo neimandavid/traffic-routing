@@ -2448,7 +2448,8 @@ def dumpIntersectionDataFun(intersectionData):
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
 #@profile
-def loadClusters(simtime, VOI=None):
+#Arguments unused; nonExitEdgeDetections is there for consistency with loadClustersDetectors, and VOI was from when I'd wanted to try artificially adding noise to the non-VOIs
+def loadClusters(simtime, nonExitEdgeDetections3=None, VOI=None):
     global totalLoadCars
     global nVehicles
     #Load locations of cars and current traffic light states into custom data structures
@@ -3490,9 +3491,9 @@ def prepGhostCars(VOIs, id, ghostcarlanes, spawnLeft, ghostcardata, simtime):
                         newspeed = min(10, oldspeed)
                         ghostcardata[simtime+rightdelay].append([newghostcar, nextlane, newspeed, ghostcarpos, oldroute])
 
-def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDict2, nonExitEdgeDetections, dontReRemove2):
+def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDict2, nonExitEdgeDetections, dontReRemove2, startvehicle, reroutedata, endroute):
     carcardist = 15 #TODO: Don't hard-code this in two different places in code!!! (Actually, maybe fine, other one might need a gap on both sides?)
-    replaceExistingCar = False #TODO would turning this on help??
+    replaceExistingCar = False
     touchNothing = False #WARNING: Setting this to True triggers the missing VOI sanity check, likely due to VOIs not actually being inserted on time. That said, I don't actually understand why, given it should still add to the VOIs list, unless it starts teleporting to its goal immediately or something weird
 
     if not simtime in ghostcardata:
@@ -3502,6 +3503,12 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDi
         if not nextlane in ghostcarlanes:
             replacedCar = False
             ghostcarlanes.append(nextlane)
+
+            #Check anytime routing. Hopefully this is one road ahead of checking when the vehicle leaves each edge
+            if nextlane.split("_")[0] in endroute:
+                newstartind = endroute.index(nextlane.split("_")[0])
+                reroutedata[startvehicle] = [oldroute+tuple(endroute[newstartind+1:]), -1]
+                endroute = endroute[newstartind+1:]
 
             if not touchNothing:
                 #Actually add the new ghost car
@@ -3558,6 +3565,7 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDi
     return dontReRemove2
 
 #@profile
+#This is the main routing simulation function. It gets run in a thread when we need a new simulation, and stops early as needed
 def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchtimes, sumoPredClusters3, lightphases, simtime, reroutedata):
     global nRoutingCalls
     global nSuccessfulRoutingCalls
@@ -3572,7 +3580,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
     startedge = startlane.split("_")[0]
     startind = startroute.index(startedge)
     startroute = startroute[startind:]
-    endroute = startroute[startind:]
+    endroute = startroute[startind+1:] #I don't care to immediately trigger anytime routing just to refresh the starting data
     goaledge = startroute[-1]
     reroutedata[startvehicle] = [startroute, -1] #We'll overwrite this if we don't timeout first
 
@@ -3942,11 +3950,17 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
 
                     #Else if we've found something new on the initial route, update the first part of the route at least (because anytime routing)
                     if VOIs[id][0].split("_")[0] in endroute:
+                        print("WARNING: Updating anytime routing as we leave an edge; this should've triggered in spawnGhostCars instead???")
+                        print(startvehicle)
+                        print(VOIs[id][0].split("_")[0])
+                        print(endroute)
                         newstartind = endroute.index(VOIs[id][0].split("_")[0])
                         reroutedata[startvehicle] = [tuple(VOIs[id][3])+tuple(endroute[newstartind+1:]), -1]
                         endroute = endroute[newstartind+1:]
 
+
                     #If we still need to spawn non-left copies (presumably we're in the intersection), do that
+                    #TODO this might be bad with internal intersection edges removed, but I don't have a convenient way to distinguish "waiting on opposing traffic" from "waiting on red light"
                     if VOIs[id][5]:
                         VOIs[id][5] = False #Don't repeatedly spawn these - ghostcarlanes should sort this, though
                         prepGhostCars(VOIs, id, ghostcarlanes, False, ghostcardata, simtime)
@@ -3979,25 +3993,25 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     VOIs[id][2] = traci.vehicle.getSpeed(id)
 
         #TODO: We handle removing arrived vehicles from edgeDict3 and laneDict3 above, should maybe group this with that. But make sure we don't break stuff first
-        for id in temp: #temp is the getArrivedList, so anything that left the network
-            if id in VOIs:
-                #If we've successfully exited the goal edge, we're done
-                if VOIs[id][0].split("_")[0] == goaledge:
-                    if not useLibsumo:
-                        traci.switch("main")
-                    nSuccessfulRoutingCalls += 1
-                    routingTime += time.time() - routestartwctime
-                    reroutedata[startvehicle] = [VOIs[id][3], simtime - starttime]
-                    return reroutedata[startvehicle]
+        #Actually, pretty sure we do literally this in the tempVOIs loop above, let's see if removing it breaks anything
+        #Hopefully this was code from an earlier version that never got removed
+        # for id in temp: #temp is the getArrivedList, so anything that left the network
+        #     if id in VOIs:
+        #         #If we've successfully exited the goal edge, we're done
+        #         if VOIs[id][0].split("_")[0] == goaledge:
+        #             if not useLibsumo:
+        #                 traci.switch("main")
+        #             nSuccessfulRoutingCalls += 1
+        #             routingTime += time.time() - routestartwctime
+        #             reroutedata[startvehicle] = [VOIs[id][3], simtime - starttime]
+        #             return reroutedata[startvehicle]
 
-                toDelete.append(id)
-                #TODO: Why are we prepping new ghost cars? I'd think there's just nothing to spawn? (Might've been from back when we said the leftmost road had to actually be on the left)
-                #prepGhostCars(VOIs, id, ghostcarlanes, network, False, ghostcardata, simtime) #NOTE: Since the vehicle left the network, there must be no left edge, so no need to spawn left turn cars
-        
+        #         toDelete.append(id)
+
         for id in toDelete:
             VOIs.pop(id)
 
-        dontReRemove = spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict3, edgeDict3, nonExitEdgeDetections2, dontReRemove)
+        dontReRemove = spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict3, edgeDict3, nonExitEdgeDetections2, dontReRemove, startvehicle, reroutedata, endroute)
 
         #Light logic for Surtrac, etc.
 
@@ -4011,7 +4025,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     sumoPredCluters3 = None
                 else:
                     print("Using predicted clusters for routing Surtrac")
-                surtracDict[simtime] = doSurtrac(simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters3, True, nonExitEdgeDetections2)
+                surtracDict[simtime] = doSurtrac(simtime, None, testSUMOlightphases, lastSwitchTimes, sumoPredClusters3, True, deepcopy(nonExitEdgeDetections2))
             # else:
             #     print("Reusing Surtrac, yay!")
 
