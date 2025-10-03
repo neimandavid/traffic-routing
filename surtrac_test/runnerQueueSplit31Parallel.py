@@ -3992,22 +3992,19 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                 else:
                     VOIs[id][1] = traci.vehicle.getLanePosition(id)
                     VOIs[id][2] = traci.vehicle.getSpeed(id)
+            else:
+                #VOI has left the network
+                #NOTE: This is checking if the VOI left the network, as opposed to turning from the goal edge to somewhere else. We need both cases.
+                #If we've successfully exited the goal edge, we're done
+                if VOIs[id][0].split("_")[0] == goaledge:
+                    if not useLibsumo:
+                        traci.switch("main")
+                    nSuccessfulRoutingCalls += 1
+                    routingTime += time.time() - routestartwctime
+                    reroutedata[startvehicle] = [VOIs[id][3], simtime - starttime]
+                    return reroutedata[startvehicle]
 
-        #TODO: We handle removing arrived vehicles from edgeDict3 and laneDict3 above, should maybe group this with that. But make sure we don't break stuff first
-        #Actually, pretty sure we do literally this in the tempVOIs loop above, let's see if removing it breaks anything
-        #Hopefully this was code from an earlier version that never got removed
-        # for id in temp: #temp is the getArrivedList, so anything that left the network
-        #     if id in VOIs:
-        #         #If we've successfully exited the goal edge, we're done
-        #         if VOIs[id][0].split("_")[0] == goaledge:
-        #             if not useLibsumo:
-        #                 traci.switch("main")
-        #             nSuccessfulRoutingCalls += 1
-        #             routingTime += time.time() - routestartwctime
-        #             reroutedata[startvehicle] = [VOIs[id][3], simtime - starttime]
-        #             return reroutedata[startvehicle]
-
-        #         toDelete.append(id)
+                toDelete.append(id)
 
         for id in toDelete:
             VOIs.pop(id)
