@@ -3562,7 +3562,7 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDi
             if not leftedge == None:
                 traci.vehicle.setRoute(newghostcar, [nextedge, leftedge])
             VOIs[newghostcar] = [nextlane, newspeed, ghostcarpos, oldroute+[nextedge], leftedge, True]
-    return dontReRemove2
+    return (dontReRemove2, endroute)
 
 #@profile
 #This is the main routing simulation function. It gets run in a thread when we need a new simulation, and stops early as needed
@@ -4009,7 +4009,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         for id in toDelete:
             VOIs.pop(id)
 
-        dontReRemove = spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict3, edgeDict3, nonExitEdgeDetections2, dontReRemove, startvehicle, reroutedata, endroute)
+        (dontReRemove, endroute) = spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict3, edgeDict3, nonExitEdgeDetections2, dontReRemove, startvehicle, reroutedata, endroute)
 
         #Light logic for Surtrac, etc.
 
