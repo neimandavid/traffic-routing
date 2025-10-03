@@ -88,7 +88,7 @@ sumoconfig = None
 pSmart = 1.0 #Adoption probability
 useLastRNGState = False #To rerun the last simulation without changing the seed on the random number generator
 
-clusterthresh = 5 #Time between cars before we split to separate clusters
+clusterthresh = 10 #Time between cars before we split to separate clusters
 mingap = 2.5 #Minimum allowed space between cars (used for density estimates in Surtrac queues, etc; changing this number doesn't change SUMO's behavior, just our model of it)
 timestep = 1 #Amount of time between updates. In practice, mingap rounds up to the nearest multiple of this #NOTE: I'm pretty sure this used to be the timestep length in routing simulations, but I've since just started using SUMO with the default timestep of 1. timestep clearly is still in the code, but I'm not sure what it does anymore. Might need to change this if we ever go back to custom routing simulations
 detectordist = 50 #How far before the end of a road the detectors that trigger reroutes are
@@ -1312,8 +1312,9 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                 bestschedule[7][0] -= (simtime - lastswitchtimes[light])
             bestschedules[light] = bestschedule
         else:
-            print(light)
-            print("No schedules anywhere? That shouldn't happen...")
+            if debugMode:
+                print(light)
+                print("No schedules anywhere? That shouldn't happen...")
 
 
             
@@ -3347,8 +3348,8 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
                     if multithreadRouting:
                         #We're near the intersection and should stop routing
                         routingthreads[vehicle].join(timeout=0)
-                        if routingthreads[vehicle].is_alive():
-                            print("Stopping routing for vehicle " + vehicle)
+                        if routingthreads[vehicle].is_alive() and debugMode:
+                            print("Stopping routing early for vehicle " + vehicle)
                         stopDict[vehicle] = True
                         routingthreads[vehicle].terminate()
                     else:
