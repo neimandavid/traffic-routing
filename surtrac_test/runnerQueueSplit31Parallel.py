@@ -2786,12 +2786,12 @@ def generate_additionalfile(sumoconfig, networkfile):
     if useLibsumo:
         traci.start([checkBinary('sumo'), "-c", sumoconfig,
                                     "--start", "--no-step-log", "true",
-                                    "--xml-validation", "never", "--nowarnings", "true", "--quit-on-end"])
+                                    "--xml-validation", "never", "--no-warnings", "true", "--quit-on-end"])
     else:
         try:
             traci.start([checkBinary('sumo'), "-c", sumoconfig,
                                     "--start", "--no-step-log", "true",
-                                    "--xml-validation", "never", "--nowarnings", "true", "--quit-on-end"], label="setup")
+                                    "--xml-validation", "never", "--no-warnings", "true", "--quit-on-end"], label="setup")
         except:
             #Worried about re-calling this without old setup instance being removed
 
@@ -2799,7 +2799,7 @@ def generate_additionalfile(sumoconfig, networkfile):
             traci.switch("setup")
             traci.load(["-c", sumoconfig,
                                     "--start", "--no-step-log", "true",
-                                    "--xml-validation", "never", "--nowarnings", "true", "--quit-on-end"])
+                                    "--xml-validation", "never", "--no-warnings", "true", "--quit-on-end"])
             pass
 
     net = sumolib.net.readNet(networkfile)
@@ -2980,25 +2980,25 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
         traci.load(["-c", sumoconfig,
                                 "--additional-files", "additional_autogen.xml",
                                 "--no-step-log", "true",
-                                "--log", "LOGFILE", "--xml-validation", "never", "--start", "--nowarnings", "true", "--quit-on-end"])
+                                "--log", "LOGFILE", "--xml-validation", "never", "--start", "--no-warnings", "true", "--quit-on-end"])
     else:
         try:
             if noGUI:
                 traci.start([checkBinary('sumo'), "-c", sumoconfig,
                                         "--additional-files", "additional_autogen.xml",
                                         "--no-step-log", "true",
-                                        "--log", "LOGFILE", "--xml-validation", "never", "--start", "--nowarnings", "true", "--quit-on-end"], label="main")
+                                        "--log", "LOGFILE", "--xml-validation", "never", "--start", "--no-warnings", "true", "--quit-on-end"], label="main")
             else:
                 traci.start([sumoBinary, "-c", sumoconfig,
                                     "--additional-files", "additional_autogen.xml",
                                     "--no-step-log", "true",
-                                    "--log", "LOGFILE", "--xml-validation", "never", "--start", "--nowarnings", "true", "--quit-on-end"], label="main")
+                                    "--log", "LOGFILE", "--xml-validation", "never", "--start", "--no-warnings", "true", "--quit-on-end"], label="main")
             #Second simulator for running tests. No GUI
             #traci.start([sumoBinary, "-c", sumoconfig, #GUI in case we need to debug
             traci.start([checkBinary('sumo'), "-c", sumoconfig, #No GUI
                                     "--additional-files", "additionalrouting_autogen.xml",
                                     "--start", "--no-step-log", "true",
-                                    "--xml-validation", "never", "--nowarnings", "true", "--quit-on-end",
+                                    "--xml-validation", "never", "--no-warnings", "true", "--quit-on-end",
                                     "--step-length", "1"], label="test")
             dontBreakEverything()
         except:
@@ -3009,14 +3009,14 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
                                     "--additional-files", "additional_autogen.xml",
                                     "--no-step-log", "true",
                                     #"--time-to-teleport", "-1",
-                                    "--log", "LOGFILE", "--xml-validation", "never", "--start", "--nowarnings", "true", "--quit-on-end"])
+                                    "--log", "LOGFILE", "--xml-validation", "never", "--start", "--no-warnings", "true", "--quit-on-end"])
             if not useLibsumo:
                 traci.switch("test")
             traci.load([ "-c", sumoconfig,
                                     "--additional-files", "additionalrouting_autogen.xml",
                                     "--no-step-log", "true",
                                     #"--time-to-teleport", "-1",
-                                    "--log", "LOGFILE", "--xml-validation", "never", "--start", "--nowarnings", "true", "--quit-on-end"])
+                                    "--log", "LOGFILE", "--xml-validation", "never", "--start", "--no-warnings", "true", "--quit-on-end"])
             dontBreakEverything()
 
     
@@ -3624,7 +3624,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
         #Apparently the new thread just comes with a copy of the old simulation - don't need to do this at all?
         # traci.start([checkBinary('sumo'), "-c", sumoconfig,
         #                         "--additional-files", "additional_autogen.xml",
-        #                         "--log", "LOGFILE", "--xml-validation", "never", "--start", "--nowarnings", "true", "--quit-on-end"])
+        #                         "--log", "LOGFILE", "--xml-validation", "never", "--start", "--no-warnings", "true", "--quit-on-end"])
         (remainingDuration, lastSwitchTimes, sumoPredClusters3, testSUMOlightphases, edgeDict3, laneDict3) = loadStateInfo(savename, simtime)
     else:
         traci.switch("test")
@@ -4187,7 +4187,7 @@ def loadStateInfoDetectors(prevedge, simtime):
     #Purge all vehicles
     traci.load(["-n", netfile,
                                 "--additional-files", "additional_autogen.xml", "--no-step-log", "true",
-                                "--log", "LOGFILE", "--xml-validation", "never", "--start", "--nowarnings", "true", "--quit-on-end"])
+                                "--log", "LOGFILE", "--xml-validation", "never", "--start", "--no-warnings", "true", "--quit-on-end"])
 
     totallanedata = dict()
     for edge in nonExitEdgeDetections: #Assuming exit lanes don't matter since they shouldn't have traffic - this saves us from extra exit detectors at their ends
