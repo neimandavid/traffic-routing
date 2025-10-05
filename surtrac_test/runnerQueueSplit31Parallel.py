@@ -1387,8 +1387,12 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
         #if clustersCache == None: #This scares me, let's not cache for now. Probably not the slow part here anyway
         totalLoadRuns += 1
         loadStart = time.time()
-        if inRoutingSim and not detectorRoutingSurtrac: #Only use the detector model for Surtrac if we're not routing
-            clustersCache = loadClusters(simtime, nonExitEdgeDetections4)
+        if inRoutingSim:
+            if detectorRoutingSurtrac: #Only use the detector model for Surtrac if we're not routing
+                clustersCache = loadClustersDetectors(simtime, nonExitEdgeDetections4)
+            else:
+                clustersCache = loadClusters(simtime, nonExitEdgeDetections4)
+
         else:
             if detectorSurtrac:
                 clustersCache = loadClustersDetectors(simtime, nonExitEdgeDetections4) #This at least grabs the same vehicles as standard loadClusters, including ungrabbing them once they hit an exit road. Positions are probably slightly inaccurate, though, since this uses a detector model
