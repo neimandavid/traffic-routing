@@ -139,6 +139,10 @@ def main(sumoconfigs):
 
     if resetNN:
         print("Archiving old models.")
+
+        if not os.path.isdir("models/Archive"):
+            print("No archive folder found, creating")
+            os.mkdir("models/Archive")
         
         for light in ["light"] + lights:
             try:
