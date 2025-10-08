@@ -121,7 +121,7 @@ crossEntropyLoss = True
 detectorModel = True #REMINDER: As currently implemented, turning this on makes even 0% and 100% routing non-deterministic, as we're guessing lanes for vehicles before running Surtrac
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
-detectorRoutingSurtrac = False #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
+detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
 adopterComms = True #Whether adopters communicate their positions when using the detector model
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
@@ -488,7 +488,8 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
         for clusterind in range(len(clusters[lane])):
             if clusterind >= maxnclusters:
-                print("Warning: Too many clusters on " + str(lane) + ", ignoring the last ones")
+                if debugMode:
+                    print("Warning: Too many clusters on " + str(lane) + ", ignoring the last ones")
                 break
             try:
                 clusterdata[((roadind*maxnlanes+laneind)*maxnclusters+clusterind)*ndatapercluster : ((roadind*maxnlanes+laneind)*maxnclusters+clusterind+1)*ndatapercluster] = [(clusters[lane][clusterind]["arrival"]-simtime)/60, (clusters[lane][clusterind]["departure"]-simtime)/60, (clusters[lane][clusterind]["weight"])/20]
@@ -3928,7 +3929,7 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
             print(startvehicle)
             print(startedge)
             print(goaledge)
-            OHNOADOPTERSWENTPOOF #Should throw an error
+            raise Exception("OHNOADOPTERSWENTPOOF") #Should throw an error
             assert(False) #In case it doesn't somehow
 
         #Check if VOIs got teleported. If so, problem, abort
