@@ -780,14 +780,6 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                     didSomething = False
 
                     newschedule = startschedule
-
-                    if len(superclusters[superclusterphases][superclusterind]) == 0:
-                        print("Actually empty supercluster??")
-                        #print(superclusters[superclusterphases])
-                        #Empty supercluster???
-
-                    if len(superclusters[superclusterphases][superclusterind]) > 1:
-                        print("Multiple clusters in this supercluster, didn't expect this to happen")
                     
                     for superclustersubind in range(len(superclusters[superclusterphases][superclusterind])):
                         cluster = superclusters[superclusterphases][superclusterind][superclustersubind][0] #Don't think I need this, can look this up off clusters as needed
@@ -818,11 +810,6 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                         #So if the supercluster doesn't full clear, clusterind went up for any early clusters that did send, and then those early clusters register as already processed
                         if tempclusternum+1 <= clusterind:
                             #We've already processed this cluster, skip
-                            # print(tempclusternum+1)
-                            # print(clusterind)
-                            # print(simtime)
-                            # print(inRoutingSim)
-                            # print("Already processed this cluster, skipping")
                             continue
 
                         ist = clusters[lane][clusterind]["arrival"] + fracSent*(clusters[lane][clusterind]["departure"]-clusters[lane][clusterind]["arrival"]) #Intended start time = cluster arrival time + fracSent of the total duration
@@ -857,7 +844,6 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                                     #We've already processed part of this supercluster before having to switch the light due to maxDur
                                     #So skip this cluster, fit any other clusters we can in before the change, then stop
                                     superclusterComplete = False #Just in case the last cluster actually finished in time but then this one doesn't have time to start
-                                    print("Processed part of this supercluster, switching light and skipping")
                                     continue
                                 
                                 newFirstSwitch = max(schedule[6] + surtracdata[light][phase]["minDur"], schedule[4]-mingap, simtime) #Because I'm adding mingap after all clusters, but here the next cluster gets delayed. Except for first phase, which usually wants to switch 2.5s in the past if there's no clusters
@@ -3348,7 +3334,6 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
             if isSmart[vehicle]:
                 try:
                     
-                    #routingresults[vehicle] = manager.list([None, None])
 
                     if multithreadRouting:
                         #We're near the intersection and should stop routing
@@ -3959,18 +3944,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                         reroutedata[startvehicle] = [VOIs[id][3], simtime - starttime]
                         return reroutedata[startvehicle]
 
-                    #Else if we've found something new on the initial route, update the first part of the route at least (because anytime routing)
-                    # if VOIs[id][0].split("_")[0] in endroute:
-                    #     print("WARNING: Updating anytime routing as we leave an edge; this should've triggered in spawnGhostCars instead???")
-                    #     print(startvehicle)
-                    #     print(VOIs[id][0].split("_")[0])
-                    #     print(endroute)
-                    #     print(startroute)
-                    #     newstartind = endroute.index(VOIs[id][0].split("_")[0])
-                    #     reroutedata[startvehicle] = [tuple(VOIs[id][3])+tuple(endroute[newstartind+1:]), -1]
-                    #     endroute = endroute[newstartind+1:]
-
-
                     #If we still need to spawn non-left copies (presumably we're in the intersection), do that
                     #TODO this might be bad with internal intersection edges removed, but I don't have a convenient way to distinguish "waiting on opposing traffic" from "waiting on red light"
                     if VOIs[id][5]:
@@ -4016,7 +3989,6 @@ def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchti
                     return reroutedata[startvehicle]
 
                 toDelete.append(id)
-
         for id in toDelete:
             VOIs.pop(id)
 

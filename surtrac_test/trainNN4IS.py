@@ -46,7 +46,7 @@ if superResetTrainingData:
     resetTrainingData2 = True
 #UPDATE: Turns out appendTrainingData (there) gets updated automatically, as does noNNInMain
 #Also, Surtrac network architecture works for FTPs as well
-#So just make sure resetTrainingData=False, testDumbtrac and FTP are correct, and surtracFreq = 1ish (all in runnerQueueSplitWhatever)
+#So just make sure resetTrainingData=False; comms, testDumbtrac, and FTP are correct; and surtracFreq = 1ish (all in runnerQueueSplitWhatever)
 
 crossEntropyLoss = True #NOTE: We're just always assuming training data is MSE s.t. we can always reuse it
 
