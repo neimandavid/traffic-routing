@@ -127,6 +127,7 @@ adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
 
 simspeedfactor = 1 #How much slower than real-time we want this to run. 1 for real-time, 2 for twice as slow, etc.
+#Can set simspeedfactor to something crazy high (like 1000) if you never want the routing to time out early
 
 clusterStats = False #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
 clusterNumsStats = []
@@ -1447,10 +1448,11 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                     # if not (simtime - lastswitchtimes[light] >= surtracdata[light][curphase]["minDur"] and simtime - lastswitchtimes[light] <= surtracdata[light][curphase]["maxDur"]+timestep):
                     #     print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]))
 
-                    if simtime - lastswitchtimes[light] < surtracdata[light][curphase]["minDur"]:
-                        print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]) + " but min duration " + str(surtracdata[light][curphase]["minDur"]))
-                    if simtime - lastswitchtimes[light] > surtracdata[light][curphase]["maxDur"]+timestep:
-                        print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]) + " but max duration " + str(surtracdata[light][curphase]["maxDur"]))
+                    if debugMode:
+                        if simtime - lastswitchtimes[light] < surtracdata[light][curphase]["minDur"]:
+                            print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]) + " but min duration " + str(surtracdata[light][curphase]["minDur"]))
+                        if simtime - lastswitchtimes[light] > surtracdata[light][curphase]["maxDur"]+timestep:
+                            print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]) + " but max duration " + str(surtracdata[light][curphase]["maxDur"]))
 
                     lightphases[light] = (curphase+1)%nPhases #This would change the light if we're in routing sim
                     lastswitchtimes[light] = simtime
