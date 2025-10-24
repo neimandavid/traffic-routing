@@ -1862,18 +1862,19 @@ def run(network, rerouters, pSmart, verbose = True):
                     if (theta1-theta0+math.pi)%(2*math.pi)-math.pi > 0:
                         leftDict[id] += 1
 
-                    #Start routing sim for vehicles on a new road
-                    if multithreadRouting and id in isSmart and isSmart[id]:
-                        saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
-                        startroute = traci.vehicle.getRoute(id)
-                        startind = startroute.index(newlane.split("_")[0])
-                        startroute = startroute[startind:]
-                        if id in routingthreads:
-                            routingthreads[id].terminate()
-                        routingresults[id] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
-                        stopDict[id] = False
-                        routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults))
-                        routingthreads[id].start()
+                    #Pretty sure this was erroneously back-copied from 31Parallel
+                    # #Start routing sim for vehicles on a new road
+                    # if multithreadRouting and id in isSmart and isSmart[id]:
+                    #     saveStateInfo(savename, remainingDuration, mainlastswitchtimes, sumoPredClusters, lightphases)
+                    #     startroute = traci.vehicle.getRoute(id)
+                    #     startind = startroute.index(newlane.split("_")[0])
+                    #     startroute = startroute[startind:]
+                    #     if id in routingthreads:
+                    #         routingthreads[id].terminate()
+                    #     routingresults[id] = manager.list([startroute, -1]) #Initialize this to whatever we'd expect if we had a really bad timeout
+                    #     stopDict[id] = False
+                    #     routingthreads[id] = Process(target=rerouteSUMOGC, args=(id, newlane, remainingDuration, mainlastswitchtimes, deepcopy(sumoPredClusters), lightphases, simtime, routingresults))
+                    #     routingthreads[id].start()
 
                 laneDict[id] = newlane
                 edgeDict[id] = newloc
