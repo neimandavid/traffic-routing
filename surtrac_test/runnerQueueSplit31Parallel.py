@@ -1743,33 +1743,33 @@ def run(network, rerouters, pSmart, verbose = True):
         simtime += 1
         traci.simulationStep() #Tell the simulator to simulate the next time step
         
-        if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
-            #time.sleep(0.5)
-            # if time.time() - tstart < simspeedfactor*simtime:
-            #     print("We're ahead of schedule!")
+        # if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
+        #     #time.sleep(0.5)
+        #     # if time.time() - tstart < simspeedfactor*simtime:
+        #     #     print("We're ahead of schedule!")
 
-            #This loop is wasting time and checking if there's any routing simulations worth waiting on
-            while time.time() - tstart < simspeedfactor*simtime: #Use tstart2 if we want to not "save up" time on easy parts
-                pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
+        #     #This loop is wasting time and checking if there's any routing simulations worth waiting on
+        #     while time.time() - tstart < simspeedfactor*simtime: #Use tstart2 if we want to not "save up" time on easy parts
+        #         pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
 
-                #End early if no routing is running, no point waiting on nothing
-                noThreadsRunning = True
-                for vehicle in routingthreads:
+        #         #End early if no routing is running, no point waiting on nothing
+        #         noThreadsRunning = True
+        #         for vehicle in routingthreads:
 
-                    #Timeout more often
-                    if time.time() - tstart >= simspeedfactor*simtime:
-                        #noThreadsRunning = False
-                        #We're behind schedule and don't care if anything's running, break early and continue main sim
-                        break
+        #             #Timeout more often
+        #             if time.time() - tstart >= simspeedfactor*simtime:
+        #                 #noThreadsRunning = False
+        #                 #We're behind schedule and don't care if anything's running, break early and continue main sim
+        #                 break
 
-                    #routingthreads[vehicle].join(timeout=0)
-                    if routingthreads[vehicle].is_alive():
-                        noThreadsRunning = False
-                        break
+        #             #routingthreads[vehicle].join(timeout=0)
+        #             if routingthreads[vehicle].is_alive():
+        #                 noThreadsRunning = False
+        #                 break
 
-                if noThreadsRunning:
-                    #tstart2 = max(tstart2, time.time() - simspeedfactor*simtime) #Move tstart2 forward so it looks like we're exactly on schedule
-                    break
+        #         if noThreadsRunning:
+        #             #tstart2 = max(tstart2, time.time() - simspeedfactor*simtime) #Move tstart2 forward so it looks like we're exactly on schedule
+        #             break
 
         if debugMode:
             assert(simtime == traci.simulation.getTime())
