@@ -1747,6 +1747,8 @@ def run(network, rerouters, pSmart, verbose = True):
             #time.sleep(0.5)
             # if time.time() - tstart < simspeedfactor*simtime:
             #     print("We're ahead of schedule!")
+
+            #This loop is wasting time and checking if there's any routing simulations worth waiting on
             while time.time() - tstart < simspeedfactor*simtime: #Use tstart2 if we want to not "save up" time on easy parts
                 pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
 
@@ -1760,7 +1762,7 @@ def run(network, rerouters, pSmart, verbose = True):
                         #We're behind schedule and don't care if anything's running, break early and continue main sim
                         break
 
-                    routingthreads[vehicle].join(timeout=0)
+                    #routingthreads[vehicle].join(timeout=0)
                     if routingthreads[vehicle].is_alive():
                         noThreadsRunning = False
                         break
@@ -3339,7 +3341,7 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
 
                     if multithreadRouting:
                         #We're near the intersection and should stop routing
-                        routingthreads[vehicle].join(timeout=0)
+                        #routingthreads[vehicle].join(timeout=0)
                         if routingthreads[vehicle].is_alive() and debugMode:
                             print("Stopping routing early for vehicle " + vehicle)
                         stopDict[vehicle] = True
@@ -3366,7 +3368,7 @@ def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
                         traci.switch("main")
 
                 if multithreadRouting:
-                    routingthreads[vehicle].join()
+                    routingthreads[vehicle].join() #Thread should already have stopped. This is to ensure any terminate() from before went through in case we had to early stop
                 
                 [newroute, esttime] = routingresults[vehicle]
 

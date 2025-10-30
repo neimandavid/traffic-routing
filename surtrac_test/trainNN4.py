@@ -27,6 +27,9 @@ from Net import Net
 import openpyxl #For writing training data to .xlsx files
 import time
 
+print("This has never worked, use intersection-specific instead")
+asdf
+
 #From: https://www.geeksforgeeks.org/how-to-use-gpu-acceleration-in-pytorch/
 if torch.cuda.is_available():
     print(f"GPU: {torch.cuda.get_device_name(0)} is available.")
