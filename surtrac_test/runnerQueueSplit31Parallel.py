@@ -2448,7 +2448,7 @@ def dumpIntersectionDataFun(intersectionData):
         for dtheta in thetabooks:
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
-@profile
+#@profile
 #Arguments unused; nonExitEdgeDetections is there for consistency with loadClustersDetectors, and VOI was from when I'd wanted to try artificially adding noise to the non-VOIs
 def loadClusters(simtime, nonExitEdgeDetections3=None, VOI=None):
     global totalLoadCars
@@ -2519,7 +2519,7 @@ def loadClusters(simtime, nonExitEdgeDetections3=None, VOI=None):
     return (clusters, lightphases)
 
 #This is currently only used for Surtrac; should be another function that handles starting routing sims
-@profile
+#@profile
 def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
     global totalLoadCars
     global nVehicles
@@ -3295,7 +3295,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     return [outdata, rngstate]
 
 #Tell all the detectors to reroute the cars they've seen
-@profile
+#@profile
 def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     global delay3adjdict
     #Clear any stored Surtrac stuff
