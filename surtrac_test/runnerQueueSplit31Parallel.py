@@ -122,7 +122,7 @@ detectorModel = True #REMINDER: As currently implemented, turning this on makes 
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
-adopterComms = True #Whether adopters communicate their positions when using the detector model
+adopterComms = False #Whether adopters communicate their positions when using the detector model
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
 
@@ -504,7 +504,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
     return torch.Tensor(np.array([np.concatenate((clusterdata, phasevec, [phaselenprop/120]))]))
 
-@profile
+#@profile
 def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
     global totalSurtracRuns
     global totalSurtracClusters
@@ -1352,7 +1352,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         bestschedules[light] = testnnschedule
         
 
-@profile
+#@profile
 def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True, nonExitEdgeDetections4 = nonExitEdgeDetections): #deepcopy breaks main Surtrac somehow?!
     global clustersCache
     global totalLoadRuns
@@ -1707,7 +1707,7 @@ def backwardDijkstra(network, goal):
             heappush(pq, (gval+c+h, succ))
     return gvals
 
-@profile
+#@profile
 def run(network, rerouters, pSmart, verbose = True):
     global sumoPredClusters
     global currentRoutes
@@ -2448,7 +2448,7 @@ def dumpIntersectionDataFun(intersectionData):
         for dtheta in thetabooks:
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
-#@profile
+##@profile
 #Arguments unused; nonExitEdgeDetections is there for consistency with loadClustersDetectors, and VOI was from when I'd wanted to try artificially adding noise to the non-VOIs
 def loadClusters(simtime, nonExitEdgeDetections3=None, VOI=None):
     global totalLoadCars
@@ -2519,7 +2519,7 @@ def loadClusters(simtime, nonExitEdgeDetections3=None, VOI=None):
     return (clusters, lightphases)
 
 #This is currently only used for Surtrac; should be another function that handles starting routing sims
-#@profile
+##@profile
 def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
     global totalLoadCars
     global nVehicles
@@ -3295,7 +3295,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     return [outdata, rngstate]
 
 #Tell all the detectors to reroute the cars they've seen
-#@profile
+##@profile
 def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     global delay3adjdict
     #Clear any stored Surtrac stuff
@@ -3564,7 +3564,7 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDi
             VOIs[newghostcar] = [nextlane, newspeed, ghostcarpos, oldroute+[nextedge], leftedge, True]
     return (dontReRemove2, endroute)
 
-#@profile
+##@profile
 #This is the main routing simulation function. It gets run in a thread when we need a new simulation, and stops early as needed
 def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchtimes, sumoPredClusters3, lightphases, simtime, reroutedata):
     global nRoutingCalls
