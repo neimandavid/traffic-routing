@@ -104,7 +104,7 @@ routingSimUsesSUMO = True #Only switch this if we go back to custom routing simu
 mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
-disableSurtracComms = False#True #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
+disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
 predCutoffMain = 30 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 0 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
@@ -112,7 +112,7 @@ intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to acc
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
-testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
+testDumbtrac = True #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
 FTP = True #If false, and testDumbtrac = True, runs actuated control instead of fixed timing plans. If true, runs fixed timing plans (should now be same as SUMO defaults)
 resetTrainingData = False#True
 appendTrainingData = False#True
@@ -122,7 +122,7 @@ detectorModel = True #REMINDER: As currently implemented, turning this on makes 
 detectorSurtrac = detectorModel
 detectorRouting = detectorModel
 detectorRoutingSurtrac = detectorModel #If false, uses omniscient Surtrac in routing regardless of detectorSurtrac. If true, defers to detectorSurtrac
-adopterComms = False #Whether adopters communicate their positions when using the detector model
+adopterComms = True #Whether adopters communicate their positions when using the detector model
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
 
@@ -1743,33 +1743,33 @@ def run(network, rerouters, pSmart, verbose = True):
         simtime += 1
         traci.simulationStep() #Tell the simulator to simulate the next time step
         
-        # if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
-        #     #time.sleep(0.5)
-        #     # if time.time() - tstart < simspeedfactor*simtime:
-        #     #     print("We're ahead of schedule!")
+        if multithreadRouting: #No point delaying if we aren't actually running anything in parallel, that's just silly
+            #time.sleep(0.5)
+            # if time.time() - tstart < simspeedfactor*simtime:
+            #     print("We're ahead of schedule!")
 
-        #     #This loop is wasting time and checking if there's any routing simulations worth waiting on
-        #     while time.time() - tstart < simspeedfactor*simtime: #Use tstart2 if we want to not "save up" time on easy parts
-        #         pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
+            #This loop is wasting time and checking if there's any routing simulations worth waiting on
+            while time.time() - tstart < simspeedfactor*simtime: #Use tstart2 if we want to not "save up" time on easy parts
+                pass#time.sleep(0) is bad since we might stop this thread from running and thus end up slower than real-time
 
-        #         #End early if no routing is running, no point waiting on nothing
-        #         noThreadsRunning = True
-        #         for vehicle in routingthreads:
+                #End early if no routing is running, no point waiting on nothing
+                noThreadsRunning = True
+                for vehicle in routingthreads:
 
-        #             #Timeout more often
-        #             if time.time() - tstart >= simspeedfactor*simtime:
-        #                 #noThreadsRunning = False
-        #                 #We're behind schedule and don't care if anything's running, break early and continue main sim
-        #                 break
+                    #Timeout more often
+                    if time.time() - tstart >= simspeedfactor*simtime:
+                        #noThreadsRunning = False
+                        #We're behind schedule and don't care if anything's running, break early and continue main sim
+                        break
 
-        #             #routingthreads[vehicle].join(timeout=0)
-        #             if routingthreads[vehicle].is_alive():
-        #                 noThreadsRunning = False
-        #                 break
+                    #routingthreads[vehicle].join(timeout=0)
+                    if routingthreads[vehicle].is_alive():
+                        noThreadsRunning = False
+                        break
 
-        #         if noThreadsRunning:
-        #             #tstart2 = max(tstart2, time.time() - simspeedfactor*simtime) #Move tstart2 forward so it looks like we're exactly on schedule
-        #             break
+                if noThreadsRunning:
+                    #tstart2 = max(tstart2, time.time() - simspeedfactor*simtime) #Move tstart2 forward so it looks like we're exactly on schedule
+                    break
 
         if debugMode:
             assert(simtime == traci.simulation.getTime())
@@ -2448,7 +2448,7 @@ def dumpIntersectionDataFun(intersectionData):
         for dtheta in thetabooks:
             thetabooks[dtheta].save("intersectiondata/theta"+str(math.floor(dtheta))+".xlsx")
 
-##@profile
+#@profile
 #Arguments unused; nonExitEdgeDetections is there for consistency with loadClustersDetectors, and VOI was from when I'd wanted to try artificially adding noise to the non-VOIs
 def loadClusters(simtime, nonExitEdgeDetections3=None, VOI=None):
     global totalLoadCars
@@ -2519,7 +2519,7 @@ def loadClusters(simtime, nonExitEdgeDetections3=None, VOI=None):
     return (clusters, lightphases)
 
 #This is currently only used for Surtrac; should be another function that handles starting routing sims
-##@profile
+#@profile
 def loadClustersDetectors(simtime, nonExitEdgeDetections3, VOI=None):
     global totalLoadCars
     global nVehicles
@@ -3295,7 +3295,7 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     return [outdata, rngstate]
 
 #Tell all the detectors to reroute the cars they've seen
-##@profile
+#@profile
 def reroute(rerouters, simtime, remainingDuration, sumoPredClusters=[]):
     global delay3adjdict
     #Clear any stored Surtrac stuff
@@ -3564,7 +3564,7 @@ def spawnGhostCars(ghostcardata, ghostcarlanes, simtime, VOIs, laneDict2, edgeDi
             VOIs[newghostcar] = [nextlane, newspeed, ghostcarpos, oldroute+[nextedge], leftedge, True]
     return (dontReRemove2, endroute)
 
-##@profile
+#@profile
 #This is the main routing simulation function. It gets run in a thread when we need a new simulation, and stops early as needed
 def rerouteSUMOGC(startvehicle, startlane, remainingDurationIn, mainlastswitchtimes, sumoPredClusters3, lightphases, simtime, reroutedata):
     global nRoutingCalls
