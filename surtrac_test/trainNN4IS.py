@@ -38,7 +38,7 @@ print(device)
 
 #In case we want to pause a run and continue later, set these to false
 reset = True
-reuseOldData = False
+reuseOldData = False #This was for testing different model architectures using the same pre-generated data, keep this off otherwise. (It's also currently broken for intersection-specific, though probably not hard to fix)
 resetNN = reset
 resetTrainingData2 = reset
 superResetTrainingData = False #I believe we don't want this for intersection-specific DAgger stuff?
