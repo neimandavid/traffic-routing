@@ -274,7 +274,7 @@
         <phase duration="25" state="rrGGGg"/>
         <phase duration="5"  state="rryyGG"/>
         <phase duration="8" state="GrrrGG"/>
-        <phase duration="7"  state="Grrryy"/>
+        <phase duration="7"  state="yrrryy"/>
         <phase duration="38" state="GGGrrr"/>
         <phase duration="7"  state="yyyrrr"/>
     </tlLogic>
@@ -282,7 +282,7 @@
         <phase duration="25" state="GGGgrr"/>
         <phase duration="5"  state="yyGGrr"/>
         <phase duration="8" state="rrGGGr"/>
-        <phase duration="7"  state="rryyGr"/>
+        <phase duration="7"  state="rryyyr"/>
         <phase duration="38" state="GrrrGG"/>
         <phase duration="7"  state="yrrryy"/>
     </tlLogic>
@@ -310,7 +310,7 @@
         <phase duration="25" state="GgrrGG"/>
         <phase duration="5"  state="GGrryy"/>
         <phase duration="8" state="GGGrrr"/>
-        <phase duration="7"  state="yyGrrr"/>
+        <phase duration="7"  state="yyyrrr"/>
         <phase duration="38" state="rrGGGr"/>
         <phase duration="7"  state="rryyyr"/>
     </tlLogic>
@@ -318,7 +318,7 @@
         <phase duration="25" state="GgrrGG"/>
         <phase duration="5"  state="GGrryy"/>
         <phase duration="8" state="GGGrrr"/>
-        <phase duration="7"  state="yyGrrr"/>
+        <phase duration="7"  state="yyyrrr"/>
         <phase duration="38" state="rrGGGr"/>
         <phase duration="7"  state="rryyyr"/>
     </tlLogic>
@@ -346,7 +346,7 @@
         <phase duration="25" state="GgrrGG"/>
         <phase duration="5"  state="GGrryy"/>
         <phase duration="8" state="GGGrrr"/>
-        <phase duration="7"  state="yyGrrr"/>
+        <phase duration="7"  state="yyyrrr"/>
         <phase duration="38" state="rrGGGr"/>
         <phase duration="7"  state="rryyyr"/>
     </tlLogic>
@@ -354,7 +354,7 @@
         <phase duration="25" state="rrGGGg"/>
         <phase duration="5"  state="rryyGG"/>
         <phase duration="8" state="GrrrGG"/>
-        <phase duration="7"  state="Grrryy"/>
+        <phase duration="7"  state="yrrryy"/>
         <phase duration="38" state="GGGrrr"/>
         <phase duration="7"  state="yyyrrr"/>
     </tlLogic>
