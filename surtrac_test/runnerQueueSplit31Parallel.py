@@ -593,7 +593,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
             dur = 1e6 #Something really big so we know the light won't change
         else:
             dur = 0
-        testnnschedule = [None, None, None, None, None, None, None, [dur]] #Only thing the output needs is a schedule; returns either [0] for switch immediately or [1] for continue for at least another timestep
+        testnnschedule = [None, None, None, None, None, None, None, [dur, 1e6]] #Only thing the output needs is a schedule; returns either [0] for switch immediately or [1] for continue for at least another timestep
         assert(len(testnnschedule[7]) > 0)
         #return #Don't return early, might still need to append training data
 
