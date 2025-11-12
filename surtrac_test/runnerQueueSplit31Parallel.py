@@ -520,6 +520,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         ttimestep = 1
         
     i = lightphases[light]
+    outputDumbtrac = 12345 #This should get overwritten if using dumbtrac and ignored otherwise
 
     #If using NN, don't make it learn easy edge cases like min/max duration or yellow lights, just do those by hand
     if (testNN and (inRoutingSim or not noNNinMain)): #If using NN
@@ -1318,7 +1319,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
     
     if appendTrainingData:
         if testDumbtrac:
-            outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            #outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
             if crossEntropyLoss:
                 if (outputDumbtrac-0.25) < 0:
                     target = torch.LongTensor([0])
@@ -1454,7 +1455,7 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                         if simtime - lastswitchtimes[light] > surtracdata[light][curphase]["maxDur"]+timestep:
                             print("Duration violation on light " + light + "; actual duration " + str(simtime - lastswitchtimes[light]) + " but max duration " + str(surtracdata[light][curphase]["maxDur"]))
 
-                    lightphases[light] = (curphase+1)%nPhases #This would change the light if we're in routing sim
+                    lightphases[light] = (curphase+1)%nPhases #This would change the light if we're in non-SUMO routing sim
                     lastswitchtimes[light] = simtime
 
                     remainingDuration[light].pop(0)
