@@ -521,6 +521,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         
     i = lightphases[light]
     outputDumbtrac = 12345 #This should get overwritten if using dumbtrac and ignored otherwise
+    nnin = 23456 #Same idea, overwritten if using NN, else ignored
 
     #If using NN, don't make it learn easy edge cases like min/max duration or yellow lights, just do those by hand
     if (testNN and (inRoutingSim or not noNNinMain)): #If using NN
@@ -1331,7 +1332,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
             else:
                 target = torch.tensor([[min(float(outputDumbtrac-0.25), 10)]]) # Target from expert
             #nnin = convertToNNInput(simtime, light, clusters, lightphases, lastswitchtimes) #Obsolete - use Surtrac architecture anyway
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            #nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes) #Ran this earlier, should be fine
         else:
             if crossEntropyLoss:
                 if (bestschedule[7][0]-0.25) < 0:
@@ -1341,7 +1342,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                 #target = torch.tensor([[(bestschedule[7][0]-0.25) < 0, (bestschedule[7][0]-0.25) >= 0]]) # Target from expert
             else:
                 target = torch.tensor([[min(float(bestschedule[7][0]-0.25), 10)]]) # Target from expert
-            nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            #nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes)
 
         if (testNN and (inRoutingSim or not noNNinMain)): #If NN
             trainingdata[light].append((nnin, target, torch.tensor(np.array([[temp]]))))
