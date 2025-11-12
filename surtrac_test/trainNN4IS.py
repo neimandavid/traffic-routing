@@ -386,7 +386,10 @@ def dumpTrainingData(trainingdata):
                     if row == 2:
                         sheets[light].cell(1, col, "NN Output")
                     if len(batch) > 2:
-                        sheets[light].cell(row, col, float(batch[2][linenum])) #TODO this is wrong for cross-entropy loss
+                        for entry in batch[2][linenum]:
+                            sheets[light].cell(row, col, float(entry))
+                            col += 1
+                        #sheets[light].cell(row, col, float(batch[2][linenum])) #TODO this is wrong for cross-entropy loss
                     row += 1
     except Exception as e:
         print(e)
