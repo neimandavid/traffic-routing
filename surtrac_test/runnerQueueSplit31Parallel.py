@@ -520,7 +520,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         ttimestep = 1
         
     i = lightphases[light]
-    outputDumbtrac = "oops" #This should get overwritten if using dumbtrac and ignored otherwise
+    outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes) #Going to compute this upfront and hope this doesn't hurt non-NN Surtrac stuff too much
     nnin = convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtimes) #Going to compute this upfront and hope this doesn't hurt non-NN Surtrac stuff too much
 
     #If using NN, don't make it learn easy edge cases like min/max duration or yellow lights, just do those by hand
@@ -584,7 +584,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
                 actionNN = 0 #Stick
 
         if testDumbtrac and not (testNN and (inRoutingSim or not noNNinMain)): #Dumbtrac but not NN
-            outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
+            #outputDumbtrac = dumbtrac(simtime, light, clusters, lightphases, lastswitchtimes)
             if outputDumbtrac <= 0: #Stick for <= 0 seconds
                 actionDumbtrac = 1 #Switch
             else:
