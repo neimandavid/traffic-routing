@@ -2955,8 +2955,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
             random.setstate(rngstate)
     else:
         rngstate = random.getstate()
-        with open("lastRNGstate.pickle", 'wb') as handle:
-            pickle.dump(rngstate, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickledump("lastRNGstate.pickle", rngstate)
+        # with open("lastRNGstate.pickle", 'wb') as handle:
+        #     pickle.dump(rngstate, handle, protocol=pickle.HIGHEST_PROTOCOL)
     
     appendTrainingData = appendTrainingDataIn
     if appendTrainingDataIn:
@@ -3256,8 +3257,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     
     if appendTrainingData:
         print("Saving training data")
-        with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'wb') as handle:
-            pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickledump("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", trainingdata) #Avoid file corruption if interrupted at a bad time
+        # with open("trainingdata/trainingdata_" + sys.argv[1] + ".pickle", 'wb') as handle:
+        #     pickle.dump(trainingdata, handle, protocol=pickle.HIGHEST_PROTOCOL)
     #traci.close()
 
     p = pSmart
@@ -3291,8 +3293,9 @@ def main(sumoconfigin, pSmart, verbose = True, useLastRNGState = False, appendTr
     data[p]["TeleportData"].append(newdata[14])
     
     data[p]["RNGStates"].append(rngstate)
-    with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
-        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    pickledump("delaydata/delaydata_" + sys.argv[1] + ".pickle", data)
+    # with open("delaydata/delaydata_" + sys.argv[1] + ".pickle", 'wb') as handle:
+    #     pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     return [outdata, rngstate]
 
