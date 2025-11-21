@@ -129,7 +129,7 @@ adopterCommsRouting = adopterComms
 simspeedfactor = 0.75 #How much slower than real-time we want this to run. 1 for real-time, 2 for twice as slow, etc.
 #Can set simspeedfactor to something crazy high (like 1000) if you never want the routing to time out early
 
-clusterStats = False #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
+clusterStats = True #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
 clusterNumsStats = []
 clusterWeights = []
 clusterLens = []
@@ -1511,7 +1511,7 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                     continue
 
                 cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
-                if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
+                if False:#cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
                     #Split on "|" and "_" to deal with splitty cars correctly
                     route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
                     edge = lane.split("_")[0]
