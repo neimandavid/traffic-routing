@@ -1511,11 +1511,11 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                     continue
 
                 cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
-                if False:#cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
+                if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
                     #Split on "|" and "_" to deal with splitty cars correctly
                     route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
                     edge = lane.split("_")[0]
-                    if not edge in route:
+                    if edge not in route:
                         #Not sure why this happens - maybe the route is changing and predictions aren't updating?
                         #Can definitely happen for a splitty car inside QueueSim, but that shouldn't register in isSmart anymore
                         #Seeing this with standard adopters on Pittsburgh too but I don't understand why
@@ -1540,6 +1540,7 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                         #Might be happening if the car needs to make a last-minute lane change to stay on its route?
                         #TODO: Find a lane where it can continue with the route and go from there? Ignoring for now
                         #NEXT TODO: Apparently still a thing even with splitting the initial VOI to multiple lanes???
+                        print(nextedge + " not in normprobs[" + lane + "]")
                         continue
 
                     for nextlaneind in range(nLanes[nextedge]):
