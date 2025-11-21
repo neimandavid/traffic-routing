@@ -112,7 +112,7 @@ intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to acc
 
 testNNdefault = True #Uses NN over Dumbtrac for light control if both are true
 noNNinMain = True
-testDumbtrac = True #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
+testDumbtrac = False #If true, overrides Surtrac with Dumbtrac (FTP or actuated control) in simulations and training data (if appendTrainingData is also true)
 FTP = True #If false, and testDumbtrac = True, runs actuated control instead of fixed timing plans. If true, runs fixed timing plans (should now be same as SUMO defaults)
 resetTrainingData = False#True
 appendTrainingData = False#True
@@ -126,7 +126,7 @@ adopterComms = True #Whether adopters communicate their positions when using the
 adopterCommsSurtrac = adopterComms
 adopterCommsRouting = adopterComms
 
-simspeedfactor = 1 #How much slower than real-time we want this to run. 1 for real-time, 2 for twice as slow, etc.
+simspeedfactor = 0.75 #How much slower than real-time we want this to run. 1 for real-time, 2 for twice as slow, etc.
 #Can set simspeedfactor to something crazy high (like 1000) if you never want the routing to time out early
 
 clusterStats = False #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
