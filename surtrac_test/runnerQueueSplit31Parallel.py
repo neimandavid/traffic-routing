@@ -1354,7 +1354,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         bestschedules[light] = testnnschedule
         
 
-#@profile
+@profile
 def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True, nonExitEdgeDetections4 = nonExitEdgeDetections): #deepcopy breaks main Surtrac somehow?!
     global clustersCache
     global totalLoadRuns
@@ -1521,15 +1521,8 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                         #Can definitely happen for a splitty car inside QueueSim, but that shouldn't register in isSmart anymore
                         #Seeing this with standard adopters on Pittsburgh too but I don't understand why
                         #Regardless, don't predict this car forward and hope for the best?
-                        #We're in main sim, shouldn't be dealing with ghost cars, don't need that check and it doesn't do anything anyway
-                        # if not "|" in cartuple[0] and not "_" in cartuple[0]:
-                        #     #Smart car is on an edge we didn't expect. Most likely it changed route between the previous and current Surtrac calls. Get rid of it for now; can we be cleverer?
-                        #     # print(cartuple[0])
-                        #     # print(route)
-                        #     # print(edge)
-                        #     # print("Warning, smart car on an edge that's not in its route. This shouldn't happen? Assuming a mispredict and removing")
-                        #     continue
-                        #TODO: else should predict it goes everywhere?
+                        #We're in main sim, shouldn't be dealing with ghost cars, don't need to check for ghost cars
+                        #TODO: should predict it goes everywhere?
                         continue
                     edgeind = route.index(edge)
                     if edgeind+1 == len(route):
