@@ -129,7 +129,7 @@ adopterCommsRouting = adopterComms
 simspeedfactor = 0.75 #How much slower than real-time we want this to run. 1 for real-time, 2 for twice as slow, etc.
 #Can set simspeedfactor to something crazy high (like 1000) if you never want the routing to time out early
 
-clusterStats = True #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
+clusterStats = False #ONLY WORKS WITH REAL SURTRAC! If we want to record cluster stats when starting Surtrac calls for external use (ex: training NNs)
 clusterNumsStats = []
 clusterWeights = []
 clusterLens = []
