@@ -1517,20 +1517,18 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                     route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
                     edge = lane.split("_")[0]
                     if not edge in route:
-                        print("Adopter got off intended route???")
-                        print(cartuple[0])
-                        print(edge)
-                        print(route)
-                        #Not sure if or why this happens - maybe the route is changing and predictions aren't updating?
-                        #Can definitely happen for a splitty car inside QueueSim
+                        #Not sure why this happens - maybe the route is changing and predictions aren't updating?
+                        #Can definitely happen for a splitty car inside QueueSim, but that shouldn't register in isSmart anymore
+                        #Seeing this with standard adopters on Pittsburgh too but I don't understand why
                         #Regardless, don't predict this car forward and hope for the best?
-                        if not "|" in cartuple[0] and not "_" in cartuple[0]:
-                            #Smart car is on an edge we didn't expect. Most likely it changed route between the previous and current Surtrac calls. Get rid of it for now; can we be cleverer?
-                            # print(cartuple[0])
-                            # print(route)
-                            # print(edge)
-                            # print("Warning, smart car on an edge that's not in its route. This shouldn't happen? Assuming a mispredict and removing")
-                            continue
+                        #We're in main sim, shouldn't be dealing with ghost cars, don't need that check and it doesn't do anything anyway
+                        # if not "|" in cartuple[0] and not "_" in cartuple[0]:
+                        #     #Smart car is on an edge we didn't expect. Most likely it changed route between the previous and current Surtrac calls. Get rid of it for now; can we be cleverer?
+                        #     # print(cartuple[0])
+                        #     # print(route)
+                        #     # print(edge)
+                        #     # print("Warning, smart car on an edge that's not in its route. This shouldn't happen? Assuming a mispredict and removing")
+                        #     continue
                         #TODO: else should predict it goes everywhere?
                         continue
                     edgeind = route.index(edge)
