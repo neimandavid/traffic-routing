@@ -1499,8 +1499,6 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                     heappush(nextSendTimes, (clusters[lane][clusterNums[lane]]["cars"][carNums[lane]][1], laneind)) #Pre-predict for appropriate lane for first cluster, get departure time, stuff into a priority queue
                     #We're pushing the next time the next to-be-processed car from each lane departs the current intersection, and once we process a car we'll heappush the car behind it into the queue
 
-            break
-
             while len(nextSendTimes) > 0:
                 (nextSendTime, laneind) = heappop(nextSendTimes)
                 lane = notlightlanes[light][laneind]
@@ -1513,7 +1511,7 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                     continue
 
                 cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
-                if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
+                if False:#cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
                     #Split on "|" and "_" to deal with splitty cars correctly
                     route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
                     edge = lane.split("_")[0]
