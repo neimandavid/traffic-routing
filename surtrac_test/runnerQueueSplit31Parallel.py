@@ -1504,31 +1504,20 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                 (nextSendTime, laneind) = heappop(nextSendTimes)
                 lane = notlightlanes[light][laneind]
                 
-                #We're having issues with empty clusters when we do predictions and use libsumo (multithreaded routing apparently not necessary to break stuff). Not sure why this is happening, but let's just deal with those cases and hope everything's fine
-                #NEXT TODO can I delete this? Apparently not, how bad is this?
                 while len(clusters[lane]) > clusterNums[lane] and len(clusters[lane][clusterNums[lane]]["cars"]) == carNums[lane]: #Should fire at most once, but use while just in case of empty clusters...
                     clusterNums[lane] += 1
-                    subclusterNums[lane] = 0 #TODO check this, previous comments scare me here
                     carNums[lane] = 0
                 if len(clusters[lane]) == clusterNums[lane]:
                     #Nothing left on this lane, we're done here
-                    #nextSendTimes.pop(lane)
                     continue
 
-                try:
-                    cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
-                except:
-                    print("Oops???????????")
-                    print(clusterNums[lane])
-                    print(clusters[lane])
-                    print(carNums[lane])
-                    print(clusters[lane][clusterNums[lane]]["cars"])
-                    asdf
+                cartuple = clusters[lane][clusterNums[lane]]["cars"][carNums[lane]]
                 if cartuple[0] in isSmart and isSmart[cartuple[0]]: #It's possible we call this from QueueSim, at which point we split the vehicle being routed and wouldn't recognize the new names. Anything else should get assigned to isSmart or not on creation
                     #Split on "|" and "_" to deal with splitty cars correctly
                     route = currentRoutes[cartuple[0].split("|")[0].split("_")[0]] #.split to deal with the possibility of splitty cars in QueueSim
                     edge = lane.split("_")[0]
                     if not edge in route:
+                        print("Adopter got off intended route???")
                         #Not sure if or why this happens - maybe the route is changing and predictions aren't updating?
                         #Can definitely happen for a splitty car inside QueueSim
                         #Regardless, don't predict this car forward and hope for the best?
@@ -1567,6 +1556,7 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                             #Something's weird and our data says vehicles are skipping lanes
                             #Might be a teleport in the initial turn data
                             #Regardless, skip it and hope it's fine?
+                            print("Possible teleport in planned route??? " + lane + "->" + nextlane)
                             continue
 
                         arr = nextSendTime + fftimes[nextlane] + intersectionTime
@@ -1607,6 +1597,7 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                             #Might be a teleport in the initial turn data
                             #Regardless, skip it and hope it's fine?
                             #TODO is this fixed now (for PittsburghLongIn+10New...)?
+                            print("Possible teleport in historical turn data: " + lane + "->" + nextlane)
                             continue
                         
                         #Copy-paste previous logic for creating a new cluster
