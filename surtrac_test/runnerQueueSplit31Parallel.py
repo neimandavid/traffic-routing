@@ -105,7 +105,7 @@ mainSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the 
 routingSurtracFreq = 1 #Recompute Surtrac schedules every this many seconds in the main simulation (technically a period not a frequency). Use something huge like 1e6 to disable Surtrac and default to fixed timing plans.
 recomputeRoutingSurtracFreq = 1 #Maintain the previously-computed Surtrac schedules for all vehicles routing less than this many seconds in the main simulation. Set to 1 to only reuse results within the same timestep. Does nothing when reuseSurtrac is False.
 disableSurtracComms = False #Speeds up code by having Surtrac no longer predict future clusters for neighboring intersections
-predCutoffMain = 5#30 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
+predCutoffMain = 30 #Surtrac receives communications about clusters arriving this far into the future in the main simulation
 predCutoffRouting = 0 #Surtrac receives communications about clusters arriving this far into the future in the routing simulations
 predDiscount = 1 #Multiply predicted vehicle weights by this because we're not actually sure what they're doing. 0 to ignore predictions, 1 to treat them the same as normal cars.
 intersectionTime = 0.5 #Gets added to arrival time for predicted clusters to account for vehicles needing time to go through intersections. Should account for sult maybe. Do I need to be smarter to handle turns?
@@ -1498,6 +1498,8 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                 if len(clusters[lane]) > clusterNums[lane]: #If there are clusters on this lane, toss the first car from that cluster into the priority queue
                     heappush(nextSendTimes, (clusters[lane][clusterNums[lane]]["cars"][carNums[lane]][1], laneind)) #Pre-predict for appropriate lane for first cluster, get departure time, stuff into a priority queue
                     #We're pushing the next time the next to-be-processed car from each lane departs the current intersection, and once we process a car we'll heappush the car behind it into the queue
+
+            break
 
             while len(nextSendTimes) > 0:
                 (nextSendTime, laneind) = heappop(nextSendTimes)
