@@ -1518,6 +1518,9 @@ def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None
                     edge = lane.split("_")[0]
                     if not edge in route:
                         print("Adopter got off intended route???")
+                        print(cartuple[0])
+                        print(edge)
+                        print(route)
                         #Not sure if or why this happens - maybe the route is changing and predictions aren't updating?
                         #Can definitely happen for a splitty car inside QueueSim
                         #Regardless, don't predict this car forward and hope for the best?
