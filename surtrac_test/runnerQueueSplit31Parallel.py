@@ -504,7 +504,7 @@ def convertToNNInputSurtrac(simtime, light, clusters, lightphases, lastswitchtim
 
     return torch.Tensor(np.array([np.concatenate((clusterdata, phasevec, [phaselenprop/120]))]))
 
-#@profile
+@profile
 def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRoutingSim, predictionCutoff, toSwitch, catpreds, bestschedules):
     global totalSurtracRuns
     global totalSurtracClusters
@@ -1354,7 +1354,7 @@ def doSurtracThread(simtime, light, clusters, lightphases, lastswitchtimes, inRo
         bestschedules[light] = testnnschedule
         
 
-@profile
+#@profile
 def doSurtrac(simtime, realclusters=None, lightphases=None, lastswitchtimes=None, predClusters=None, inRoutingSim=True, nonExitEdgeDetections4 = nonExitEdgeDetections): #deepcopy breaks main Surtrac somehow?!
     global clustersCache
     global totalLoadRuns
