@@ -26,6 +26,7 @@
 #27: Support new SurtracNet (single network for all intersections, takes in intersection geometry and light phase info)
 #This particular version hopefully does everything we want except improved parallelization (starting routing sims at road start and running them alongside the main sim when possible). For that version, see runnerQueueSplit30.py
 #31: Starting from 27IntersectionSpecificGood. Adding lane area detectors near intersections to try to improve detector model.
+#31Parallel: Runs routing simulations in parallel with main simulation and implements early stopping
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -142,8 +143,8 @@ stopDict = dict()
 routingthreads = dict()
 routingresults = manager.dict()
 
-learnYellow = True #False to strictly enforce that yellow lights are always their minimum length (no scheduling clusters during yellow+turn arrow, and ML solution isn't used there)
-learnMinMaxDurations = True #False to strictly enforce min/max duration limits (in particular, don't call ML, just do the right thing)
+learnYellow = False #False to strictly enforce that yellow lights are always their minimum length (no scheduling clusters during yellow+turn arrow, and ML solution isn't used there)
+learnMinMaxDurations = False #False to strictly enforce min/max duration limits (in particular, don't call ML, just do the right thing)
 
 #Don't change parameters below here
 #For testing durations to see if there's drift between fixed timing plans executed in main simulation and routing simulations.
@@ -2031,7 +2032,8 @@ def run(network, rerouters, pSmart, verbose = True):
         
         for car in traci.simulation.getStartingTeleportIDList():
             routeStats[car]["nTeleports"] += 1
-            print("Warning: Car " + car + " teleported, time=" + str(simtime))
+            if debugMode:
+                print("Warning: Car " + car + " teleported, time=" + str(simtime))
             isSmartVal = "Unknown"
             if car in isSmart:
                 isSmartVal = isSmart[car]
